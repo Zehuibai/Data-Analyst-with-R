@@ -1,0 +1,4 @@
+"0","devtools::install_github(""rstudio/bookdown"")
+"
+"2","Error in loadNamespace(name) : there is no package called ‘devtools’
+"
