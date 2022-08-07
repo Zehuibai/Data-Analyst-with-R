@@ -1,0 +1,6 @@
+\beamer@sectionintoc {2}{Text}{3}{0}{1}
+\beamer@subsectionintoc {2}{1}{Welcome}{4}{0}{1}
+\beamer@sectionintoc {3}{Equations}{5}{0}{2}
+\beamer@subsectionintoc {3}{1}{Example}{6}{0}{2}
+\beamer@sectionintoc {4}{Code}{8}{0}{3}
+\beamer@subsectionintoc {4}{1}{Example}{9}{0}{3}

@@ -1,0 +1,172 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames*,x11names*}{xcolor}
+%
+\documentclass[
+  10pt,
+  ngerman,
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdflang={de-De},
+  colorlinks=true,
+  linkcolor=Maroon,
+  filecolor=Maroon,
+  citecolor=Blue,
+  urlcolor=Blue,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable,booktabs}
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+\ifxetex
+  % Load polyglossia as late as possible: uses bidi with RTL langages (e.g. Hebrew, Arabic)
+  \usepackage{polyglossia}
+  \setmainlanguage[]{german}
+\else
+  \usepackage[shorthands=off,main=ngerman]{babel}
+\fi
+
+\title{Praktikum im Leibniz-Institut für Präventionsforschung und
+Epidemiologie}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Praktikumsbericht}
+\author{Zehui Bai\\
+Medical Biometry/Biostatistics\\
+Betreut von Dr.~Ronja Foraita\\
+Matrikelnummer:3183673\\
+Zeitraum: 01.08.2019 -- 12.09.2019}
+\date{}
+
+\begin{document}
+\maketitle
+
+{
+\hypersetup{linkcolor=}
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{praktikumsstelle}{%
+\section{Praktikumsstelle}\label{praktikumsstelle}}
+
+\hypertarget{vorstellung-der-praktikumsstelle}{%
+\subsection{Vorstellung der
+Praktikumsstelle}\label{vorstellung-der-praktikumsstelle}}
+
+Das Leibniz-Institut für Präventionsforschung und Epidemiologie -- BIPS
+wurde 1981 als „Bremer Institut für Präventionsforschung und
+Sozialmedizin (BIPS)`` gegründet. Es ist damit eines der ältesten
+Epidemiologie-Institute Deutschlands.
+
+BIPS ist ein unabhängiges, interdisziplinär arbeitendes
+Epidemiologie-Forschungsinstitut, das seine Aufgabe in der Erforschung
+von Krankheitsursachen und der Vorbeugung gegen Erkrankungen sieht. Das
+Institut entwickelt mit seiner Forschung wirksame Strategien zur
+Prävention chronischer nichtübertragbarer Erkrankungen. Das BIPS
+erforscht Ursachen für Gesundheitsstörungen und entwickelt neue
+Konzepte, um Krankheiten vorzubeugen. Es untersucht, wie wirksam diese
+Maßnahmen sind und stellt die Forschungsergebnisse der Öffentlichkeit
+zur Verfügung. Neben der epidemiologischen Forschung sichert das
+Institut den Transfer seiner Forschungsergebnisse in die Praxis. Es
+entwickelt Präventionsprogramme und berät Entscheidungsträger auf
+nationaler und internationaler Ebene (BIPS-Allgemein, 01.10.2019).
+
+\begin{verbatim}
+\begin{center}
+\includegraphics[width=4.8in]{Fotos/Organigramm}
+\begin{figure}[!ht]
+\caption{Organisationsstruktur in BIPS}
+\end{figure}
+\end{center}
+\end{verbatim}
+
+\begin{longtable}[]{@{}l@{}}
+\caption{Datenstruktur von GWAS}\tabularnewline
+\toprule
+Variablensname\tabularnewline
+\midrule
+\endfirsthead
+\toprule
+Variablensname\tabularnewline
+\midrule
+\endhead
+ID\_NO\tabularnewline
+Material\tabularnewline
+Spitted\tabularnewline
+Datum\tabularnewline
+GAWS\tabularnewline
+Projekt\_Name\tabularnewline
+extraConcentration\tabularnewline
+country\tabularnewline
+DNA\_extraction\tabularnewline
+\bottomrule
+\end{longtable}
+
+\hypertarget{literatur}{%
+\section{Literatur}\label{literatur}}
+
+{[}1{]} BIPS-Allgemein.(Tag des Zugriffs: 01.10.2019)
+
+\url{https://www.bips-institut.de/das-institut/ueber-das-institut.html}
+
+\end{document}

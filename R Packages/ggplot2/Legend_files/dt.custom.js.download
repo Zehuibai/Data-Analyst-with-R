@@ -1,0 +1,464 @@
+jQuery(document).ready(function() {
+
+	var isMobile = (navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i)) || (navigator.userAgent.match(/iPad/i)) || (navigator.userAgent.match(/Android/i)) || (navigator.userAgent.match(/Blackberry/i)) || (navigator.userAgent.match(/Windows Phone/i)) ? true : false;
+	var currentWidth = window.innerWidth || document.documentElement.clientWidth;
+
+	jQuery(window).on('load', function(){
+		jQuery('.dt-quiz-timer').each(function(){
+			if(jQuery(this).hasClass('dt-start')){
+				jQuery(this).trigger('activate');
+			}
+		});
+	});
+
+	jQuery( 'body' ).delegate( '.dt_print_certificate', 'click', function(event){
+		var browser = jQuery.browser;
+		if(browser.mozilla) {
+			var printBlock = jQuery('.dt-sc-certificate-container');
+			window.print();
+		} else {
+			jQuery('.dt-sc-certificate-container').print();
+			event.preventDefault();
+		}
+	});
+
+
+	jQuery( 'body' ).delegate( "#dt-start-quiz", 'click', function(){
+
+		var course_id = jQuery('#dt-quiz-attributes').attr('data-course_id'),
+			lesson_id = jQuery('#dt-quiz-attributes').attr('data-lesson_id'),
+			quiz_id = jQuery('#dt-quiz-attributes').attr('data-quiz_id'),
+			user_id = jQuery('#dt-quiz-attributes').attr('data-user_id');
+
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data:
+			{
+				action: 'dt_ajax_start_quiz',
+				course_id: course_id,
+				lesson_id: lesson_id,
+				quiz_id: quiz_id,
+				user_id: user_id
+			},
+			beforeSend: function(){
+				jQuery('#dt-sc-ajax-load-image').show();
+			},
+			error: function (xhr, status, error) {
+				jQuery('#dt-quiz-questions-container').html('Something went wrong!');
+			},
+			success: function (response) {
+				jQuery('#dt-quiz-questions-container').html(response);
+				jQuery(window).on('beforeunload', function(){
+					return object.onRefresh;
+				});
+
+				jQuery(window).on('unload',function(){
+					jQuery('#dt-complete-quiz').trigger('click');
+				});
+				start_timer();
+				jQuery(".dt-question-options ul li img").on('click',function(e){
+
+					if(!jQuery(this).parents("ul").hasClass('disabled')) {
+
+						jQuery(this).parents(".dt-question-options").find("li").removeClass('selected');
+						jQuery(this).parents(".dt-question-options").find(".multichoice-image").removeAttr('checked');
+						jQuery(this).parents('li').addClass('selected');
+						jQuery(this).next('input').attr('checked', 'checked');
+
+					}
+					e.preventDefault();
+
+				});
+			},
+			complete: function(){
+				jQuery('#dt-sc-ajax-load-image').hide();
+			}
+		});
+
+	});
+
+	jQuery( 'body' ).delegate( "#dt-submit-question", 'click', function(){
+
+		var course_id = jQuery('#dt-quiz-attributes').attr('data-course_id'),
+			lesson_id = jQuery('#dt-quiz-attributes').attr('data-lesson_id'),
+			quiz_id = jQuery('#dt-quiz-attributes').attr('data-quiz_id'),
+			user_id = jQuery('#dt-quiz-attributes').attr('data-user_id'),
+			question_navigator = jQuery('#dt-quiz-attributes').attr('data-question_navigator'),
+			current_question_num = jQuery('#dt-current-question-num').val(),
+			current_question_id = jQuery('.dt-question:visible').find('#dt-current-question-id').val(),
+			question_total = jQuery('#dt-questions-total').val();
+
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data: jQuery('form[name=frmQuiz]').serialize() + '&action=dttheme_show_answers_and_explanation_single&course_id='+course_id+'&lesson_id='+lesson_id+'&quiz_id='+quiz_id+'&user_id='+user_id+'&question_id='+current_question_id,
+			beforeSend: function(){
+				jQuery('#dt-sc-ajax-load-image').show();
+			},
+			error: function (xhr, status, error) {
+				jQuery('#dt-quiz-questions-container').html('Something went wrong!');
+			},
+			success: function (response) {
+
+				if(response == 'passed') {
+
+					if(question_navigator != 'true') {
+						if(parseInt(current_question_num, 10) == parseInt(question_total, 10)) {
+							jQuery('#dt-complete-quiz').trigger('click');
+							return;
+						}
+					}
+
+					jQuery('.dt-question-'+current_question_num).slideUp();
+					next_question_num = parseInt(current_question_num, 10) + 1;
+					jQuery('#dt-current-question-num').val(next_question_num);
+
+					if(parseInt(next_question_num, 10) <= parseInt(question_total, 10)) {
+						jQuery('.dt-question-'+next_question_num).slideDown();
+						jQuery('.dt-sc-quiz-curriculum li').removeClass('current');
+						jQuery('.dt-sc-quiz-curriculum .dt-sc-question-'+next_question_num).addClass('current');
+					}
+					if(parseInt(next_question_num, 10) >= parseInt(question_total, 10)) {
+						if(question_navigator == 'true') {
+							jQuery('.dt-question-1').slideDown();
+							jQuery('.dt-sc-quiz-curriculum li').removeClass('current');
+							jQuery('.dt-sc-quiz-curriculum .dt-sc-question-1').addClass('current');
+						}
+						jQuery('#dt-submit-question').removeClass('hidden');
+						jQuery('#dt-next-question').addClass('hidden');
+					}
+
+					jQuery('.dt-sc-question-counter-container .dt-sc-current-question').html(next_question_num);
+
+				} else {
+
+					jQuery('#dt-sc-answer-holder').html(response);
+
+					if(parseInt(current_question_num, 10) >= parseInt(question_total, 10)) {
+						jQuery('#dt-submit-question').addClass('hidden');
+						jQuery('#dt-next-question').addClass('hidden');
+						if(question_navigator != 'true') {
+							jQuery('#dt-complete-quiz').removeClass('hidden');
+						}
+					} else {
+						jQuery('#dt-submit-question').addClass('hidden');
+						jQuery('#dt-next-question').removeClass('hidden');
+					}
+
+				}
+
+			},
+			complete: function(){
+				jQuery('#dt-sc-ajax-load-image').hide();
+			}
+		});
+
+	});
+
+	jQuery( 'body' ).delegate( "#dt-next-question", 'click', function(){
+
+		var course_id = jQuery('#dt-quiz-attributes').attr('data-course_id'),
+			lesson_id = jQuery('#dt-quiz-attributes').attr('data-lesson_id'),
+			quiz_id = jQuery('#dt-quiz-attributes').attr('data-quiz_id'),
+			user_id = jQuery('#dt-quiz-attributes').attr('data-user_id'),
+			question_navigator = jQuery('#dt-quiz-attributes').attr('data-question_navigator'),
+			current_question_num = jQuery('#dt-current-question-num').val(),
+			current_question_id = jQuery('#dt-current-question-id').val(),
+			question_total = jQuery('#dt-questions-total').val(),
+			correctanswer_and_answerexplanation = jQuery('#dt-correctanswer-and-answerexplanation').val();
+
+		jQuery('.dt-question-'+current_question_num).slideUp();
+		next_question_num = parseInt(current_question_num, 10) + 1;
+		jQuery('#dt-current-question-num').val(next_question_num);
+		if(parseInt(next_question_num, 10) <= parseInt(question_total, 10)) {
+			jQuery('.dt-question-'+next_question_num).slideDown();
+			jQuery('.dt-sc-quiz-curriculum li').removeClass('current');
+			jQuery('.dt-sc-quiz-curriculum .dt-sc-question-'+next_question_num).addClass('current');
+		}
+
+		if(correctanswer_and_answerexplanation == 'true') {
+			jQuery('#dt-submit-question').removeClass('hidden');
+			jQuery('#dt-next-question').addClass('hidden');
+		} else if(parseInt(next_question_num, 10) >= parseInt(question_total, 10)) {
+			jQuery('#dt-next-question').addClass('hidden');
+			if(question_navigator != 'true') {
+				jQuery('#dt-complete-quiz').removeClass('hidden');
+			}
+		}
+
+		jQuery.scrollTo('#dt-question-list', 800, { offset: { top: -250 }});
+
+		jQuery('#dt-sc-answer-holder').html('');
+
+		jQuery('.dt-sc-question-counter-container .dt-sc-current-question').html(next_question_num);
+
+	});
+
+	jQuery( 'body' ).delegate( "#dt-complete-quiz", 'click', function(){
+
+		jQuery( window ).off( "beforeunload" );
+		jQuery( window ).off( "unload" );
+
+		var course_id = jQuery('#dt-quiz-attributes').attr('data-course_id'),
+			lesson_id = jQuery('#dt-quiz-attributes').attr('data-lesson_id'),
+			quiz_id = jQuery('#dt-quiz-attributes').attr('data-quiz_id'),
+			user_id = jQuery('#dt-quiz-attributes').attr('data-user_id'),
+			timings = jQuery('.dt-quiz-timer .dt-timer').attr('data-timer');
+
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data: jQuery('form[name=frmQuiz]').serialize() + '&action=dt_ajax_validate_quiz&course_id='+course_id+'&lesson_id='+lesson_id+'&quiz_id='+quiz_id+'&user_id='+user_id+'&timings='+timings,
+			beforeSend: function(){
+				jQuery('#dt-sc-ajax-load-image').show();
+			},
+			error: function (xhr, status, error) {
+				jQuery('#dt-quiz-questions-container').html('Something went wrong!');
+			},
+			success: function (response) {
+				jQuery('#dt-quiz-questions-container').html(response);
+				jQuery.scrollTo('#primary', 800, { offset: { top: -150 }});
+			},
+			complete: function(){
+				jQuery('#dt-sc-ajax-load-image').hide();
+			}
+		});
+
+	});
+
+	function start_timer() {
+		var $quiztime = parseInt(jQuery('.dt-quiz-timer').attr('data-time'));
+		var $quiztimer = jQuery('.dt-quiz-timer').find('.dt-timer');
+		var $this = jQuery('.dt-quiz-timer');
+
+		var $timercolors = {};
+		$timercolors['cyan'] = { 'fgcolor' : '#81164e', 'bgcolor' : '#e2d6c1'};
+		$timercolors['cyan-yellow'] = { 'fgcolor' : '#56bdc2', 'bgcolor' : '#e2d6c1'};
+		$timercolors['dark-pink'] = { 'fgcolor' : '#f1ad26', 'bgcolor' : '#e2d6c1'};
+		$timercolors['grayish-blue'] = { 'fgcolor' : '#fb6858', 'bgcolor' : '#e2d6c1'};
+		$timercolors['grayish-green'] = { 'fgcolor' : '#e57988', 'bgcolor' : '#e2d6c1'};
+		$timercolors['grayish-orange'] = { 'fgcolor' : '#87342e', 'bgcolor' : '#e2d6c1'};
+		$timercolors['light-red'] = { 'fgcolor' : '#105268', 'bgcolor' : '#e2d6c1'};
+		$timercolors['magenta'] = { 'fgcolor' : '#ca4f6c', 'bgcolor' : '#e2d6c1'};
+		$timercolors['orange'] = { 'fgcolor' : '#838c48', 'bgcolor' : '#e2d6c1'};
+		$timercolors['pink'] = { 'fgcolor' : '#453827', 'bgcolor' : '#e2d6c1'};
+		$timercolors['white-avocado'] = { 'fgcolor' : '#72723e', 'bgcolor' : '#dddddd'};
+		$timercolors['white-blue'] = { 'fgcolor' : '#478bca', 'bgcolor' : '#dddddd'};
+		$timercolors['white-blueiris'] = { 'fgcolor' : '#595ca1', 'bgcolor' : '#dddddd'};
+		$timercolors['white-blueturquoise'] = { 'fgcolor' : '#08bbb7', 'bgcolor' : '#dddddd'};
+		$timercolors['white-brown'] = { 'fgcolor' : '#8f5a28', 'bgcolor' : '#dddddd'};
+		$timercolors['white-burntsienna'] = { 'fgcolor' : '#d36b5e', 'bgcolor' : '#dddddd'};
+		$timercolors['white-chillipepper'] = { 'fgcolor' : '#c10841', 'bgcolor' : '#dddddd'};
+		$timercolors['white-eggplant'] = { 'fgcolor' : '#614051', 'bgcolor' : '#dddddd'};
+		$timercolors['white-electricblue'] = { 'fgcolor' : '#536878', 'bgcolor' : '#dddddd'};
+		$timercolors['white-graasgreen'] = { 'fgcolor' : '#81c77f', 'bgcolor' : '#dddddd'};
+		$timercolors['white-gray'] = { 'fgcolor' : '#7d888e', 'bgcolor' : '#dddddd'};
+		$timercolors['white-green'] = { 'fgcolor' : '#00a988', 'bgcolor' : '#dddddd'};
+		$timercolors['white-lightred'] = { 'fgcolor' : '#d66060', 'bgcolor' : '#dddddd'};
+		$timercolors['white-orange'] = { 'fgcolor' : '#f67f45', 'bgcolor' : '#dddddd'};
+		$timercolors['white-palebrown'] = { 'fgcolor' : '#e472ae', 'bgcolor' : '#dddddd'};
+		$timercolors['white-pink'] = { 'fgcolor' : '#e472ae', 'bgcolor' : '#dddddd'};
+		$timercolors['white-radiantorchid'] = { 'fgcolor' : '#af71b0', 'bgcolor' : '#dddddd'};
+		$timercolors['white-red'] = { 'fgcolor' : '#ef3a43', 'bgcolor' : '#dddddd'};
+		$timercolors['white-skyblue'] = { 'fgcolor' : '#0facce', 'bgcolor' : '#dddddd'};
+		$timercolors['white-yellow'] = { 'fgcolor' : '#eec005', 'bgcolor' : '#dddddd'};
+
+		var $skin = (mytheme_urls.skin != '') ? mytheme_urls.skin : 'orange';
+
+		$quiztimer.timer({
+			'timer': $quiztime,
+			'width' : 160 ,
+			'height' : 160 ,
+			'fgColor' : $timercolors[$skin].fgcolor,
+			'bgColor' : $timercolors[$skin].bgcolor
+		});
+		var prevval = '';
+
+		$quiztimer.on('change',function(){
+			var $countdown= $this.find('.dt-countdown');
+			var val = parseInt( $quiztimer.attr('data-timer'));
+
+			if(val > 0){
+				val--;
+				$quiztimer.attr('data-timer',val);
+				var $text='';
+				if(val > 60){
+					$text = Math.floor(val/60) + ':' + ((parseInt(val%60) < 10)?'0'+parseInt(val%60):parseInt(val%60)) + '';
+				}else{
+					$text = '00:'+ ((val < 10)?'0'+val:val);
+				}
+				$countdown.html($text);
+			}else{
+				$countdown.html(object.quizTimeout);
+				jQuery('#dt-complete-quiz').trigger('click');
+				$quiztimer.off();
+			}
+
+		});
+	}
+
+	// Question
+	jQuery(".dt-question-options ul li img").on('click',function(e){
+
+		if(!jQuery(this).parents("ul").hasClass('disabled')) {
+
+			jQuery(this).parents(".dt-question-options").find("li").removeClass('selected');
+			jQuery(this).parents(".dt-question-options").find(".multichoice-image").removeAttr('checked');
+			jQuery(this).parents('li').addClass('selected');
+			jQuery(this).next('input').attr('checked', 'checked');
+
+		}
+
+		e.preventDefault();
+
+	});
+
+	// Class
+	if(jQuery().sticky) {
+		if(mytheme_urls.stickynav === "enable") {
+			if(!isMobile && currentWidth > 767) {
+				jQuery(".dt-sc-class-menu-list").sticky({ topSpacing: 110 });
+			}
+		} else {
+			if(!isMobile && currentWidth > 767) {
+				jQuery(".dt-sc-class-menu-list").sticky({ topSpacing: 40 });
+			}
+	  	}
+	}
+
+	jQuery('a.classCustomScroll').on('click',function (e) {
+
+		e.preventDefault();
+
+		jQuery('.classCustomScroll').removeClass('dt-sc-current-class-menu');
+		jQuery(this).addClass('dt-sc-current-class-menu');
+		var toDiv = jQuery(this).attr('href');
+
+		if(mytheme_urls.stickynav === "enable") {
+			var toDivOffset = parseInt(jQuery(toDiv).offset().top, 10) - 70;
+		} else {
+			var toDivOffset = parseInt(jQuery(toDiv).offset().top, 10) - 10;
+		}
+
+		jQuery('html, body').animate({
+			scrollTop: toDivOffset
+		}, 1400);
+
+	});
+
+	jQuery( 'body' ).delegate( '.dt-sc-class-registration-btn', 'click', function(){
+
+		var $classid = jQuery(this).attr('data-classid');
+
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data:
+			{
+				action : 'dttheme_show_class_registration_form',
+				dt_classid : $classid,
+			},
+			success: function( data ){
+
+				jQuery('body').append( '<div id="dt_class_regform_popup" style="position:fixed;" class="dt_class_regform_popup">' + data + '<div class="dt_class_regform_popup_blocker"></div></div> ' );
+
+			}
+		});
+
+	});
+
+	jQuery( 'body' ).delegate( '#dt-sc-class-registration-form', 'submit', function(){
+
+		var $classid = jQuery(this).attr('data-classid');
+
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data: jQuery('form[name=dt-sc-class-registration-form]').serialize() + '&action=dttheme_process_class_registration_form',
+			beforeSend: function(){
+				jQuery('.dt-submit-regform').prepend( '<span><i class="fa fa-spinner fa-spin"></i></span> ' );
+			},
+			error: function (xhr, status, error) {
+				confirm('The page save failed.');
+			},
+			success: function( data ){
+
+				jQuery('.dt-sc-class-registration-form-container').append( '<div class="dt-sc-hr-invisible-small"></div><div class="dt-sc-success-box">' + object.registrationSuccess + '</div>' ).find('.dt-sc-success-box').hide().fadeIn('slow');
+				jQuery(".dt-sc-class-registration-form :input").prop("disabled", true);
+
+			},
+			complete: function(){
+				jQuery(".dt-submit-regform span").remove()
+			}
+		});
+
+		return false;
+
+	});
+
+	jQuery( 'body' ).delegate( '.dt_class_regform_popup_blocker, .dt-close-regform, #closeButton', 'click', function(){
+
+		jQuery( '#dt_class_regform_popup,.dt_class_regform_popup_blocker' ).remove();
+
+	});
+
+	if(jQuery("div#dt-sc-onsite-map").length ) {
+
+		var $title = jQuery("div#dt-sc-onsite-map").data("title");
+
+		var $lat = jQuery("div#dt-sc-onsite-map").data("lat");
+			$lat = ( jQuery.trim($lat).length > 0  ) ? $lat :  "-37.80544394934272";
+
+		var $lng = jQuery("div#dt-sc-onsite-map").data("lng");
+			$lng = ( jQuery.trim($lng).length > 0 ) ? $lng : "144.964599609375";
+
+		var myLatlng = new google.maps.LatLng($lat,$lng);
+		var mapOptions = {
+			zoom: 8,
+			center: myLatlng,
+			mapTypeId: google.maps.MapTypeId.ROADMAP
+		}
+
+		var map = new google.maps.Map(document.getElementById('dt-sc-onsite-map'), mapOptions);
+		var marker = new google.maps.Marker({
+			position: myLatlng,
+			map: map,
+			title : $title
+		});
+
+		var infowindow = new google.maps.InfoWindow({
+			content: $title+"<br>"+jQuery("div#dt-sc-onsite-map").data("address")
+		});
+
+	  google.maps.event.addListener(marker, 'click', function() {
+		infowindow.open(map,marker);
+	  });
+	}
+
+	// Class Single Page Toggle
+	jQuery('.dt-sc-class-toggle-switch').toggleClick(function(){ jQuery(this).addClass('active'); },function(){ jQuery(this).removeClass('active'); });
+	jQuery('.dt-sc-class-toggle-switch').on('click',function(){ jQuery(this).parents('.dt-sc-class-toggle-frame').find('.dt-sc-class-toggle-content').slideToggle(); });
+
+
+	// Quiz Curriculum Navigation
+	jQuery( 'body' ).delegate( '.dt-sc-quiz-curriculum li a', 'click', function(){
+
+		var $class = jQuery.trim(jQuery(this).parent().attr('class').replace('current', '').replace('dt-sc-', 'dt-'));
+		var $question_id = jQuery.trim(jQuery(this).parent().attr('class').replace('current', '').replace('dt-sc-question-', ''));
+
+		jQuery('.dt-sc-quiz-curriculum li').removeClass('current');
+		jQuery(this).parent().addClass('current');
+
+		jQuery('#dt-question-list .dt-question').slideUp();
+		jQuery('#dt-question-list .dt-question.'+$class).slideDown();
+
+		jQuery('#dt-submit-question').removeClass('hidden');
+		jQuery('#dt-next-question').addClass('hidden');
+
+		jQuery('#dt-current-question-num').val($question_id);
+
+		return false;
+	});
+
+});

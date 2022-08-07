@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1611304732235.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2769954784",
+    "id" : "FDFEB0F7",
+    "lastKnownWriteTime" : 1611305306,
+    "last_content_update" : 1611305306453,
+    "path" : "Z:/STATISTICS/08_Team/RPA/GCPS2021/R/gcps2021.R",
+    "project_path" : "R/gcps2021.R",
+    "properties" : {
+        "cursorPosition" : "7,2",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

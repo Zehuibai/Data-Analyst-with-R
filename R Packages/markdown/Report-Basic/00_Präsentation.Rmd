@@ -1,0 +1,213 @@
+---
+title: "Präsentation"
+author: "Zehui Bai"
+date: 'Stand: `r format(Sys.time(), "%F %H:%M Uhr")`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: yes
+    # theme: darkly
+    toc: yes
+    toc_float: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load package
+
+```
+
+
+
+
+# ioslides presentation
+ 
+## YAML set up
+
+要从R Markdown创建ioslides演示文稿，请在文档的YAML元数据中指定ioslides_presentation输出格式。
+ 
+```
+---
+title: "Habits"
+author: John Doe
+date: March 22, 2005
+output:
+  ioslides_presentation:
+    widescreen: true
+    smaller: true           ## 演示尺寸  使用宽屏选项以更宽的尺寸显示演示文稿。 您可以指定较小的文本
+    incremental: true       ## 添加增量选项来增量渲染项目符号
+    transition: slower      ## 过渡选项自定义幻灯片过渡的速度 This can be "default", "slower", "faster", or a numeric value with a number of seconds (e.g., 0.5) . 
+    logo: logo.png          ## Adding a logo 默认情况下，徽标将以85x85像素的正方形显示
+    transition: slower      ## customize the speed of slide transitions using transition option. This can be "default", "slower", "faster", or a numeric value with a number of seconds (e.g., 0.5) 
+---
+```
+ 
+
+## Graph set up
+ 
+通过在竖线（|）字符后添加文本来向幻灯片或节添加字幕。 例如：
+ 
+```
+## Getting up | What I like to do first thing
+```
+ 
+可以通过在幻灯片标题中添加.smaller属性来逐个幻灯片地启用更小选项：adding the .smaller attribute to the slide header:
+ 
+```
+## Getting up {.smaller}
+```
+ 
+ 
+Background images 背景图像: 
+使用属性data-background为幻灯片指定背景图像，并使用其他属性（包括data-background-size，data-background-position和data-background-repeat）来调整图像的样式
+ 
+```
+## Getting up {data-background=foo.png data-background-size=cover}
+```
+
+
+指示应逐步显示其内容
+
+```
+## Getting up {.build}
+## Getting up {.smaller .build}
+```
+
+
+ 
+ 
+## Code highlighting
+
+通过在代码周围添加特殊的“突出显示”注释，可以选择代码子集以进一步强调。突出显示的区域将以粗体显示。当您想帮助听众将注意力集中在突出显示的区域上时，按h键，其余代码将消失。
+ 
+```
+### <b>
+x <- 10
+y <- x * 2
+### </b>
+```
+ 
+Display modes 单字符键盘快捷键启用备用显示模式
+ 
+* 'f': enable fullscreen mode 启用全屏模式
+* 'w': toggle widescreen mode 切换宽屏模式
+* 'o': enable overview mode 启用overview 模式
+* 'h': enable code highlight mode 启用代码突出显示模式
+* 'p': show presenter notes 显示演示者备注
+ 
+ 
+ 
+ 
+## 居中
+
+您可以通过将.flexbox和.vcenter属性添加到幻灯片标题来使内容在幻灯片上居中。 例如：
+
+```
+## Dinner {.flexbox .vcenter}
+```
+
+您可以通过将内容包含在以类为中心的div标签中来水平居中。 例如
+
+```
+<div class="centered">
+This text is centered.
+</div>
+```
+
+two-column layout using the columns-2 class
+
+```
+<div class="columns-2">
+  ![](image.png)
+
+  - Bullet 1
+  - Bullet 2
+  - Bullet 3
+</div>
+```
+
+
+## Text color
+
+```
+<div class="red2">
+This text is red
+</div>
+```
+
+
+
+
+
+
+
+
+# Slidy presentation
+ 
+ 
+## Display modes
+ 
+* 'C': Show table of contents (the right sub-figure in Figure 4.2 has shown the table of contents). 显示目录
+* 'F': Toggles the display of the footer.
+* 'A': Toggles display of current vs all slides (useful for printing handouts). 切换当前幻灯片和所有幻灯片的显示（用于打印讲义）
+* 'S': Make fonts smaller. 缩小字体
+* 'B': Make fonts larger .
+ 
+ 
+ 
+## YAML
+
+```
+---
+output:
+  slidy_presentation:
+    font_adjustment: -1    ## Text size 
+    duration: 45           ## 以分钟为单位指定持续时间）将倒数计时器添加到幻灯片的页脚中
+    footer: "Copyright (c) 2014, RStudio"
+                           ## add custom footer text 
+---
+```
+
+
+
+# Beamer presentation
+ 
+ 
+## Themes
+
+Sources: https://hartwork.org/beamer-theme-matrix/
+
+```
+---
+output:
+  beamer_presentation:
+    theme: "AnnArbor"
+    colortheme: "dolphin"
+    fonttheme: "structurebold"
+---
+```
+ 
+ 
+## slide_level 
+
+slide_level选项定义了定义单个幻灯片的标题级别。 默认情况下，这是层次结构中的最高标题级别，紧随其后的是内容，而不是文档中某处的另一个标题。 通过指定显式的slide_level可以覆盖此默认值：
+ 
+```
+---
+output:
+  beamer_presentation:
+    slide_level: 2
+---
+```
+ 
+ 
+ 
+ 
+ 
+ 
+ 

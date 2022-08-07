@@ -1,0 +1,300 @@
+---
+title: 'Calendar plot in R'
+author: "Zehui Bai"
+date: 'Stand: `r format(Sys.time(), "%F %H:%M Uhr")`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+packages<-c("calendR","tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+    # <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+# <!-- ---------------------------------------------------------------------- -->
+```
+ 
+
+
+
+
+ 
+
+
+ 
+
+
+
+
+## calendar in year
+
+```
+calendR(
+  year = format(Sys.Date(), "%Y"),
+  month = NULL,
+  start_date = NULL,
+  end_date = NULL,
+  start = c("S", "M"),
+  orientation = c("portrait", "landscape"),
+  title,
+  title.size = 20,
+  title.col = "gray30",
+  subtitle = "",
+  subtitle.size = 10,
+  subtitle.col = "gray30",
+  text = "",
+  text.pos = NULL,
+  text.size = 4,
+  text.col = "gray30",
+  special.days = NULL,
+  special.col = "gray90",
+  gradient = FALSE,
+  low.col = "white",
+  col = "gray30",
+  lwd = 0.5,
+  lty = 1,
+  font.family = "sans",
+  font.style = "plain",
+  day.size = 3,
+  days.col = "gray30",
+  weeknames,
+  weeknames.col = "gray30",
+  weeknames.size = 4.5,
+  months.size = 10,
+  months.col = "gray30",
+  months.pos = 0.5,
+  mbg.col = "white",
+  legend.pos = "none",
+  legend.title = "",
+  bg.col = "white",
+  bg.img = "",
+  margin = 1,
+  lunar = FALSE,
+  lunar.col = "gray60",
+  lunar.size = 7,
+  pdf = FALSE,
+  doc_name = "",
+  papersize = "A4"
+)
+```
+
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Defaults to current year
+calendR() 
+
+## Specify the year you prefer
+calendR(year = 2021) 
+ 
+## Start of the calendar weeks
+calendR(year = 2023,
+        start = "M") # Start the week on Monday
+
+calendR(orientation = "portrait", # Equivalent to: orientation = "p"
+        months.pos = 0)           # Month names aligned to the left
+
+lubridate::yday(as.Date("2009-09-02"))
+weekdays(Sys.Date())
+
+calendR(year = 2025,
+        start = "M",
+        special.days = c(9, 19, 56, 79, 102,  # Days to color
+                         126, 257, 300, 342),
+        special.col = "lightblue",            # Color of the specified days
+        low.col = "white")                    # Background color of the rest of the days
+
+calendR(year = 2025,
+        start = "M",
+        special.days = "weekend") # Color all weekends
+```
+
+
+
+
+## calendar in month
+
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+calendR(year = 2022, month = 3,
+        special.days = c(1, 9, 12, 23, 28),
+        special.col = "#bfe2f2",
+        low.col = "white")
+
+
+
+# more than one event 
+# Vector of dates
+dates <- seq(as.Date("2020-08-01"), as.Date("2020-08-31"), by = "1 day")
+
+# Vector of NA and weekends
+# (with the week starting on Monday)
+events <- ifelse(format(dates, "%w") %in% c(5, 6), "Weekend", NA)
+
+# Adding more events
+events[c(3, 5, 10, 12, 17, 19, 24, 26)] <- "Academy"
+events[c(13, 27)] <- "Swimming"
+events[30] <- "Exam"
+
+# Creating the calendar
+calendR(year = 2021, month = 8,
+        start = "M",
+        special.days = events,
+        special.col = c("lightgreen", "pink",  # As many colors
+                        "#f7f7f7", "#bfe2f2"), # as events
+        low.col = "white",
+        legend.pos = "bottom", # Legend position
+        legend.title = "")     # Legend title
+```
+
+
+
+## Calendar heatmap in R
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+calendR(year = 2021,
+        special.days = 1:365, # Vector of the same length as the number of days of the year
+        gradient = TRUE,      # Set gradient = TRUE to create the heatmap
+        special.col = rgb(1, 0, 0, alpha = 0.6), # Color of the gradient for the highest value
+        low.col = "white")   
+```
+
+
+## Academic calendar
+
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+calendR(start_date = "2020-09-01", # Custom start date
+        end_date = "2021-05-31",   # Custom end date
+        start = "M",               # Start the weeks on Monday
+        mbg.col = 4,               # Color of the background of the names of the months
+        months.col = "white",      # Color text of the names of the months
+        special.days = "weekend",  # Color the weekends
+        special.col = "lightblue", # Color of the special.days
+        lty = 0,                   # Line type
+        bg.col = "#f4f4f4",        # Background color
+        title = "Academic calendar 2020-2021", # Title
+        title.size = 30,                       # Title size
+        orientation = "p")         # Vertical orientation
+```
+
+
+<!-- ---------------------------------------------------------------------- -->
+<!--                              Example for SAS output                    -->
+<!-- ---------------------------------------------------------------------- -->
+
+<!-- https://sci-hub.se/10.1007/bf01629431 -->
+<!-- ```{sas}  -->
+<!-- data _null_; -->
+<!-- put 'Hello, world!'; -->
+<!-- run; -->
+<!-- ``` -->
+
+<!-- ```{sas DATAstep, collectcode=TRUE}  -->
+<!-- proc means data=sashelp.class; -->
+<!-- run; -->
+<!-- ``` -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 

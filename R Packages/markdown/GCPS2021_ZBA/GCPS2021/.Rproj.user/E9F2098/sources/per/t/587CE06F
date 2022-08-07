@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1611222041403.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3418271042",
+    "id" : "587CE06F",
+    "lastKnownWriteTime" : 1611222049,
+    "last_content_update" : 1611222049022,
+    "path" : "Z:/STATISTICS/08_Team/RPA/GCPS2021/inst/rmarkdown/templates/gcps2021/template.yaml",
+    "project_path" : "inst/rmarkdown/templates/gcps2021/template.yaml",
+    "properties" : {
+        "cursorPosition" : "3,17",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "yaml"
+}

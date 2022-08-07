@@ -1,0 +1,305 @@
+---
+title: "k-Stichproben Problem für unabhängige Zufallsvariablen"
+subject: "Nichtparametrische Methode"
+author: "Zehui Bai"
+institute:   "Universität Bremen"    
+date: "12.12.2019"
+output:   
+  beamer_presentation:  
+    incremental: false  
+    theme: "Madrid"  
+    colortheme: "dove"  
+    toc: true   
+    slide_level: 2
+    keep_tex: true
+    fig_width: 5
+    fig_height: 4
+    fig_caption: true
+    highlight: tango
+    includes:
+      in_header: latex-topmatter.tex
+  html_document:
+    df_print: kable
+header-includes: 
+- \AtBeginSubsection{}   
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE)
+library(knitr)
+```
+
+
+
+# Einführung
+
+## Review
+
+* Im 5. und 6. Kapitel haben wir das Zweistichproben-Problem für unabhängige bzw. verbundene Stichproben behandelt. 
+* Im 7. Kapitel werden mehr als 2 Stichproben (unabhängige oder verbundene) miteinander verglichen.
+* Im Fall unabhängiger Stichproben werden wir dementsprechend Tests auf Gleichheit der Verteilungen eines Merkmals in mehr als zwei Grundgesamtheiten kennenlernen
+* Im Fall verbundener Stichproben wollen wir Tests auf sogenannte Behandlungseffekte diskutieren, denen folgendes Verfahren zugrunde liegt, z.B. An jedem ausgewählten Subjekt werden $k$ verschiedene "Behandlungen" vorgenommen.
+
+
+
+## Idee für mehr als 2 Stichproben
+
+* Notwendiger Test:deckt Unterschiede bezüglich aller c-Stichproben simultan auf (globaler Test)
+* Paarweiser Test: problematisch, wenn wir immer paarweise Stichproben mit einem Zweistichproben-Test vergleichen (multipler Test) überschreiten wir das vorgegebene Testniveau $\alpha$ in erheblichem Maße.
+    + Beispiel
+    + $k$ = 6 Stichproben aus Grundgesamtheiten mit derselben Verteilung stammen
+    + $\frac{6*(6-1)}{2}=15$ paarweise Stichprobenvergleiche
+    + $\alpha^*=1-(1-\alpha)^15=0.5367088 > \alpha(0.05)$
+    
+    
+
+
+
+
+
+# Globaler Test
+    
+## Problemstellung
+
+Zu testen ist die Hypothese:
+
+* $H_0: F_1(z)=F_2(z)=\cdot\cdot\cdot=F_c(z)$ für alle $z \in \mathbb{R}$, unbekannte Verteilungsfunktion $F_i$
+
+Der parametrische Test für diese Hypothese ist der $F$-Test, der die auf der Annahme der Normalverteilung $N(\mu_i.\sigma_i^2)$ voraussetzt.
+
+* $H_0: \mu_1=\mu_2=\mu_3=\cdot\cdot\cdot=\mu_c$
+ 
+ 
+ 
+
+
+
+## Varianzanalyse-Modell
+
+Die Einteilung der Beobachtungen in Gruppen erfolgt bezüglich eines einzigen Kriteriums (Effekts).
+
+$$X_{ij}=\mu+\alpha_i+E_{ij}$$
+
+* $\mu$ das (unbekannte) Gesamtmittel 
+* $\alpha$ der (unbekannte) Effekt der i-ten Behandlung
+* $E_{ij}$ Zufallsvariablen unabhängig und Normalverteilt $N(0,\sigma^2)$
+* $X_{ij}$ ist $N(\mu,\sigma^2)$-verteilt mit $\mu_i=\mu+\alpha_i$
+    
+
+## Teststatistik
+
+Die Teststatistik für den Test auf Gleichheit der $k$ Mittelwerte lautet:(alle $\alpha_i=0$)
+
+$$F=\frac{(N-k)\sum_{i=1}^k n_i (\overline{X_i}-\overline{X})^2}{(k-1)\sum_{i=1}^k \sum_{j=1}^{n_i} n_i (X_{ij}-\overline{X_i})^2},\ \ \ \ \ \ \sum_{i=1}^cn_i=N$$
+
+
+
+
+## Beispiel:Intelligenz
+
+Zur Untersuchung der Intelligenz von Studenten der Fachrichtungen Wirtschaftswissenschaften (I), Medizin (II), Germanistik (III) und Mathematik (IV) wurden aus jedem dieser vier Fachrichtungen einer Universität einige Studenten zufällig ausgewählt und ihre IQ-Werte bestimmt
+
+```{r echo=FALSE}
+Intelligenz <- data.frame(IQ.Werte=c(99, 131, 118, 112, 128, 136, 120, 107, 134, 122,
+                                        134, 103, 127, 121, 139, 114, 121, 132,
+                                        120, 133, 110, 141, 118, 124, 111, 138, 120,
+                                        117, 125, 140, 109, 128, 137, 110, 138, 127, 141, 119, 148),
+                             Fach=c(rep(1,10),rep(2,8),rep(3,9),rep(4,12)))
+Intelligenz$Fach <- factor(Intelligenz$Fach,labels=c("I", "II", "III","IV"))
+
+Intelligenz_reshape <- data.frame(I=c(99, 131, 118, 112, 128, 136, 120, 107, 134, 122,"",""),
+                                  II=c(134, 103, 127, 121, 139, 114, 121, 132,"","","",""),
+                                  III=c(120, 133, 110, 141, 118, 124, 111, 138, 120,"","",""),
+                                  IV=c(117, 125, 140, 109, 128, 137, 110, 138, 127, 141, 119, 148))
+knitr::kable(t(Intelligenz_reshape),format = "pandoc") 
+```
+
+
+ 
+## Summary
+
+* Ob Intelligenz von Studenten der Fachrichtungen Wirtschaftswissenschaften (I), Medizin (II), Germanistik (III) und Mathematik (IV) unterschiedlich sind?
+
+
+```{r echo=FALSE}
+## Compute summary statistics
+library(dplyr)
+summary <- group_by(Intelligenz, Fach) %>%
+  summarise(
+    count = n(),
+    mean = mean(IQ.Werte, na.rm = TRUE),
+    sd = sd(IQ.Werte, na.rm = TRUE)
+  )
+knitr::kable(summary,format = "pandoc") 
+```
+
+
+
+
+
+## Statistiktest
+
+```{r echo=T}
+## F-test
+Intelligenz.aov <- aov(IQ.Werte~Fach, data=Intelligenz)
+summary(Intelligenz.aov)
+```
+
+
+```{r echo=T}
+## Pairewise t-test
+pairwise.t.test(Intelligenz$IQ.Werte, 
+                Intelligenz$Fach,
+                p.adjust.method = "none")
+```
+
+## Multiple Test mit bonferroni
+
+```{r echo=T}
+library(multcomp)
+mc <- glht(Intelligenz.aov, linfct = mcp(Fach = "Tukey"))
+summary(mc,test = adjusted(type = "bonferroni"))
+```
+
+## Multiple Test mit Tukey
+
+```{r echo=T}
+summary(glht(Intelligenz.aov, linfct = mcp(Fach = "Tukey")))
+```
+
+
+
+
+
+
+# Kruskal-Wallis-Test
+
+## Kruskal-Wallis-Test
+
+* Der Kruskal-Wallis-Test ist ein parameterfreier statistischer Test(keine Verteilungsannahme), welcher testet, ob unabhängige Stichproben einer ordinalskalierten Variable die gleiche Verteilung haben.
+* Er ähnelt einem Mann-Whitney-U-Test und basiert wie dieser auf Rangplatzsummen, mit dem Unterschied, dass er für den Vergleich von mehr als zwei Gruppen angewendet werden kann.
+* Im Falle abhängiger Stichproben kann stattdessen der Friedman-Test verwendet werden.
+
+
+
+
+
+
+## Teststatistik
+
+* $N=\sum_{i=1}^k n_i$ N Elemente 
+* $R_i=\sum_{j=1}^{n_i}$ ist Rangsumme in der i-ten Stichprobe
+* Wegen $\sum_{i=1}^N i=N(N+1)/2$ gilt unter $H_0$
+
+$$\begin{aligned}
+\operatorname {E}(R = i) &=\sum _{i=1}^k R_i P(R=R_{i}) \\
+                     &=P(R=R_{i}) \sum _{i=1}^k \sum_{j=1}^{n_j}R_{ij}\\
+                     &=P(R=R_{i}) \sum_{i=1}^N i \\
+                     &=n_i \times \frac{1}{N} \cdot \frac{N(N+1)}{2}\\
+                     &=\frac{n_i(N+1)}{2}
+\end{aligned}$$
+
+
+## Teststatistik
+
+**Idee**:Summe von Abweichungsquadraten betrachten (bei einer Wahl der Summe der Abweichungen selbst heben sich negative und positive Summanden gegenseitig auf)
+$$T=\sum_{i=1}^c(R_i-\frac{n_1(N+1)}{2})^2$$
+
+* Die von Kruskal-Wallis vorgeschlagene H-Statistik basiert auf einer gewichteten Summe der Abweichungsquadrate.
+
+
+
+## Teststatistik
+
+* Dieser gewährleistet unter $H_0$ für hinreichend große $n_i$ eine Approximation der Verteilung von $H$ durch die $\chi^2$-Verteilung:
+
+$${H=\frac {12}{N(N+1)}}\sum _{i=1}^k \frac{1}{n_i}  (R_i-\frac{n_i(N+1)}{2})^2$$
+
+* Als Prüfgröße des Kruskal-Wallis-Tests wird ein sogenannter H-Wert berechnet. Der H-Wert wird häufig zur Vereinfachung der Rechnung in der Form wie folgt gebildet:
+
+$${\displaystyle H={\frac {12}{N(N+1)}}\sum _{i=1}^k{\frac {R_{i}^{2}}{n_{i}}}-3(N+1)}$$
+
+
+
+## Herleitung
+
+
+
+
+
+
+## P-Wert
+
+Die Gesamtzahl der Möglichkeiten, die $N$ verschiedenen Ränge auf $c$ Stichproben zu verteilen, wenn in der $i-te$ Stichprobe $n_i$ Ränge zu vergeben sind, beträgt $N!/n_1!n_2!…n_c!$. Alle Möglichkeiten sind unter H_0 gleich wahrscheinlich,d.h.
+$$P_{H_0}(R_{11}=r_{11},…,R_{1n_1}=r_{1n_1},…,R_{c1}=r_{c1},…,R_{cn_c}=r_{cnc]})=\frac{\prod_{i=1}^cn_1!}{N!}$$
+
+Der Wert von $H$ wird nun für jede mögliche Aufteilung der Ränge auf die $c$ Stichproben
+berechnet; es bezeichne $a(h)$ die Anzahl der Aufteilungen, für die $H=h$ ist. Dann gilt:
+$$P_{H_0}(H=h)=\frac{a(h)\prod_{i=1}^cn_i!}{N!}$$
+
+
+
+
+## Zurück zum Beispiel:Intelligenz
+
+Zur Untersuchung der Intelligenz von Studenten der Fachrichtungen Wirtschaftswissenschaften (I), Medizin (II), Germanistik (III) und Mathematik (IV) wurden aus jedem dieser vier Fachrichtungen einer Universität einige Studenten zufällig ausgewählt und ihre IQ-Werte bestimmt
+
+```{r echo=FALSE}
+Intelligenz <- data.frame(IQ.Werte=c(99, 131, 118, 112, 128, 136, 120, 107, 134, 122,
+                                        134, 103, 127, 121, 139, 114, 121, 132,
+                                        120, 133, 110, 141, 118, 124, 111, 138, 120,
+                                        117, 125, 140, 109, 128, 137, 110, 138, 127, 141, 119, 148),
+                             Fach=c(rep(1,10),rep(2,8),rep(3,9),rep(4,12)))
+Intelligenz$Fach <- factor(Intelligenz$Fach,labels=c("I", "II", "III","IV"))
+
+Intelligenz_reshape <- data.frame(I=c(99, 131, 118, 112, 128, 136, 120, 107, 134, 122,"",""),
+                                  II=c(134, 103, 127, 121, 139, 114, 121, 132,"","","",""),
+                                  III=c(120, 133, 110, 141, 118, 124, 111, 138, 120,"","",""),
+                                  IV=c(117, 125, 140, 109, 128, 137, 110, 138, 127, 141, 119, 148))
+knitr::kable(t(Intelligenz_reshape),format = "pandoc") 
+```
+
+
+## Kruskal-Wallis-Test in R
+
+```{r echo=F}
+Intelligenz_rang <- Intelligenz[order(Intelligenz$IQ.Werte), ]
+Intelligenz_rang$Rang2 <- c(1:4,5.5,5.5,7:10,11.5,11.5,13,15,15,15,17.5,17.5,19:21,22.5,22.5,24.5,24.5,26:28,29.5,29.5,31,32,33.5,33.5,35,36,37.5,37.5,39)
+```
+
+```{r echo=T}
+## Ordnen dann die Beobachtungen der Größe nach und weisen ihnen die Ränge 1 bis 39 zu 
+## (bei Gleichheit von Beobachtungen aus verschiedenen Stichproben werden Durchschnittsränge gebildet)
+## Rangsummen in den einzelnen Stichproben
+
+tapply(Intelligenz_rang$Rang2,Intelligenz_rang$Fach,sum)
+
+## H-Test
+
+H <- 12/(39*40)*(168.5^2/10+160.0^2/8+173.0^2/9+278.5^2/12)-3*(39+1)
+H
+1 - pchisq(H, 3)
+
+## Die Hypothese wird nicht abgelehnt
+
+## kruskal.test
+kruskal.test(IQ.Werte~Fach, data=Intelligenz)
+```
+
+## Kruskal-Wallis-Test in SAS
+
+```SAS
+ PROC NPAR1WAY DATA=Intelligenz WILCOXON;
+ CLASS Fach;
+ VAR IQ_Werte;
+ RUN;
+```
+
+
+## References
+
+* Büning, Görtz,Nichtparametrische Methoden,Kapitel 7. c- Stichproben-Problem.
+* van der Waerden, B.L. (1952). "Order tests for the two-sample problem and their power", Indagationes Mathematicae, 14, 453–458.
+* Wiki:Kruskal-Wallis-Test (https://de.wikipedia.org/wiki/Kruskal-Wallis-Test)
+* John H. McDonald, Handbook of Biological Statistics,Kruskal–Wallis test
+

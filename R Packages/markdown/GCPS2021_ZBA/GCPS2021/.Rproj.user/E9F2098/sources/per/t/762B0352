@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1611241329228.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "202817249",
+    "id" : "762B0352",
+    "lastKnownWriteTime" : 1611236555,
+    "last_content_update" : 1611236555,
+    "path" : "Z:/STATISTICS/08_Team/RPA/GCPS2021/inst/rmarkdown/templates/gcps2021/skeleton/references.bib",
+    "project_path" : "inst/rmarkdown/templates/gcps2021/skeleton/references.bib",
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "text"
+}

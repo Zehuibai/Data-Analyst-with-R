@@ -1,0 +1,163 @@
+---
+title: 'AE Frequent by Relative Risk/Forest Plot using R'
+author: "Zehui Bai"
+date: 'Stand: `r format(Sys.time(), "%F %H:%M Uhr")`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+packages<-c("pwr","tidyverse", "knitr", "papeR")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+### get the path
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         3. Load the datasets                           -->
+# <!-- ---------------------------------------------------------------------- -->
+load(file = "./Data/adae.rda")
+load(file = "./Data/adsl.rda")
+```
+ 
+
+
+
+
+
+
+
+## Descriptive analysis
+
+<!-- ---------------------------------------------------------------------- -->
+<!--          Example View missing values and descriptive statistics        -->
+<!-- ---------------------------------------------------------------------- -->
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+### Subset the population dataset ADSL on SAFFL safety flag 
+### consider only two treatments for comparison.
+### convert all the upcase variables in ADSL and ADAE to lower case
+adsl2  <- adsl %>% 
+  rename_with(tolower) %>%
+  filter(saffl=='Y' & trt01a==c('Xan_Hi','Pbo')) %>%         
+  select(usubjid,saffl,trt01a)
+  
+adae2  <- adae %>% rename_with(tolower) 
+
+adsl_cnt2 <- adsl2 %>% 
+  group_by(trt01a) %>% 
+  dplyr::summarise(bign=n()) %>%
+  pivot_wider(names_from = trt01a, values_from = bign) 
+
+### separate variables/macro variable to store those values two treatment counts
+adsl_cnt2
+pbo <- adsl_cnt2$Pbo
+xan <- adsl_cnt2$Xan_Hi 
+
+### Merge the ADSL and ADAE on usubjid variable, keep only the required variables and remove the duplicate records, group by treatment and aedecod. Get the count of each aedecod per treatment and then derive the percentage. While deriving the population we are using the macro variables pbo and xan which has the population bign count.
+adsl_adae = inner_join(adsl2,adae2,by=c("usubjid")) %>% 
+  select(usubjid,aedecod,trt01a.x)  %>%
+  distinct(usubjid,aedecod,trt01a.x) %>% 
+  group_by(trt01a.x,aedecod) %>% 
+  dplyr::summarise(cnt=n(),.groups = 'drop') %>% 
+  ungroup() %>% 
+  mutate(pct=ifelse(trt01a.x=='Pbo',cnt/pbo,cnt/xan)) %>% 
+  ungroup() %>% 
+  arrange(aedecod,trt01a.x) 
+
+### Derive the mean relative risk, lcl and ucl 
+adsl_adae2 <- adsl_adae %>% 
+  select(-pct) %>% 
+  pivot_wider(names_from = c(trt01a.x), values_from = cnt) %>%
+  mutate(nb=Pbo, na=Xan_Hi, snb=pbo, sna=xan, a=na/sna,
+         b=nb/snb,factor=1.96*sqrt(a*(1-a)/sna + b*(1-b)/snb),
+         lcl=a-b-factor,ucl=a-b+factor,mean=0.5*(lcl+ucl)) %>% 
+  filter(!is.na(mean)) 
+
+
+### Plot 1: AE Proportion dot plot
+ggplot(adsl_adae %>% filter(aedecod %in% adsl_adae2$aedecod) %>%
+         arrange(desc(aedecod)),aes(x=pct,y=reorder(aedecod,desc(aedecod)))) + 
+  geom_point(shape = 17,size=2,aes(colour = factor(trt01a.x))) +
+  ggtitle("Proportion") +
+  xlab('Proportion') + ylab('') +
+  scale_colour_manual(values = c("Blue", "Red")) +
+  theme(legend.position="bottom") + labs(col="Treatment:") 
+
+### Plot 2: Relative Risk
+ggplot(data=adsl_adae2, aes(x=reorder(aedecod,desc(aedecod)), y=mean, ymin=lcl, ymax=ucl)) +
+  geom_pointrange() + 
+  geom_hline(yintercept=0, lty=2) +  # add a dotted line at x=1 after flip
+  coord_flip() +  # flip coordinates (puts labels on y axis)
+  xlab("") + ylab("Mean (95% CI)") +
+  ggtitle("Risk Difference with 0.95CI") +
+  theme(axis.ticks = element_blank(),legend.position="none")
+
+
+### align the above two images side by side, use the package cowplot.
+library(cowplot)
+p2 <- ggplot(data=adsl_adae2, aes(x=reorder(aedecod,desc(aedecod)), y=mean, ymin=lcl, ymax=ucl)) +
+  geom_pointrange() + 
+  geom_hline(yintercept=0, lty=2) +  # add a dotted line at x=1 after flip
+  coord_flip() +  # flip coordinates (puts labels on y axis)
+  xlab("") + ylab("Mean (95% CI)") +
+  ggtitle("Risk Difference with 0.95CI") +
+  theme(axis.text.y = element_blank(),axis.ticks = element_blank(),legend.position="none")
+
+p1 <- ggplot(adsl_adae %>% filter(aedecod %in% adsl_adae2$aedecod) %>% 
+         arrange(desc(aedecod)),aes(x=pct,y=reorder(aedecod,desc(aedecod)))) + 
+  geom_point(shape = 17,size=2,aes(colour = factor(trt01a.x))) +
+  ggtitle("Proportion") +
+  xlab('Proportion') + ylab('') +
+  scale_colour_manual(values = c("Blue", "Red")) +
+  theme(legend.position="bottom") + labs(col="Treatment:")
+
+plot_grid(p1,  p2, labels = "AUTO",nrow = 1,rel_widths = c(0.8, 0.5))
+```
+
+
+ 
+
+
+
+## Reference
+
+* [Most Frequent AE by Relative Risk/Forest Plot using](https://www.linkedin.com/pulse/most-frequent-ae-relative-risk-using-r-jagadish-katam/?trackingId=GllB04d3RAe%2BIPwtx1czFg%3D%3D)
+
+
+
+
+
+ 

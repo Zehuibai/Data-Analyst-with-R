@@ -1,0 +1,326 @@
+/*
+ Theme Name:   LMS Child
+ Theme URI:    https://www.datanovia.com
+ Description:  LMS Child Theme
+ Author:       A. Kassambara
+ Author URI:   https://www.datanovia.com
+ Template:     lms
+ Version:      1.0.0
+ License:      GNU General Public License v2 or later
+ License URI:  http://www.gnu.org/licenses/gpl-2.0.html
+ Tags:         blue, yellow, two-columns, right-sidebar, responsive-layout, accessibility-ready
+ Text Domain:  lms-child
+*/
+
+/* Remove adsense yellow background color */
+ins.adsbygoogle { background: transparent !important; }
+
+/*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+ Highlight R code
+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
+
+/*highlight R code */
+#rdoc pre .operator, #rdoc pre .paren, .rdoc pre .operator, .rdoc pre .paren{color:#687687}
+#rdoc pre .literal, .rdoc pre .literal{color:#5848f6}
+#rdoc pre .number, .rdoc pre .number{color:#0000cd}
+#rdoc pre .comment, .rdoc pre .comment{color:#228B22}
+#rdoc pre .keyword, .rdoc pre .keyword{color:#00f;font-weight:700}
+#rdoc pre .identifie, .rdoc pre .identifierr{color:#000}
+#rdoc pre .string, .rdoc pre .string{color:red}
+
+
+
+
+
+/* R code block and output style
+-----------------------------------------------*/
+/* Genereal R code block 
+Don't change the order*/
+/* # 1 */
+#rdoc pre, .rdoc pre{
+	background-color: inherit;
+	padding: 0px;
+	border: 0px;
+}
+
+/*R output */
+/* # 2 */
+#rdoc pre code, .rdoc pre code {
+	font-weight: normal; 
+	border: 0px; 
+	padding: 0px; 
+	font-size: 115%;
+	font-family: monospace; 
+	line-height: 20px; 
+	background-color: transparent;
+}
+
+/* R Output in comments*/
+pre.r_output{
+	font-weight: normal; 
+	border: 0px; 
+	padding: 0px;
+	background-color: transparent;
+}
+
+
+/* R code, bash */
+/* # 3 */
+#rdoc pre .r, .rdoc pre .r, pre .r_code{
+	border: 0px;
+	padding: 9px;
+	margin: 0px;
+	line-height:20px;
+	word-break:break-all;
+	word-wrap:break-word;
+	white-space:pre-wrap;
+	background-color:#F5F5F5;
+	border:1px solid rgba(0,0,0,0.15);
+	border-radius:4px;
+	font-family:monospace;
+}
+
+
+
+/* Inline R code */
+#rdoc code:not([class]), .rdoc code:not([class]){font-weight: normal; color: #FC4E07; border: 0px; display: inline; padding: 0px; font-size: 115%; font-family: monospace; line-height: 20px; background-color: transparent;}
+
+/* R output */
+#rdoc pre code:not([class]), .rdoc pre code:not([class]){font-weight: normal; color: black;}
+
+
+/* --Toc --
+--------------------------------------*/
+#rdoc #toc, #rdoc #TOC, 
+.rdoc #toc, .rdoc #TOC  { margin:0 0 0 5px;padding:4px;border:1px solid #CCC;border-radius:5px;box-shadow:2px 2px 10px -2px #666;background-color:#f6f6f6;width:95%;}
+
+/* -- others--
+--------------------------------------*/
+
+
+
+
+
+/* for mathjax color*/
+#rdoc div span, #rdoc p span,
+.rdoc div span, .rdoc p span{
+	color:inherit;
+}
+
+#rdoc img, .rdoc img{background-color:#fff;background-color:#FFF;border-radius:3px;border:1px solid #CCC;box-shadow:2px 2px 12px -5px #999;margin:0 5px;margin-bottom:5px;padding:5px;text-align:center;}
+
+
+#rdoc .caption, .rdoc .caption{display:none;}
+
+
+/* Adapted to highlight js v9.12.0 
+---------------------------------------*/
+
+#rdoc pre.r, #rdoc pre.yaml, #rdoc pre.bash, #rdoc pre.dockerfile,
+.rdoc pre.r, .rdoc pre.yaml, .rdoc pre.bash, .rdoc pre.dockerfile,
+.comment-content pre.r, .comment-content pre.yaml, .comment-content pre.bash, 
+.comment-content pre.dockerfile  {
+	font-weight: normal;
+	color: #808080;
+	background: transparent;
+	margin: 0;
+	outline: 0;
+	vertical-align: baseline;
+	font-family: 'Open Sans', sans-serif;
+	margin-bottom: 20px;
+	display: block;
+	font-size: 13px;
+	line-height: 24px;
+	width: 94%;
+	overflow: auto;
+	background-color: #F5F5F5;
+	padding: 0px;
+	border: 0px;
+}
+
+#rdoc pre code.hljs, .rdoc pre code.hljs, .comment-content pre code.hljs {
+	color: #808080;
+	outline: 0;
+	vertical-align: baseline;
+	overflow: auto;
+	background: #f3f4f5;
+	width: auto;
+	font-weight: normal;
+	font-size: 115%;
+	padding: 9px;
+	margin: 0px;
+	line-height: 20px;
+	word-break: break-all;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+	background-color: transparent;
+	border: 1px solid rgba(0,0,0,0.15);
+	border-radius: 4px;
+	font-family: monospace;
+	display: block!important;
+}
+
+/* R outputs */
+#rdoc pre:not([class]) code.hljs,
+.rdoc pre:not([class]) code.hljs {
+	outline: 0;
+	vertical-align: baseline;
+	overflow: auto;
+	background: #f3f4f5;
+	border-radius: 2px;
+	margin: 0 1px;
+	width: auto;
+	border: 0px;
+	display: inline;
+	padding: 0px;
+	font-size: 115%;
+	font-family: monospace;
+	line-height: 20px;
+	background-color: transparent;
+	font-weight: normal;
+	/*color: black;*/
+}
+
+/* Bash black background. Should stay here*/
+#rdoc pre.bash code.hljs, .rdoc pre.bash code.hljs, 
+.comment-content pre.bash code.hljs{
+	color:white;
+	background-color:black; color:white;
+}
+#rdoc pre.bash .hljs-built_in, .rdoc pre.bash .hljs-built_in {color: #e6db74;}
+
+
+/* class prefix added in new version of highlight.js v9.12.0 */
+#rdoc pre .hljs-operator, .rdoc pre .hljs-operator, 
+.comment-content pre .hljs-operator, 
+#rdoc pre .hljs-paren, .rdoc pre .hljs-paren 
+{color:#687687}
+#rdoc pre .hljs-literal, .rdoc pre .hljs-literal, .comment-content pre .hljs-literal{color:#5848f6}
+#rdoc pre .hljs-number, .rdoc pre .hljs-number, .comment-content pre .hljs-number{color:#0000cd}
+#rdoc pre .hljs-comment, .rdoc pre .hljs-comment, .comment-content pre .hljs-comment{color:#228B22}
+#rdoc pre .hljs-keyword, .rdoc pre .hljs-keyword, .comment-content pre .hljs-keyword {color:#00f;font-weight:700}
+#rdoc pre .hljs-identifier, .rdoc pre .hljs-identifier, .comment-content pre .hljs-identifier{color:#000}
+#rdoc pre .hljs-string, .rdoc pre .hljs-string, .comment-content pre .hljs-string{color:red}
+
+
+/* custom theme for yaml. Should stay here to overwride all */ 
+#rdoc pre.yaml, .rdoc pre.yaml {background-color:#272822; color:white;}
+#rdoc pre.yaml .hljs-attr, .rdoc pre.yaml .hljs-attr {color: #e6db74;}
+#rdoc pre.yaml .hljs-string, #rdoc pre.yaml .hljs-bullet, #rdoc pre.yaml .hljs-number,
+.rdoc pre.yaml .hljs-string, .rdoc pre.yaml .hljs-bullet, .rdoc pre.yaml .hljs-number {color: white;}
+
+/* End Adaptation to highlight js v9.12.0 
+
+/* overwrite gutenberg inline display */
+.single-post #rdoc code.r, .single-post .rdoc code.r {display: block!important;}
+
+/*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+ Global
+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
+ .error, .notice, .warning, .success, .question {
+	height: auto;
+	padding: 10px 10px 10px 40px;
+	margin: 5px auto 15px auto;
+	line-height: 20px;
+	border: 1px solid #FFFFFF;
+	border-radius: 4px;
+	position: relative;
+	display: block;
+	text-align: left;
+}
+
+.error:before, .notice:before, .warning:before, .success:before, .question:before {
+	font-family: FontAwesome;
+	font-style: normal;
+	font-weight: normal;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	position: absolute;
+	left: 6px;
+	top: 7px;
+	width: 28px;
+	text-align: center;
+}
+
+.error:before { content: "\f00d"; }
+.error, .error:before { color: #BA4B49; }
+.notice:before { content: "\f12a"; }
+.notice, .notice:before { color: #888888; }
+.warning:before { content: "\f071"; }
+.warning, .warning:before { color: #C19954; }
+.success:before { content: "\f00c"; }
+.success, .success:before { color: #478948; }
+.question:before { content: "\f128"; }
+.question, .question:before { color: #3B88AE; }
+
+.question { background-color: #DAEEF8; border-color: #BDE9F2; }
+.notice { background-color: #F0F0F0; border-color: #E2E2E2; }
+.warning { background-color: #FDF9E4; border-color: #FBECCD; }
+.error { background-color: #F3DFDF; border-color: #ECCDD2; }
+.success { background-color: #E0F1D9; border-color: #D7EAC7; }
+
+/* Block */
+.block, .medium-block, .small-block {
+	border: 1px solid #CCCCCC;
+	border-top: 2px solid #366393;
+	border-bottom: 1px solid #99B1CB;
+	background: #F2F8FF;
+	padding: 5px;
+	margin-bottom: 20px;
+	word-wrap: break-word;
+}
+.block h1, .medium-block h1, .small-block h1 { border: none; }
+
+.block {
+  width: auto;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.small-block{
+	width:32%;
+}
+
+.highlight-block{
+	border-color: #478bca #CCCCCC #478bca #CCCCCC;
+    border-width: 7px 1px 1px 1px;
+}
+
+
+/*
+Custom CSS modifying the LMS theme
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::;
+*/
+/* Reducing the sticky header*/
+#main-menu{
+  margin-top: 0px;
+}
+.is-sticky #header:before {
+  height: 75%;
+}
+.is-sticky #logo{
+  padding-bottom: 0px
+}
+
+
+/*
+Affiliate marketing
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::;
+*/
+.affiliate-marketing h2 {
+    color: white;
+    background-color: #2e3135;
+    height: 50px;
+    padding: 15px; padding-top: 25px;
+    border-bottom: 8px solid #478bca;
+    margin-top: 50px;
+}
+.aff-product-image{float:left; display:block; margin:5px;}
+.aff-product{padding-bottom:10px; min-height:250px; background-color: white;}
+#main-menu > ul.menu > li#menu-item-16331 > a{color:#FC4E07;}
+
+ul li{padding-bottom: 0px;}
+
+
+

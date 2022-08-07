@@ -1,0 +1,242 @@
+---
+output: 
+ pdf_document:
+    latex_engine: xelatex
+    template: template.tex
+    keep_tex: yes
+title: "Lorem Ipsum - Report"
+subtitle: "enter subtitle or leave blank"
+date: "`r toupper(format(Sys.Date(), '%d/%b/%Y'))`"
+client: "Lorem Ipsum Corp."
+author: "Ronald A. Fisher"
+email: "rfisher@gcp-service.com"
+template_name: "template_name_D01"
+eff_date: "01/JAN/1960"
+tables:
+  toc: TRUE
+  figures: TRUE
+  tables: TRUE
+bibliography: TRUE
+font: "Arial"
+knit: (function(inputFile, encoding) { 
+      out_dir <-  getwd();
+      rmarkdown::render(inputFile,
+                        encoding=encoding, 
+                        output_file=file.path(out_dir, 'report.pdf')) })
+
+---
+
+
+```{r global_options, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+# Above you see the YAML-header, feel free to choose any option you need for your document
+# Please remember to set the file name (replace 'report.pdf') and the output directory (out_dir)
+# If this is your first execution of a rmd-file, make sure to have a latex distribution installed
+# I recommend tinytex
+# install.packages('tinytex)
+# tinytex::install_tinytex
+
+# The following code guarantees that generated plots are placed "here", i.e. (most likely) exactly where they are created in the text
+knitr::opts_chunk$set(fig.pos = 'H')
+# Additionally, save all generated plots to a custom directory (which wil be created if it does not exist yet)
+#knitr::opts_chunk$set(
+#  fig.path = "C:/Users/rpaul/Desktop/images/"
+#)
+# R code chunks can include running R code. Their output will not be send to the console but rendered as part of the doc
+# This chunk can be used as a setup for all your package needs!
+library(ggplot2)
+library(knitr)
+library(png)
+```
+
+
+# This Section Title is created using rmd-syntax
+
+The following text is filler and can be replaced by real content. I really recommend having a look at the rmarkdown cheat sheet: https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf
+The next is created using LateX!
+
+
+
+
+# Text
+
+## Basic Text
+
+Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+
+
+<!-- Add Comments Hier-->
+
+Section headers can be written after a number of pound signs, e.g.,
+
+```
+# First-level header
+
+## Second-level header
+
+### Third-level header
+```
+
+
+## Quoting text
+
+```
+> "This is quoted text."
+>
+> --- Autor
+```
+
+> "This is quoted text."
+>
+> --- Autor
+
+
+
+
+## Math expressions
+
+### Using alignment
+
+
+Here is a model:
+
+\begin{align}
+Y = \beta_0 + \beta_1 X_i + \epsilon \\
+Y_i = \beta_0 + \beta_1 X_i + \epsilon_i ,
+\end{align}
+and here is some unnumbered equation:
+\begin{align*}
+a^2 + b^2 = c^2
+\end{align*}
+
+
+### Alternative
+
+Math expressions of the display style can be written in a pair of double dollar signs, e.g
+
+$${\displaystyle f_{Y}(\mathbf {y} \mid {\boldsymbol {\theta }},\tau )=h(\mathbf {y} ,\tau )\exp \left({\frac {\mathbf {b} ({\boldsymbol {\theta }})^{\rm {T}}\mathbf {T} (\mathbf {y} )-A({\boldsymbol {\theta }})}{d(\tau )}}\right).\,\!}$$
+
+Inline LaTeX equations can be written in a pair of dollar signs using the LaTeX syntax, e.g. ${\displaystyle f_{Y}(\mathbf {y} \mid {\boldsymbol {\theta }},\tau )}$
+
+
+
+
+## Codes
+
+Sometimes you may need some SAS code
+
+```SAS
+proc univariate data = whas500(where=(fstat=1));
+  var lenfol;
+  histogram lenfol / kernel;
+run;
+```
+
+
+
+
+# Plot
+
+## Insert R Plots
+
+Here are some nomally distributed random numbers:
+
+```{r normal_plot, echo=FALSE, fig.width=2.5, fig.height=2.5, fig.align='center' ,fig.cap="\\label{fig:fig1}Density of normally distributed random numbers."}
+### The options above allow for individual positioning and size of the image
+### Note: - labels have to be unique in order to identify images for the list of figures
+###       - always add an additional "\" in front of every LateX-related command
+df <- data.frame(x = rnorm(1000, mean = 0, sd=1))
+plot1 <- ggplot(df, aes(x=x))+
+  geom_density()+
+  theme_bw()
+plot1
+```
+
+
+Here is an overview of $\chi^2$-distributions with various degrees of freedom:
+
+```{r chisq_plot, echo=FALSE, fig.width=2.5, fig.height=2.5, fig.align='center',fig.cap="\\label{fig:fig2}$\\chi^2$-distributions."}
+df.chi <- expand.grid(x = 1:25)
+rb <- rainbow(15)
+plot2 <- ggplot(df.chi, aes(x=x))+ sapply(1:15, function(free){
+    geom_function(fun = dchisq, n = 101, args = list(df = free), col = rb[free])
+  })+ theme_bw()
+plot2
+```
+
+
+This is the end of this section. Have some references to the plots before you leave (see figs. \ref{fig:fig1} and \ref{fig:fig2}).
+
+
+## Insert external figures
+
+Insert one external figure:
+
+\begin{center}
+\includegraphics[width=3.5 in]{Z:/STATISTICS/08_Team/RPA/GCPS2021/inst/rmarkdown/templates/gcps2021/skeleton/gpc-service-logo.png}
+\begin{figure}[!h]
+\caption{This is the figure caption}
+\end{figure}
+\end{center}
+
+
+ 
+
+
+# Table
+
+## Create a R Table
+
+```{r table, echo=FALSE, message = FALSE, error = FALSE, warning = FALSE}
+sum.iris <- do.call(cbind, lapply(iris, summary))
+
+# Kable returns data.frames as pretty tables
+kable(sum.iris, caption = "Summary of Edgar Anderson's Iris Data")
+```
+
+
+The R extension package pander provides better table capabilities and can also work well with the knitr package for output. Its pander() function can convert a variety of R output formats into the table form required by knitr.
+
+
+
+## Create custom tables
+
+
+| Colname 1            | Colname 2            | ...              |  
+|----------------------|----------------------|------------------|
+| AAA                  | ...                  | ...              |
+| AAAA                 | ...                  | ...              |
+| AAAAA                | ...                  | ...              |
+Table: \centering This is the table caption (left alignment)
+
+
+
+| Colname 1            | Colname 2            | ...              |  
+|:--------------------:|:--------------------:|:----------------:|
+| AAA                  | ...                  | ...              |
+| AAAA                 | ...                  | ...              |
+| AAAAA                | ...                  | ...              |
+Table: \centering This is the table caption (center alignment)
+
+
+
+| Colname 1            | Colname 2            | ...              |  
+|---------------------:|---------------------:|-----------------:|
+| AAA                  | ...                  | ...              |
+| AAAA                 | ...                  | ...              |
+| AAAAA                | ...                  | ...              |
+Table: \centering This is the table caption (right alignment)
+
+
+
+
+# Conclusion
+
+This is a nice template, says \cite{fisher_statistical_1970} (acutally, he doesn't. I just wanted to show one possible way of adding literature).
+
+
+
+
+
+
+
+

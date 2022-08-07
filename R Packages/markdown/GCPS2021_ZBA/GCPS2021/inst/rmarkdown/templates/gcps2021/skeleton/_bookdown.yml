@@ -1,0 +1,6 @@
+book_filename: "report"
+output_dir: "report"
+language:
+    ui:
+        chapter_name: "Section "
+ delete_merged_file: TRUE

@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<!-- saved from url=(0123)https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab11_GLMandModelSelection.html#logistic_regression_inference -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+
+<meta name="generator" content="pandoc">
+
+
+
+
+<title>GLM: Logistic Regression and Model Selection</title>
+
+<script src="./GLM_ Logistic Regression and Model Selection_files/jquery.min.js.download"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="./GLM_ Logistic Regression and Model Selection_files/cosmo.min.css" rel="stylesheet">
+<script src="./GLM_ Logistic Regression and Model Selection_files/bootstrap.min.js.download"></script>
+<script src="./GLM_ Logistic Regression and Model Selection_files/html5shiv.min.js.download"></script>
+<script src="./GLM_ Logistic Regression and Model Selection_files/respond.min.js.download"></script>
+<script src="./GLM_ Logistic Regression and Model Selection_files/jquery-ui.min.js.download"></script>
+<link href="./GLM_ Logistic Regression and Model Selection_files/jquery.tocify.css" rel="stylesheet">
+<script src="./GLM_ Logistic Regression and Model Selection_files/jquery.tocify.js.download"></script>
+<script src="./GLM_ Logistic Regression and Model Selection_files/tabsets.js.download"></script>
+<link href="./GLM_ Logistic Regression and Model Selection_files/default.css" rel="stylesheet">
+<script src="./GLM_ Logistic Regression and Model Selection_files/highlight.js.download"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+<script type="text/javascript" src="./GLM_ Logistic Regression and Model Selection_files/MathJax.js.download"></script><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuRadioCheck.RTL {right: 1em; left: auto}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1em; bottom: 1.5em; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style type="text/css">.MathJax_Display {text-align: center; margin: 1em 0em; position: relative; display: block!important; text-indent: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; width: 100%}
+.MathJax .merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MathJax .MJX-monospace {font-family: monospace}
+.MathJax .MJX-sans-serif {font-family: sans-serif}
+#MathJax_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true'); padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+.MathJax {display: inline; font-style: normal; font-weight: normal; line-height: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0; min-height: 0; border: 0; padding: 0; margin: 0}
+.MathJax:focus, body :focus .MathJax {display: inline-table}
+.MathJax.MathJax_FullWidth {text-align: center; display: table-cell!important; width: 10000em!important}
+.MathJax img, .MathJax nobr, .MathJax a {border: 0; padding: 0; margin: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+img.MathJax_strut {border: 0!important; padding: 0!important; margin: 0!important; vertical-align: 0!important}
+.MathJax span {display: inline; position: static; border: 0; padding: 0; margin: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+.MathJax nobr {white-space: nowrap!important}
+.MathJax img {display: inline!important; float: none!important}
+.MathJax * {transition: none; -webkit-transition: none; -moz-transition: none; -ms-transition: none; -o-transition: none}
+.MathJax_Processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+.MathJax_Processed {display: none!important}
+.MathJax_ExBox {display: block!important; overflow: hidden; width: 1px; height: 60ex; min-height: 0; max-height: none}
+.MathJax .MathJax_EmBox {display: block!important; overflow: hidden; width: 1px; height: 60em; min-height: 0; max-height: none}
+.MathJax_LineBox {display: table!important}
+.MathJax_LineBox span {display: table-cell!important; width: 10000em!important; min-width: 0; max-width: none; padding: 0; border: 0; margin: 0}
+.MathJax .MathJax_HitBox {cursor: text; background: white; opacity: 0; filter: alpha(opacity=0)}
+.MathJax .MathJax_HitBox * {filter: none; opacity: 1; background: transparent}
+#MathJax_Tooltip * {filter: none; opacity: 1; background: transparent}
+@font-face {font-family: MathJax_Main; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Main-bold; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Main-italic; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Math-italic; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Caligraphic; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size1; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size2; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size3; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size4; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf?V=2.7.2') format('opentype')}
+.MathJax .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style></head>
+
+<body data-new-gr-c-s-check-loaded="14.1051.0" data-gr-ext-installed=""><div style="visibility: hidden; overflow: hidden; position: absolute; top: 0px; height: 1px; width: auto; padding: 0px; border: 0px; margin: 0px; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal;"><div id="MathJax_Hidden"></div></div><div id="MathJax_Message" style="display: none;"></div>
+
+<style type="text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3,h4",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+<ul id="tocify-header0" class="tocify-header list-group"><li class="tocify-item list-group-item active" data-unique="logistic_regression_inference" style="cursor: pointer;">Logistic Regression Inference</li><ul class="tocify-subheader list-group" data-tag="3" style="display: block;"><li class="tocify-item list-group-item" data-unique="sole_data" style="cursor: pointer;">Sole data</li><li class="tocify-item list-group-item" data-unique="fitting_the_model" style="cursor: pointer;">Fitting the model</li></ul></ul><ul id="tocify-header1" class="tocify-header list-group"><li class="tocify-item list-group-item" data-unique="prediction_intervals" style="cursor: pointer;">Prediction intervals</li><ul class="tocify-subheader list-group" data-tag="3" style="display: none;"><li class="tocify-item list-group-item" data-unique="directly_from_the_glm_results" style="cursor: pointer;">Directly from the glm results</li><li class="tocify-item list-group-item" data-unique="quick_exercise:" style="cursor: pointer;">Quick Exercise:</li><li class="tocify-item list-group-item" data-unique="bootstrapping">Bootstrapping</li></ul></ul><ul id="tocify-header2" class="tocify-header list-group"><li class="tocify-item list-group-item" data-unique="model_selection" style="cursor: pointer;">Model Selection</li><ul class="tocify-subheader list-group" data-tag="3" style="display: none;"><li class="tocify-item list-group-item" data-unique="analysis_of_deviance" style="cursor: pointer;">Analysis of Deviance</li><li class="tocify-item list-group-item" data-unique="aic" style="cursor: pointer;">AIC</li><li class="tocify-item list-group-item" data-unique="visualization" style="cursor: pointer;">Visualization</li><li class="tocify-item list-group-item" data-unique="watching_out_for_correlated_covariates" style="cursor: pointer;">Watching out for correlated covariates!</li><li class="tocify-item list-group-item" data-unique="including_everything" style="cursor: pointer;">Including EVERYTHING</li></ul></ul></div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/index.html">Topic 3 - Regression, Regression, Regression (and Likelihoods)</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li class="dropdown">
+  <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab11_GLMandModelSelection.html#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Lectures
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture11.html">Lecture 11: ANOVA and linear regression</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture12.html">Lecture/Lab 12: Matrix solutions for regression</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture13.html">Lecture 13: Generalized linear models (GLM)</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture14_Likelihoods.html">Lecture 14: Likelihoods and maximum likelihood estimation</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture15_TimeSeries.html">Lecture 15: Time series and dependent data</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture15b_SpatialCorrelation.html">Lecture 15b: Spatial correlations</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lecture16_MixedEffectsModels.html">Lecture/Lab 16: Mixed effects models</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown active">
+  <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab11_GLMandModelSelection.html#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Labs
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab08_ANOVAandRegression.html">Lab 8: ANOVA and Regression</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab09_MLEforMixedDistribution.html">Lab 9: MLE for mixed distribution</a>
+    </li>
+    <li>
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab10_MLEforLogisticRegression.html">Lab 10: MLE for logistic regression</a>
+    </li>
+    <li class="active">
+      <a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709/Topic3/Lab11_GLMandModelSelection.html">Lab 11: GLM and model selection</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">GLM: Logistic Regression and Model Selection</h1>
+<h3 class="subtitle"><em><strong><a href="https://terpconnect.umd.edu/~egurarie/teaching/Biol709">BIOL709/BSCI339</a></strong></em></h3>
+
+</div>
+
+
+<div id="logistic-regression-inference" class="section level2">
+<div name="logistic_regression_inference" data-unique="logistic_regression_inference"></div><h2>Logistic Regression Inference</h2>
+<div id="sole-data" class="section level3">
+<div name="sole_data" data-unique="sole_data"></div><h3>Sole data</h3>
+<p>Back to the Sole data from the previous lab:</p>
+<pre class="r"><code class="r"><span class="identifier">Solea</span> <span class="operator">&lt;-</span> <span class="identifier">read.csv</span><span class="paren">(</span><span class="string">"https://terpconnect.umd.edu/~egurarie/teaching/Biol709/data/Solea.csv"</span><span class="paren">)</span>
+<span class="identifier">head</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">)</span></code></pre>
+<pre><code>##   Sample season month Area depth temperature salinity transparency gravel
+## 1      1      1     5    2   3.0          20       30           15   3.74
+## 2      2      1     5    2   2.6          18       29           15   1.94
+## 3      3      1     5    2   2.6          19       30           15   2.88
+## 4      4      1     5    4   2.1          20       29           15  11.06
+## 5      5      1     5    4   3.2          20       30           15   9.87
+## 6      6      1     5    4   3.5          20       32            7  32.45
+##   large_sand med_fine_sand   mud Solea_solea
+## 1      13.15         11.93 71.18           0
+## 2       4.99          5.43 87.63           0
+## 3       8.98         16.85 71.29           1
+## 4      11.96         21.95 55.03           0
+## 5      28.60         19.49 42.04           0
+## 6       7.39          9.43 50.72           0</code></pre>
+<p>And, using our handy plotting function:</p>
+<pre class="r"><code class="r"><span class="identifier">plotBinary</span> <span class="operator">&lt;-</span> <span class="keyword">function</span> <span class="paren">(</span><span class="identifier">X</span>, <span class="identifier">Y</span>, <span class="keyword">...</span><span class="paren">)</span> <span class="paren">{</span>
+     <span class="identifier">plot</span><span class="paren">(</span><span class="identifier">X</span>, <span class="identifier">jitter</span><span class="paren">(</span><span class="identifier">Y</span>, <span class="identifier">factor</span> <span class="operator">=</span> <span class="number">0.1</span><span class="paren">)</span>, <span class="identifier">col</span> <span class="operator">=</span> <span class="identifier">rgb</span><span class="paren">(</span><span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0.5</span><span class="paren">)</span>, 
+         <span class="identifier">pch</span> <span class="operator">=</span> <span class="number">19</span>, <span class="identifier">ylim</span> <span class="operator">=</span> <span class="identifier">c</span><span class="paren">(</span><span class="operator">-</span><span class="number">0.2</span>, <span class="number">1.2</span><span class="paren">)</span>, <span class="keyword">...</span><span class="paren">)</span>
+     <span class="identifier">boxplot</span><span class="paren">(</span><span class="identifier">X</span> <span class="operator">~</span> <span class="identifier">Y</span>, <span class="identifier">horizontal</span> <span class="operator">=</span> <span class="literal">TRUE</span>, <span class="identifier">notch</span> <span class="operator">=</span> <span class="literal">TRUE</span>, <span class="identifier">add</span> <span class="operator">=</span> <span class="literal">TRUE</span>, 
+         <span class="identifier">at</span> <span class="operator">=</span> <span class="identifier">c</span><span class="paren">(</span><span class="operator">-</span><span class="number">0.1</span>, <span class="number">1.1</span><span class="paren">)</span>, <span class="identifier">width</span> <span class="operator">=</span> <span class="identifier">c</span><span class="paren">(</span><span class="number">0.1</span>, <span class="number">0.1</span><span class="paren">)</span>, <span class="identifier">col</span> <span class="operator">=</span> <span class="string">"grey"</span>, 
+         <span class="identifier">boxwex</span> <span class="operator">=</span> <span class="number">0.1</span>, <span class="identifier">yaxt</span> <span class="operator">=</span> <span class="string">"n"</span><span class="paren">)</span>
+<span class="paren">}</span></code></pre>
+<p>… visually explore several covariates that might be interesting.</p>
+<pre class="r"><code class="r"><span class="identifier">par</span><span class="paren">(</span><span class="identifier">mfrow</span><span class="operator">=</span><span class="identifier">c</span><span class="paren">(</span><span class="number">3</span>,<span class="number">1</span><span class="paren">)</span>, <span class="identifier">bty</span><span class="operator">=</span><span class="string">"l"</span>, <span class="identifier">mar</span><span class="operator">=</span><span class="identifier">c</span><span class="paren">(</span><span class="number">4</span>,<span class="number">4</span>,<span class="number">1</span>,<span class="number">1</span><span class="paren">)</span>, <span class="identifier">cex.lab</span><span class="operator">=</span><span class="number">1.5</span><span class="paren">)</span>
+<span class="identifier">with</span><span class="paren">(</span><span class="identifier">Solea</span>, <span class="identifier">plotBinary</span><span class="paren">(</span><span class="identifier">salinity</span>, <span class="identifier">Solea_solea</span>, <span class="identifier">xlab</span><span class="operator">=</span><span class="string">"salinity"</span>, <span class="identifier">ylab</span> <span class="operator">=</span> <span class="string">"Presence"</span>, <span class="identifier">yaxt</span> <span class="operator">=</span> <span class="string">"n"</span><span class="paren">)</span><span class="paren">)</span>
+<span class="identifier">with</span><span class="paren">(</span><span class="identifier">Solea</span>, <span class="identifier">plotBinary</span><span class="paren">(</span><span class="identifier">temperature</span>, <span class="identifier">Solea_solea</span>, <span class="identifier">xlab</span><span class="operator">=</span><span class="string">"temperature"</span>,   <span class="identifier">ylab</span> <span class="operator">=</span> <span class="string">"Presence"</span>, <span class="identifier">yaxt</span> <span class="operator">=</span> <span class="string">"n"</span><span class="paren">)</span><span class="paren">)</span>
+<span class="identifier">with</span><span class="paren">(</span><span class="identifier">Solea</span>, <span class="identifier">plotBinary</span><span class="paren">(</span><span class="identifier">depth</span>, <span class="identifier">Solea_solea</span>, <span class="identifier">xlab</span><span class="operator">=</span><span class="string">"depth"</span>, <span class="identifier">ylab</span> <span class="operator">=</span> <span class="string">"Presence"</span>, <span class="identifier">yaxt</span> <span class="operator">=</span> <span class="string">"n"</span><span class="paren">)</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-3-1.png" width="672"></p>
+<p>You can kind of tell that places with more salinity are less likely to have Sole present, or that temperature does not seem very significant, but can we quantify and test these hypothesized relationship?</p>
+</div>
+<div id="fitting-the-model" class="section level3">
+<div name="fitting_the_model" data-unique="fitting_the_model"></div><h3>Fitting the model</h3>
+<p>The logistic model with one covariate can be written: <span class="math display"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-1-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;msub&gt;&lt;mi&gt;Y&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mi&gt;B&lt;/mi&gt;&lt;mi&gt;e&lt;/mi&gt;&lt;mi&gt;r&lt;/mi&gt;&lt;mi&gt;n&lt;/mi&gt;&lt;mi&gt;o&lt;/mi&gt;&lt;mi&gt;u&lt;/mi&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;mi&gt;p&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/math&gt;" role="presentation" style="text-align: center; position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-1" style="width: 8.772em; display: inline-block;"><span style="display: inline-block; position: relative; width: 7.871em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.384em, 1007.75em, 2.706em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-2"><span class="msubsup" id="MathJax-Span-3"><span style="display: inline-block; position: relative; width: 0.904em; height: 0px;"><span style="position: absolute; clip: rect(3.186em, 1000.78em, 4.207em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-4" style="font-family: MathJax_Math-italic;">Y<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.183em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.604em;"><span class="mi" id="MathJax-Span-5" style="font-size: 70.7%; font-family: MathJax_Math-italic;">i</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-6" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="mi" id="MathJax-Span-7" style="font-family: MathJax_Math-italic; padding-left: 0.303em;">B</span><span class="mi" id="MathJax-Span-8" style="font-family: MathJax_Math-italic;">e</span><span class="mi" id="MathJax-Span-9" style="font-family: MathJax_Math-italic;">r</span><span class="mi" id="MathJax-Span-10" style="font-family: MathJax_Math-italic;">n</span><span class="mi" id="MathJax-Span-11" style="font-family: MathJax_Math-italic;">o</span><span class="mi" id="MathJax-Span-12" style="font-family: MathJax_Math-italic;">u</span><span class="mi" id="MathJax-Span-13" style="font-family: MathJax_Math-italic;">l</span><span class="mi" id="MathJax-Span-14" style="font-family: MathJax_Math-italic;">l</span><span class="mi" id="MathJax-Span-15" style="font-family: MathJax_Math-italic;">i</span><span class="mo" id="MathJax-Span-16" style="font-family: MathJax_Main;">(</span><span class="mi" id="MathJax-Span-17" style="font-family: MathJax_Math-italic;">p</span><span class="mo" id="MathJax-Span-18" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.33em; border-left: 0px solid; width: 0px; height: 1.27em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msub><mi>Y</mi><mi>i</mi></msub><mo>=</mo><mi>B</mi><mi>e</mi><mi>r</mi><mi>n</mi><mi>o</mi><mi>u</mi><mi>l</mi><mi>l</mi><mi>i</mi><mo stretchy="false">(</mo><mi>p</mi><mo stretchy="false">)</mo></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-1"> Y_i = Bernoulli(p)</script></span> <span class="math display"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-2-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;mi&gt;p&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mfrac&gt;&lt;mrow&gt;&lt;mi&gt;exp&lt;/mi&gt;&lt;mo&gt;&amp;#x2061;&lt;/mo&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x03B2;&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x03B2;&lt;/mi&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/msub&gt;&lt;mi&gt;X&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/mrow&gt;&lt;mrow&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;exp&lt;/mi&gt;&lt;mo&gt;&amp;#x2061;&lt;/mo&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x03B2;&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x03B2;&lt;/mi&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/msub&gt;&lt;mi&gt;X&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/mrow&gt;&lt;/mfrac&gt;&lt;/mrow&gt;&lt;/math&gt;" role="presentation" style="text-align: center; position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-19" style="width: 11.595em; display: inline-block;"><span style="display: inline-block; position: relative; width: 10.453em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(0.604em, 1010.45em, 3.426em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-20"><span class="mi" id="MathJax-Span-21" style="font-family: MathJax_Math-italic;">p</span><span class="mo" id="MathJax-Span-22" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="texatom" id="MathJax-Span-23" style="padding-left: 0.303em;"><span class="mrow" id="MathJax-Span-24"><span class="mfrac" id="MathJax-Span-25"><span style="display: inline-block; position: relative; width: 8.291em; height: 0px; margin-right: 0.123em; margin-left: 0.123em;"><span style="position: absolute; clip: rect(3.126em, 1006.31em, 4.447em, -999.997em); top: -4.742em; left: 50%; margin-left: -3.18em;"><span class="mrow" id="MathJax-Span-26"><span class="mi" id="MathJax-Span-27" style="font-family: MathJax_Main;">exp</span><span class="mo" id="MathJax-Span-28"></span><span class="mo" id="MathJax-Span-29" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-30"><span style="display: inline-block; position: relative; width: 1.024em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.6em, 4.387em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-31" style="font-family: MathJax_Math-italic;">β<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.544em;"><span class="mn" id="MathJax-Span-32" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-33" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="msubsup" id="MathJax-Span-34" style="padding-left: 0.243em;"><span style="display: inline-block; position: relative; width: 1.024em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.6em, 4.387em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-35" style="font-family: MathJax_Math-italic;">β<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.544em;"><span class="mn" id="MathJax-Span-36" style="font-size: 70.7%; font-family: MathJax_Main;">1</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mi" id="MathJax-Span-37" style="font-family: MathJax_Math-italic;">X<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-38" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(3.126em, 1008.11em, 4.447em, -999.997em); top: -3.3em; left: 50%; margin-left: -4.081em;"><span class="mrow" id="MathJax-Span-39"><span class="mn" id="MathJax-Span-40" style="font-family: MathJax_Main;">1</span><span class="mo" id="MathJax-Span-41" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="mi" id="MathJax-Span-42" style="font-family: MathJax_Main; padding-left: 0.243em;">exp</span><span class="mo" id="MathJax-Span-43"></span><span class="mo" id="MathJax-Span-44" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-45"><span style="display: inline-block; position: relative; width: 1.024em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.6em, 4.387em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-46" style="font-family: MathJax_Math-italic;">β<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.544em;"><span class="mn" id="MathJax-Span-47" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-48" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="msubsup" id="MathJax-Span-49" style="padding-left: 0.243em;"><span style="display: inline-block; position: relative; width: 1.024em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.6em, 4.387em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-50" style="font-family: MathJax_Math-italic;">β<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.544em;"><span class="mn" id="MathJax-Span-51" style="font-size: 70.7%; font-family: MathJax_Main;">1</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mi" id="MathJax-Span-52" style="font-family: MathJax_Math-italic;">X<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-53" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(0.844em, 1008.29em, 1.264em, -999.997em); top: -1.318em; left: 0em;"><span style="display: inline-block; overflow: hidden; vertical-align: 0em; border-top: 1.3px solid; width: 8.291em; height: 0px;"></span><span style="display: inline-block; width: 0px; height: 1.084em;"></span></span></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -1.13em; border-left: 0px solid; width: 0px; height: 2.87em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>p</mi><mo>=</mo><mrow class="MJX-TeXAtom-ORD"><mfrac><mrow><mi>exp</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><mi>X</mi><mo stretchy="false">)</mo></mrow><mrow><mn>1</mn><mo>+</mo><mi>exp</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><mi>X</mi><mo stretchy="false">)</mo></mrow></mfrac></mrow></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-2"> p = {\exp(\beta_0 + \beta_1 X) \over 1 + \exp(\beta_0 + \beta_1 X)}</script></span></p>
+<p>Now we just need to fit the model with the <code>glm()</code> function - very similar to the <code>lm()</code> function:</p>
+<pre class="r"><code class="r"><span class="paren">(</span><span class="identifier">Sole.glm</span> <span class="operator">&lt;-</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> <span class="identifier">salinity</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span><span class="paren">(</span><span class="identifier">link</span><span class="operator">=</span><span class="string">"logit"</span><span class="paren">)</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span><span class="paren">)</span></code></pre>
+<pre><code>## 
+## Call:  glm(formula = Solea_solea ~ salinity, family = binomial(link = "logit"), 
+##     data = Solea)
+## 
+## Coefficients:
+## (Intercept)     salinity  
+##      2.6607      -0.1299  
+## 
+## Degrees of Freedom: 64 Total (i.e. Null);  63 Residual
+## Null Deviance:       87.49 
+## Residual Deviance: 68.56     AIC: 72.56</code></pre>
+<p>The link bit is uneccessary as <code>logit</code> is the default link function for this family.</p>
+<p>There you have it. Esimates are <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-3-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x03B2;&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;2.66&lt;/mn&gt;&lt;/math&gt;" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-54" style="width: 4.688em; display: inline-block;"><span style="display: inline-block; position: relative; width: 4.207em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.384em, 1004.15em, 2.646em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-55"><span class="msubsup" id="MathJax-Span-56"><span style="display: inline-block; position: relative; width: 1.024em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.6em, 4.387em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-57" style="font-family: MathJax_Math-italic;">β<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.544em;"><span class="mn" id="MathJax-Span-58" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-59" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="mn" id="MathJax-Span-60" style="font-family: MathJax_Main; padding-left: 0.303em;">2.66</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.263em; border-left: 0px solid; width: 0px; height: 1.137em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>2.66</mn></math></span></span><script type="math/tex" id="MathJax-Element-3">\beta_0 = 2.66</script></span> and <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-4-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;&amp;#x03B2;&lt;/mi&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;mn&gt;0.1299&lt;/mn&gt;&lt;/math&gt;" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-61" style="width: 6.61em; display: inline-block;"><span style="display: inline-block; position: relative; width: 5.949em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.384em, 1005.89em, 2.646em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-62"><span class="msubsup" id="MathJax-Span-63"><span style="display: inline-block; position: relative; width: 1.024em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.6em, 4.387em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-64" style="font-family: MathJax_Math-italic;">β<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.544em;"><span class="mn" id="MathJax-Span-65" style="font-size: 70.7%; font-family: MathJax_Main;">1</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-66" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="mo" id="MathJax-Span-67" style="font-family: MathJax_Main; padding-left: 0.303em;">−</span><span class="mn" id="MathJax-Span-68" style="font-family: MathJax_Main;">0.1299</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.263em; border-left: 0px solid; width: 0px; height: 1.137em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>β</mi><mn>1</mn></msub><mo>=</mo><mo>−</mo><mn>0.1299</mn></math></span></span><script type="math/tex" id="MathJax-Element-4">\beta_1 = -0.1299</script></span>, i.e.&nbsp;there is a negative effect of salinity on presence of sole.</p>
+</div>
+</div>
+<div id="prediction-intervals" class="section level2">
+<div name="prediction_intervals" data-unique="prediction_intervals"></div><h2>Prediction intervals</h2>
+<div id="directly-from-the-glm-results" class="section level3">
+<div name="directly_from_the_glm_results" data-unique="directly_from_the_glm_results"></div><h3>Directly from the glm results</h3>
+<p>We can illustate this model over our first figure using the <code>predict</code> function, which provides predictions for “new data” (which must be a data frame with the same names as the old predictor names)</p>
+<pre class="r"><code class="r"><span class="identifier">expit</span> <span class="operator">&lt;-</span> <span class="keyword">function</span><span class="paren">(</span><span class="identifier">x</span><span class="paren">)</span> <span class="identifier">exp</span><span class="paren">(</span><span class="identifier">x</span><span class="paren">)</span><span class="operator">/</span><span class="paren">(</span><span class="number">1</span> <span class="operator">+</span> <span class="identifier">exp</span><span class="paren">(</span><span class="identifier">x</span><span class="paren">)</span><span class="paren">)</span>
+<span class="identifier">Sole.predict</span> <span class="operator">&lt;-</span> <span class="identifier">predict</span><span class="paren">(</span><span class="identifier">Sole.glm</span>, <span class="identifier">newdata</span> <span class="operator">=</span> <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">salinity</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">:</span><span class="number">40</span><span class="paren">)</span>, <span class="identifier">se.fit</span> <span class="operator">=</span> <span class="literal">TRUE</span><span class="paren">)</span></code></pre>
+<p>Note that by default it returns the raw prediction, which is not the probability but logit(p). To see it in terms of the original probabilities, we need to back-transform it with <code>expit</code>.</p>
+<p>There is a bit of a nuance here: <code>predict</code> does have a <code>type = "response"</code> option to get it automatically in the right units, but that transformation doesnâ€™t work correctly on the standard errors.</p>
+<p>Here’s the plot, with prediction intervals:</p>
+<pre class="r"><code class="r"><span class="identifier">plotBinary</span><span class="paren">(</span><span class="identifier">Solea</span><span class="operator">$</span><span class="identifier">salinity</span>, <span class="identifier">Solea</span><span class="operator">$</span><span class="identifier">Solea</span>, <span class="identifier">xlab</span> <span class="operator">=</span> <span class="string">"Salinity"</span>, <span class="identifier">ylab</span> <span class="operator">=</span> <span class="string">"Presence"</span>, <span class="identifier">yaxt</span> <span class="operator">=</span> <span class="string">"n"</span><span class="paren">)</span>
+<span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">expit</span><span class="paren">(</span><span class="identifier">Sole.predict</span><span class="operator">$</span><span class="identifier">fit</span><span class="paren">)</span><span class="paren">)</span>
+<span class="comment">### plot the prediction intervals</span>
+<span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">with</span><span class="paren">(</span><span class="identifier">Sole.predict</span>, <span class="identifier">expit</span><span class="paren">(</span><span class="identifier">fit</span><span class="operator">+</span><span class="number">1.96</span><span class="operator">*</span><span class="identifier">se.fit</span><span class="paren">)</span><span class="paren">)</span>, <span class="identifier">col</span><span class="operator">=</span><span class="number">2</span><span class="paren">)</span>
+<span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">with</span><span class="paren">(</span><span class="identifier">Sole.predict</span>, <span class="identifier">expit</span><span class="paren">(</span><span class="identifier">fit</span><span class="operator">-</span><span class="number">1.96</span><span class="operator">*</span><span class="identifier">se.fit</span><span class="paren">)</span><span class="paren">)</span>, <span class="identifier">col</span><span class="operator">=</span><span class="number">2</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-6-1.png" width="672"></p>
+<p><font color="blue"></font></p><font color="blue">
+</font></div><font color="blue">
+</font><div id="quick-exercise" class="section level3"><font color="blue">
+<div name="quick_exercise:" data-unique="quick_exercise:"></div><h3>Quick Exercise:</h3>
+<p>Using these prediction intervals, how would you report the probability of finding sole in salinity of 5, 20, and 35 ppm respectively?</p>
+</font><p><font color="blue"></font></p>
+</div>
+<div id="bootstrapping" class="section level3">
+<div name="bootstrapping" data-unique="bootstrapping"></div><h3>Bootstrapping</h3>
+<p>You can always bootstap prediction intervals as well! They are, after all, just another statistic:</p>
+<pre class="r"><code class="r"><span class="keyword">require</span><span class="paren">(</span><span class="identifier">mosaic</span><span class="paren">)</span>
+<span class="identifier">X</span> <span class="operator">&lt;-</span> <span class="identifier">Solea</span><span class="operator">$</span><span class="identifier">salinity</span>
+<span class="identifier">Y</span> <span class="operator">&lt;-</span> <span class="identifier">Solea</span><span class="operator">$</span><span class="identifier">Solea_solea</span> 
+  
+<span class="identifier">Solea.bs</span> <span class="operator">&lt;-</span> <span class="identifier">with</span><span class="paren">(</span><span class="identifier">Solea</span>, <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">X</span>,<span class="identifier">Y</span><span class="paren">)</span><span class="paren">)</span>
+<span class="identifier">newdata</span> <span class="operator">&lt;-</span> <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">X</span> <span class="operator">=</span> <span class="number">0</span><span class="operator">:</span><span class="number">40</span><span class="paren">)</span>
+<span class="identifier">Solea.prediction.bs</span> <span class="operator">&lt;-</span> <span class="identifier">matrix</span><span class="paren">(</span><span class="literal">NA</span>, <span class="identifier">ncol</span><span class="operator">=</span><span class="number">1000</span>, <span class="identifier">nrow</span> <span class="operator">=</span> <span class="identifier">nrow</span><span class="paren">(</span><span class="identifier">newdata</span><span class="paren">)</span><span class="paren">)</span>
+
+<span class="keyword">for</span><span class="paren">(</span><span class="identifier">i</span> <span class="keyword">in</span> <span class="number">1</span><span class="operator">:</span><span class="number">1000</span><span class="paren">)</span>
+<span class="identifier">Solea.prediction.bs</span><span class="paren">[</span>,<span class="identifier">i</span><span class="paren">]</span> <span class="operator">&lt;-</span> <span class="identifier">predict</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Y</span> <span class="operator">~</span> <span class="identifier">X</span>, <span class="identifier">data</span> <span class="operator">=</span> <span class="identifier">Solea.bs</span><span class="paren">[</span><span class="identifier">sample</span><span class="paren">(</span><span class="number">1</span><span class="operator">:</span><span class="identifier">nrow</span><span class="paren">(</span><span class="identifier">Solea.bs</span><span class="paren">)</span>, <span class="identifier">replace</span><span class="operator">=</span><span class="literal">TRUE</span><span class="paren">)</span>,<span class="paren">]</span>, <span class="identifier">family</span> <span class="operator">=</span> <span class="string">"binomial"</span><span class="paren">)</span>, <span class="identifier">newdata</span> <span class="operator">=</span> <span class="identifier">newdata</span>, <span class="identifier">type</span> <span class="operator">=</span> <span class="string">"response"</span><span class="paren">)</span></code></pre>
+<p>Below, I plot all of the bootstrapped fits, with the bootstrap prediction interval, compared to the inferred prediction interval:</p>
+<pre class="r"><code class="r"><span class="identifier">plotBinary</span><span class="paren">(</span><span class="identifier">X</span>,<span class="identifier">Y</span><span class="paren">)</span>
+
+<span class="comment"># bootstraps</span>
+<span class="identifier">apply</span><span class="paren">(</span><span class="identifier">Solea.prediction.bs</span>, <span class="number">2</span>, <span class="keyword">function</span><span class="paren">(</span><span class="identifier">x</span><span class="paren">)</span> <span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">x</span>, <span class="identifier">col</span><span class="operator">=</span><span class="identifier">rgb</span><span class="paren">(</span><span class="number">0</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">.3</span><span class="paren">)</span><span class="paren">)</span><span class="paren">)</span></code></pre>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code class="r"><span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">apply</span><span class="paren">(</span><span class="identifier">Solea.prediction.bs</span>, <span class="number">1</span>, <span class="identifier">quantile</span>, <span class="identifier">p</span> <span class="operator">=</span> <span class="number">0.025</span><span class="paren">)</span>, <span class="identifier">col</span> <span class="operator">=</span> <span class="string">"darkgreen"</span>, <span class="identifier">lwd</span><span class="operator">=</span><span class="number">2</span><span class="paren">)</span>
+<span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">apply</span><span class="paren">(</span><span class="identifier">Solea.prediction.bs</span>, <span class="number">1</span>, <span class="identifier">quantile</span>, <span class="identifier">p</span> <span class="operator">=</span> <span class="number">0.975</span><span class="paren">)</span>, <span class="identifier">col</span> <span class="operator">=</span> <span class="string">"darkgreen"</span>,<span class="identifier">lwd</span><span class="operator">=</span><span class="number">2</span><span class="paren">)</span>
+
+<span class="comment"># point prediction</span>
+<span class="identifier">lines</span><span class="paren">(</span><span class="number">0</span><span class="operator">:</span><span class="number">40</span>, <span class="identifier">expit</span><span class="paren">(</span><span class="identifier">Sole.predict</span><span class="operator">$</span><span class="identifier">fit</span><span class="paren">)</span>, <span class="identifier">col</span><span class="operator">=</span><span class="string">"darkblue"</span>, <span class="identifier">lwd</span><span class="operator">=</span><span class="number">3</span>, <span class="identifier">lty</span> <span class="operator">=</span> <span class="number">3</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-8-1.png" width="672"></p>
+</div>
+</div>
+<div id="model-selection" class="section level2">
+<div name="model_selection" data-unique="model_selection"></div><h2>Model Selection</h2>
+<div id="analysis-of-deviance" class="section level3">
+<div name="analysis_of_deviance" data-unique="analysis_of_deviance"></div><h3>Analysis of Deviance</h3>
+<p>Lets define some formulas so we can easily play with the additional covariate of temperature:</p>
+<pre class="r"><code class="r"><span class="identifier">f1</span> <span class="operator">&lt;-</span> <span class="identifier">formula</span><span class="paren">(</span><span class="identifier">Solea_solea</span><span class="operator">~</span><span class="number">1</span><span class="paren">)</span>
+<span class="identifier">f2</span> <span class="operator">&lt;-</span> <span class="identifier">formula</span><span class="paren">(</span><span class="identifier">Solea_solea</span><span class="operator">~</span><span class="identifier">temperature</span><span class="paren">)</span>
+<span class="identifier">f3</span> <span class="operator">&lt;-</span> <span class="identifier">formula</span><span class="paren">(</span><span class="identifier">Solea_solea</span><span class="operator">~</span><span class="identifier">salinity</span><span class="paren">)</span>
+<span class="identifier">f4</span> <span class="operator">&lt;-</span> <span class="identifier">formula</span><span class="paren">(</span><span class="identifier">Solea_solea</span><span class="operator">~</span><span class="identifier">salinity</span><span class="operator">+</span><span class="identifier">temperature</span><span class="paren">)</span>
+<span class="identifier">f5</span> <span class="operator">&lt;-</span> <span class="identifier">formula</span><span class="paren">(</span><span class="identifier">Solea_solea</span><span class="operator">~</span><span class="identifier">temperature</span><span class="operator">*</span><span class="identifier">salinity</span><span class="paren">)</span></code></pre>
+<p>In a glm, the analogy to ANOVA is called “Analysis of Deviance”, where the “deviance” is given by: <span class="math display"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-5-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;mi&gt;D&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;m&lt;/mi&gt;&lt;mi&gt;o&lt;/mi&gt;&lt;mi&gt;d&lt;/mi&gt;&lt;mi&gt;e&lt;/mi&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;m&lt;/mi&gt;&lt;mi&gt;o&lt;/mi&gt;&lt;mi&gt;d&lt;/mi&gt;&lt;mi&gt;e&lt;/mi&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/math&gt;" role="presentation" style="text-align: center; position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-69" style="width: 10.994em; display: inline-block;"><span style="display: inline-block; position: relative; width: 9.913em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.384em, 1009.79em, 2.706em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-70"><span class="mi" id="MathJax-Span-71" style="font-family: MathJax_Math-italic;">D</span><span class="mo" id="MathJax-Span-72" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="mn" id="MathJax-Span-73" style="font-family: MathJax_Main; padding-left: 0.303em;">2</span><span class="mo" id="MathJax-Span-74" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-75"><span style="display: inline-block; position: relative; width: 2.586em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.24em, 4.207em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-76" style="font-family: MathJax_Math-italic;">l</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.303em;"><span class="texatom" id="MathJax-Span-77"><span class="mrow" id="MathJax-Span-78"><span class="mi" id="MathJax-Span-79" style="font-size: 70.7%; font-family: MathJax_Math-italic;">m</span><span class="mi" id="MathJax-Span-80" style="font-size: 70.7%; font-family: MathJax_Math-italic;">o</span><span class="mi" id="MathJax-Span-81" style="font-size: 70.7%; font-family: MathJax_Math-italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-82" style="font-size: 70.7%; font-family: MathJax_Math-italic;">e</span><span class="mi" id="MathJax-Span-83" style="font-size: 70.7%; font-family: MathJax_Math-italic;">l</span><span class="mn" id="MathJax-Span-84" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-85" style="font-family: MathJax_Main; padding-left: 0.243em;">−</span><span class="msubsup" id="MathJax-Span-86" style="padding-left: 0.243em;"><span style="display: inline-block; position: relative; width: 2.586em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.24em, 4.207em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-87" style="font-family: MathJax_Math-italic;">l</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.303em;"><span class="texatom" id="MathJax-Span-88"><span class="mrow" id="MathJax-Span-89"><span class="mi" id="MathJax-Span-90" style="font-size: 70.7%; font-family: MathJax_Math-italic;">m</span><span class="mi" id="MathJax-Span-91" style="font-size: 70.7%; font-family: MathJax_Math-italic;">o</span><span class="mi" id="MathJax-Span-92" style="font-size: 70.7%; font-family: MathJax_Math-italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-93" style="font-size: 70.7%; font-family: MathJax_Math-italic;">e</span><span class="mi" id="MathJax-Span-94" style="font-size: 70.7%; font-family: MathJax_Math-italic;">l</span><span class="mn" id="MathJax-Span-95" style="font-size: 70.7%; font-family: MathJax_Main;">0</span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-96" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.33em; border-left: 0px solid; width: 0px; height: 1.27em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>D</mi><mo>=</mo><mn>2</mn><mo stretchy="false">(</mo><msub><mi>l</mi><mrow class="MJX-TeXAtom-ORD"><mi>m</mi><mi>o</mi><mi>d</mi><mi>e</mi><mi>l</mi><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>l</mi><mrow class="MJX-TeXAtom-ORD"><mi>m</mi><mi>o</mi><mi>d</mi><mi>e</mi><mi>l</mi><mn>0</mn></mrow></msub><mo stretchy="false">)</mo></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-5">D = 2(l_{model1} - l_{model0})</script></span> and <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-6-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;/math&gt;" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-97" style="width: 0.363em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.303em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.384em, 1000.24em, 2.465em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-98"><span class="mi" id="MathJax-Span-99" style="font-family: MathJax_Math-italic;">l</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.063em; border-left: 0px solid; width: 0px; height: 0.937em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>l</mi></math></span></span><script type="math/tex" id="MathJax-Element-6">l</script></span> is the log-likelihood of the model. The deviance is somewhat analogous to the variance analyzed in an ANOVA, at least to the extent that the goal of modeling is to explain as much as possible of deviance. In cases where the models are nested, you can test the significance of a term with a Chi squared test - note that the deviance is defined exactly like a likelihood ratio test statistic, and that this test is just the Likelihood Ratio Test.</p>
+<p>The function to obtain an Analasis of Deviance (ANODEV) table is also <code>anova</code>:</p>
+<pre class="r"><code class="r"><span class="identifier">anova</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f5</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span><span class="paren">)</span></code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model: binomial, link: logit
+## 
+## Response: Solea_solea
+## 
+## Terms added sequentially (first to last)
+## 
+## 
+##                      Df Deviance Resid. Df Resid. Dev
+## NULL                                    64     87.492
+## temperature           1   0.8593        63     86.632
+## salinity              1  18.6567        62     67.976
+## temperature:salinity  1   3.2866        61     64.689</code></pre>
+<pre class="r"><code class="r"><span class="identifier">anova</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f5</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span>, <span class="identifier">test</span> <span class="operator">=</span> <span class="string">"Chi"</span><span class="paren">)</span></code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model: binomial, link: logit
+## 
+## Response: Solea_solea
+## 
+## Terms added sequentially (first to last)
+## 
+## 
+##                      Df Deviance Resid. Df Resid. Dev  Pr(&gt;Chi)    
+## NULL                                    64     87.492              
+## temperature           1   0.8593        63     86.632   0.35394    
+## salinity              1  18.6567        62     67.976 1.565e-05 ***
+## temperature:salinity  1   3.2866        61     64.689   0.06985 .  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>When applied to a single model, the <code>anova.glm</code> command gives the reduction in the residual deviance as each term of the formula is added sequentially. For this reason, it usually best to enter the variables in the sequence of decreasing significance. In our case, that suggests:</p>
+<pre class="r"><code class="r"><span class="identifier">anova</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> <span class="identifier">salinity</span> <span class="operator">*</span> <span class="identifier">temperature</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span>, 
+<span class="identifier">test</span> <span class="operator">=</span> <span class="string">"Chi"</span><span class="paren">)</span></code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model: binomial, link: logit
+## 
+## Response: Solea_solea
+## 
+## Terms added sequentially (first to last)
+## 
+## 
+##                      Df Deviance Resid. Df Resid. Dev  Pr(&gt;Chi)    
+## NULL                                    64     87.492              
+## salinity              1  18.9315        63     68.560 1.355e-05 ***
+## temperature           1   0.5845        62     67.976   0.44456    
+## salinity:temperature  1   3.2866        61     64.689   0.06985 .  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>Or to compare models:</p>
+<pre class="r"><code class="r"><span class="identifier">anova</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f3</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span>, 
+      <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f5</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span>, <span class="identifier">test</span> <span class="operator">=</span> <span class="string">"Chi"</span><span class="paren">)</span></code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model 1: Solea_solea ~ salinity
+## Model 2: Solea_solea ~ temperature * salinity
+##   Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)
+## 1        63     68.560                     
+## 2        61     64.689  2    3.871   0.1443</code></pre>
+</div>
+<div id="aic" class="section level3">
+<div name="aic" data-unique="aic"></div><h3>AIC</h3>
+<p>The AIC (Akaike information criterion) is a measure of fit that penalizes for the number of parameters <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-7-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;p&lt;/mi&gt;&lt;/math&gt;" role="presentation" style="position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-100" style="width: 0.544em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.483em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.685em, 1000.48em, 2.646em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-101"><span class="mi" id="MathJax-Span-102" style="font-family: MathJax_Math-italic;">p</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.263em; border-left: 0px solid; width: 0px; height: 0.87em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi></math></span></span><script type="math/tex" id="MathJax-Element-7">p</script></span>: <span class="math display"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-8-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;mi&gt;A&lt;/mi&gt;&lt;mi&gt;I&lt;/mi&gt;&lt;mi&gt;C&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;msub&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;m&lt;/mi&gt;&lt;mi&gt;o&lt;/mi&gt;&lt;mi&gt;d&lt;/mi&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mi&gt;p&lt;/mi&gt;&lt;/math&gt;" role="presentation" style="text-align: center; position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-103" style="width: 9.613em; display: inline-block;"><span style="display: inline-block; position: relative; width: 8.652em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(1.384em, 1008.65em, 2.646em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-104"><span class="mi" id="MathJax-Span-105" style="font-family: MathJax_Math-italic;">A</span><span class="mi" id="MathJax-Span-106" style="font-family: MathJax_Math-italic;">I<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.063em;"></span></span><span class="mi" id="MathJax-Span-107" style="font-family: MathJax_Math-italic;">C<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.063em;"></span></span><span class="mo" id="MathJax-Span-108" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="mo" id="MathJax-Span-109" style="font-family: MathJax_Main; padding-left: 0.303em;">−</span><span class="mn" id="MathJax-Span-110" style="font-family: MathJax_Main;">2</span><span class="msubsup" id="MathJax-Span-111"><span style="display: inline-block; position: relative; width: 1.685em; height: 0px;"><span style="position: absolute; clip: rect(3.126em, 1000.24em, 4.207em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-112" style="font-family: MathJax_Math-italic;">l</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.303em;"><span class="texatom" id="MathJax-Span-113"><span class="mrow" id="MathJax-Span-114"><span class="mi" id="MathJax-Span-115" style="font-size: 70.7%; font-family: MathJax_Math-italic;">m</span><span class="mi" id="MathJax-Span-116" style="font-size: 70.7%; font-family: MathJax_Math-italic;">o</span><span class="mi" id="MathJax-Span-117" style="font-size: 70.7%; font-family: MathJax_Math-italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-118" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="mn" id="MathJax-Span-119" style="font-family: MathJax_Main; padding-left: 0.243em;">2</span><span class="mi" id="MathJax-Span-120" style="font-family: MathJax_Math-italic;">p</span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.263em; border-left: 0px solid; width: 0px; height: 1.137em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>A</mi><mi>I</mi><mi>C</mi><mo>=</mo><mo>−</mo><mn>2</mn><msub><mi>l</mi><mrow class="MJX-TeXAtom-ORD"><mi>m</mi><mi>o</mi><mi>d</mi></mrow></msub><mo>+</mo><mn>2</mn><mi>p</mi></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-8"> AIC =  -2l_{mod} + 2p</script></span> Because a HIGH likelihood means a better fit, the LOW AIC is the best model. The nice thing about AIC is that we can compare models that are not nested:</p>
+<pre class="r"><code class="r"><span class="identifier">AIC</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f3</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span>, 
+    <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f2</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span><span class="paren">)</span></code></pre>
+<pre><code>##                                          df      AIC
+## glm(f3, family = binomial, data = Solea)  2 72.55999
+## glm(f2, family = binomial, data = Solea)  2 90.63224</code></pre>
+<p>You can see how much better the salinity model is than the temperature model.</p>
+<p>In R, it is often much smarter to work with lists. Note how we can use lists and the <code>ldply</code> function from the (handy) <code>plyr</code> pacakge to build an AIC table:</p>
+<pre class="r"><code class="r"><span class="keyword">require</span><span class="paren">(</span><span class="identifier">plyr</span><span class="paren">)</span>
+<span class="identifier">formulae</span> <span class="operator">&lt;-</span> <span class="identifier">list</span><span class="paren">(</span><span class="identifier">f1</span>, <span class="identifier">f2</span>, <span class="identifier">f3</span>, <span class="identifier">f4</span>, <span class="identifier">f5</span><span class="paren">)</span>
+<span class="identifier">solea.glms</span> <span class="operator">&lt;-</span> <span class="identifier">llply</span><span class="paren">(</span><span class="identifier">formulae</span>, <span class="keyword">function</span><span class="paren">(</span><span class="identifier">f</span><span class="paren">)</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">f</span>, <span class="identifier">family</span><span class="operator">=</span><span class="identifier">binomial</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea</span><span class="paren">)</span><span class="paren">)</span>
+<span class="identifier">names</span><span class="paren">(</span><span class="identifier">solea.glms</span><span class="paren">)</span> <span class="operator">&lt;-</span> <span class="identifier">formulae</span>
+<span class="identifier">ldply</span><span class="paren">(</span><span class="identifier">solea.glms</span>, <span class="identifier">AIC</span><span class="paren">)</span></code></pre>
+<pre><code>##                                    .id       V1
+## 1                      Solea_solea ~ 1 89.49152
+## 2            Solea_solea ~ temperature 90.63224
+## 3               Solea_solea ~ salinity 72.55999
+## 4 Solea_solea ~ salinity + temperature 73.97552
+## 5 Solea_solea ~ temperature * salinity 72.68895</code></pre>
+</div>
+<div id="visualization" class="section level3">
+<div name="visualization" data-unique="visualization"></div><h3>Visualization</h3>
+<p>A nice thing to do - as an initial exploratory step - is to fit all the single main effect models and visualize the effect sizes and significant. The naive way to do that would be something like this:</p>
+<pre class="r"><code class="r"><span class="identifier">covariates</span> <span class="operator">&lt;-</span> <span class="identifier">names</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">)</span><span class="paren">[</span><span class="operator">!</span><span class="paren">(</span> <span class="identifier">names</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">)</span> <span class="operator">%in%</span> <span class="identifier">c</span><span class="paren">(</span><span class="string">"Sample"</span>, <span class="string">"Area"</span>, <span class="string">"Solea_solea"</span><span class="paren">)</span><span class="paren">)</span><span class="paren">]</span>
+
+<span class="identifier">getBetaAndSe</span> <span class="operator">&lt;-</span> <span class="keyword">function</span><span class="paren">(</span><span class="identifier">covar</span><span class="paren">)</span>
+    <span class="identifier">coef</span><span class="paren">(</span><span class="identifier">summary</span><span class="paren">(</span><span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> <span class="identifier">Solea</span><span class="paren">[</span><span class="paren">[</span><span class="identifier">covar</span><span class="paren">]</span><span class="paren">]</span>, <span class="identifier">data</span> <span class="operator">=</span> <span class="identifier">Solea</span>, <span class="identifier">family</span> <span class="operator">=</span> <span class="string">"binomial"</span><span class="paren">)</span><span class="paren">)</span><span class="paren">)</span><span class="paren">[</span><span class="number">2</span>,<span class="number">1</span><span class="operator">:</span><span class="number">2</span><span class="paren">]</span>
+
+<span class="comment"># a Loop:</span>
+<span class="identifier">beta.table</span> <span class="operator">&lt;-</span> <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">variable</span> <span class="operator">=</span> <span class="identifier">covariates</span>, <span class="identifier">estimate</span> <span class="operator">=</span> <span class="literal">NA</span>, <span class="identifier">se</span> <span class="operator">=</span> <span class="literal">NA</span><span class="paren">)</span>
+<span class="keyword">for</span><span class="paren">(</span><span class="identifier">i</span> <span class="keyword">in</span> <span class="number">1</span><span class="operator">:</span><span class="identifier">length</span><span class="paren">(</span><span class="identifier">covariates</span><span class="paren">)</span><span class="paren">)</span>
+    <span class="identifier">beta.table</span><span class="paren">[</span><span class="identifier">i</span>,<span class="number">2</span><span class="operator">:</span><span class="number">3</span><span class="paren">]</span> <span class="operator">&lt;-</span> <span class="identifier">getBetaAndSe</span><span class="paren">(</span><span class="identifier">covariates</span><span class="paren">[</span><span class="identifier">i</span><span class="paren">]</span><span class="paren">)</span>
+
+<span class="comment"># plyr and magrittr piping one-liner </span>
+<span class="comment">## (Less code, but also less tansparent)</span>
+  <span class="keyword">require</span><span class="paren">(</span><span class="identifier">magrittr</span><span class="paren">)</span>
+    <span class="identifier">beta.table2</span> <span class="operator">&lt;-</span> <span class="identifier">adply</span><span class="paren">(</span><span class="identifier">t</span><span class="paren">(</span><span class="identifier">covariates</span><span class="paren">)</span>, <span class="number">2</span>, <span class="identifier">getBetaAndSe</span><span class="paren">)</span> <span class="operator">%&gt;%</span> <span class="identifier">mutate</span><span class="paren">(</span><span class="identifier">X1</span> <span class="operator">=</span> <span class="identifier">covariates</span><span class="paren">)</span></code></pre>
+<p>Base plot:</p>
+<pre class="r"><code class="r"><span class="identifier">par</span><span class="paren">(</span><span class="identifier">mar</span> <span class="operator">=</span> <span class="identifier">c</span><span class="paren">(</span><span class="number">3</span>,<span class="number">10</span>,<span class="number">2</span>,<span class="number">2</span><span class="paren">)</span><span class="paren">)</span>
+<span class="identifier">beta.table</span> <span class="operator">&lt;-</span> <span class="identifier">mutate</span><span class="paren">(</span><span class="identifier">beta.table</span>, <span class="identifier">low</span> <span class="operator">=</span> <span class="identifier">estimate</span> <span class="operator">-</span> <span class="number">2</span> <span class="operator">*</span> <span class="identifier">se</span>, <span class="identifier">high</span> <span class="operator">=</span> <span class="identifier">estimate</span> <span class="operator">+</span> <span class="number">2</span><span class="operator">*</span><span class="identifier">se</span><span class="paren">)</span>
+<span class="identifier">n</span> <span class="operator">&lt;-</span> <span class="identifier">nrow</span><span class="paren">(</span><span class="identifier">beta.table</span><span class="paren">)</span>
+<span class="identifier">with</span><span class="paren">(</span><span class="identifier">beta.table</span>, <span class="paren">{</span>
+    <span class="identifier">plot</span><span class="paren">(</span><span class="identifier">estimate</span>, <span class="number">1</span><span class="operator">:</span><span class="identifier">n</span>, <span class="identifier">pch</span> <span class="operator">=</span> <span class="number">19</span>, <span class="identifier">xlim</span> <span class="operator">=</span> <span class="identifier">c</span><span class="paren">(</span><span class="identifier">min</span><span class="paren">(</span><span class="identifier">low</span><span class="paren">)</span>, <span class="identifier">max</span><span class="paren">(</span><span class="identifier">high</span><span class="paren">)</span><span class="paren">)</span>, 
+         <span class="identifier">yaxt</span> <span class="operator">=</span> <span class="string">"n"</span>, <span class="identifier">ylab</span><span class="operator">=</span><span class="string">""</span><span class="paren">)</span>
+    <span class="identifier">segments</span><span class="paren">(</span><span class="identifier">low</span>, <span class="number">1</span><span class="operator">:</span><span class="identifier">n</span>, <span class="identifier">high</span>, <span class="number">1</span><span class="operator">:</span><span class="identifier">length</span><span class="paren">(</span><span class="identifier">high</span><span class="paren">)</span><span class="paren">)</span>
+    <span class="identifier">axis</span><span class="paren">(</span><span class="number">2</span>, <span class="identifier">at</span> <span class="operator">=</span> <span class="number">1</span><span class="operator">:</span><span class="identifier">n</span>, <span class="identifier">label</span> <span class="operator">=</span> <span class="identifier">variable</span>, <span class="identifier">las</span> <span class="operator">=</span> <span class="number">2</span>, <span class="identifier">cex</span> <span class="operator">=</span><span class="number">0.8</span><span class="paren">)</span>
+    <span class="identifier">abline</span><span class="paren">(</span><span class="identifier">v</span> <span class="operator">=</span> <span class="number">0</span>, <span class="identifier">lwd</span> <span class="operator">=</span> <span class="number">2</span>, <span class="identifier">lty</span> <span class="operator">=</span> <span class="number">3</span>, <span class="identifier">col</span><span class="operator">=</span><span class="string">"darkgrey"</span><span class="paren">)</span>
+<span class="paren">}</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-16-1.png" width="672"></p>
+<p>A ggplot approach:</p>
+<pre class="r"><code class="r"><span class="identifier">ggplot</span><span class="paren">(</span><span class="identifier">beta.table</span>, <span class="identifier">aes</span><span class="paren">(</span><span class="identifier">y</span><span class="operator">=</span><span class="identifier">estimate</span>, <span class="identifier">x</span><span class="operator">=</span><span class="identifier">variable</span>, <span class="identifier">ymin</span><span class="operator">=</span><span class="identifier">low</span>, <span class="identifier">ymax</span><span class="operator">=</span><span class="identifier">high</span><span class="paren">)</span><span class="paren">)</span> <span class="operator">+</span> <span class="identifier">geom_pointrange</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span> <span class="identifier">coord_flip</span><span class="paren">(</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-17-1.png" width="672"></p>
+<p>This is a useful figure, in general. But a problem is that the variables are all in different units so effect sizes are hard to compare.</p>
+<p>This is one of the main reasons that people often <em>scale</em> covariates, which means simply that they transform via: <span class="math display"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-9-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;msup&gt;&lt;mi&gt;X&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;T&lt;/mi&gt;&lt;/mrow&gt;&lt;/msup&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mfrac&gt;&lt;mrow&gt;&lt;mi&gt;X&lt;/mi&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;mover&gt;&lt;mi&gt;X&lt;/mi&gt;&lt;mo accent=&quot;false&quot;&gt;&amp;#x00AF;&lt;/mo&gt;&lt;/mover&gt;&lt;/mrow&gt;&lt;msub&gt;&lt;mi&gt;s&lt;/mi&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;/msub&gt;&lt;/mfrac&gt;&lt;/mrow&gt;&lt;/math&gt;" role="presentation" style="text-align: center; position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-121" style="width: 7.03em; display: inline-block;"><span style="display: inline-block; position: relative; width: 6.309em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(0.423em, 1006.31em, 3.306em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-122"><span class="msubsup" id="MathJax-Span-123"><span style="display: inline-block; position: relative; width: 1.505em; height: 0px;"><span style="position: absolute; clip: rect(3.186em, 1000.84em, 4.207em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-124" style="font-family: MathJax_Math-italic;">X<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -4.441em; left: 0.904em;"><span class="texatom" id="MathJax-Span-125"><span class="mrow" id="MathJax-Span-126"><span class="mi" id="MathJax-Span-127" style="font-size: 70.7%; font-family: MathJax_Math-italic;">T<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.063em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span class="mo" id="MathJax-Span-128" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="texatom" id="MathJax-Span-129" style="padding-left: 0.303em;"><span class="mrow" id="MathJax-Span-130"><span class="mfrac" id="MathJax-Span-131"><span style="display: inline-block; position: relative; width: 3.186em; height: 0px; margin-right: 0.123em; margin-left: 0.123em;"><span style="position: absolute; clip: rect(2.826em, 1003.07em, 4.267em, -999.997em); top: -4.682em; left: 50%; margin-left: -1.498em;"><span class="mrow" id="MathJax-Span-132"><span class="mi" id="MathJax-Span-133" style="font-family: MathJax_Math-italic;">X<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mo" id="MathJax-Span-134" style="font-family: MathJax_Main; padding-left: 0.243em;">−</span><span class="munderover" id="MathJax-Span-135" style="padding-left: 0.243em;"><span style="display: inline-block; position: relative; width: 0.904em; height: 0px;"><span style="position: absolute; clip: rect(3.186em, 1000.84em, 4.207em, -999.997em); top: -4.021em; left: 0.003em;"><span class="mi" id="MathJax-Span-136" style="font-family: MathJax_Math-italic;">X<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(3.306em, 1000.9em, 3.847em, -999.997em); top: -4.502em; left: 0.063em;"><span class="mo" id="MathJax-Span-137" style=""><span style="display: inline-block; position: relative; width: 0.904em; height: 0px;"><span style="position: absolute; top: -4.021em; left: -0.057em;"><span style="font-size: 70.7%; font-family: MathJax_Main;">¯</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -4.021em; left: 0.604em;"><span style="font-size: 70.7%; font-family: MathJax_Main;">¯</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -4.021em; left: 0.123em;"><span style="font-size: 70.7%; font-family: MathJax_Main;">¯</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -4.021em; left: 0.363em;"><span style="font-size: 70.7%; font-family: MathJax_Main;">¯</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(3.426em, 1000.96em, 4.387em, -999.997em); top: -3.36em; left: 50%; margin-left: -0.477em;"><span class="msubsup" id="MathJax-Span-138"><span style="display: inline-block; position: relative; width: 0.964em; height: 0px;"><span style="position: absolute; clip: rect(3.426em, 1000.42em, 4.207em, -999.997em); top: -4.021em; left: 0em;"><span class="mi" id="MathJax-Span-139" style="font-family: MathJax_Math-italic;">s</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; top: -3.901em; left: 0.483em;"><span class="mi" id="MathJax-Span-140" style="font-size: 70.7%; font-family: MathJax_Math-italic;">x</span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(0.844em, 1003.19em, 1.264em, -999.997em); top: -1.318em; left: 0em;"><span style="display: inline-block; overflow: hidden; vertical-align: 0em; border-top: 1.3px solid; width: 3.186em; height: 0px;"></span><span style="display: inline-block; width: 0px; height: 1.084em;"></span></span></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.997em; border-left: 0px solid; width: 0px; height: 2.937em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msup><mi>X</mi><mrow class="MJX-TeXAtom-ORD"><mi>T</mi></mrow></msup><mo>=</mo><mrow class="MJX-TeXAtom-ORD"><mfrac><mrow><mi>X</mi><mo>−</mo><mover><mi>X</mi><mo accent="false">¯</mo></mover></mrow><msub><mi>s</mi><mi>x</mi></msub></mfrac></mrow></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-9">X^{T} = {X - \overline{X} \over s_x}</script></span> This way, all the effects are comparable. This is useful enough that there is a function <code>scale</code> just for that.</p>
+<p>I recreate the plot above with rescaled variables (and heavy piping)</p>
+<pre class="r"><code class="r"><span class="identifier">covariates</span> <span class="operator">&lt;-</span> <span class="identifier">names</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">)</span><span class="paren">[</span><span class="operator">!</span><span class="paren">(</span> <span class="identifier">names</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">)</span> <span class="operator">%in%</span> <span class="identifier">c</span><span class="paren">(</span><span class="string">"Sample"</span>, <span class="string">"Area"</span>, <span class="string">"Solea_solea"</span><span class="paren">)</span><span class="paren">)</span><span class="paren">]</span>
+<span class="identifier">getBetaAndSe</span> <span class="operator">&lt;-</span> <span class="keyword">function</span><span class="paren">(</span><span class="identifier">covar</span><span class="paren">)</span><span class="paren">{</span>
+    <span class="identifier">coefs</span> <span class="operator">&lt;-</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> <span class="identifier">scale</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">[</span><span class="paren">[</span><span class="identifier">covar</span><span class="paren">]</span><span class="paren">]</span><span class="paren">)</span>, <span class="identifier">data</span> <span class="operator">=</span> <span class="identifier">Solea</span>, <span class="identifier">family</span> <span class="operator">=</span> <span class="string">"binomial"</span><span class="paren">)</span> <span class="operator">%&gt;%</span> 
+        <span class="identifier">summary</span> <span class="operator">%&gt;%</span> <span class="identifier">coef</span>
+    <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">variable</span> <span class="operator">=</span> <span class="identifier">covar</span>, 
+               <span class="identifier">estimate</span> <span class="operator">=</span> <span class="identifier">coefs</span><span class="paren">[</span><span class="number">2</span>,<span class="number">1</span><span class="paren">]</span>, 
+               <span class="identifier">se</span> <span class="operator">=</span> <span class="identifier">coefs</span><span class="paren">[</span><span class="number">2</span>,<span class="number">2</span><span class="paren">]</span>, 
+               <span class="identifier">p</span> <span class="operator">=</span> <span class="identifier">coefs</span><span class="paren">[</span><span class="number">2</span>,<span class="number">4</span><span class="paren">]</span><span class="paren">)</span>
+<span class="paren">}</span>
+
+<span class="keyword">require</span><span class="paren">(</span><span class="identifier">ggthemes</span><span class="paren">)</span>
+<span class="identifier">beta.table</span> <span class="operator">&lt;-</span> <span class="identifier">adply</span><span class="paren">(</span><span class="identifier">t</span><span class="paren">(</span><span class="identifier">covariates</span><span class="paren">)</span>, <span class="number">2</span>, <span class="identifier">getBetaAndSe</span><span class="paren">)</span> <span class="operator">%&gt;%</span> 
+            <span class="identifier">arrange</span><span class="paren">(</span><span class="identifier">estimate</span><span class="paren">)</span> <span class="operator">%&gt;%</span> 
+            <span class="identifier">mutate</span><span class="paren">(</span><span class="identifier">low</span> <span class="operator">=</span> <span class="identifier">estimate</span> <span class="operator">-</span> <span class="number">2</span><span class="operator">*</span><span class="identifier">se</span>, 
+                         <span class="identifier">high</span> <span class="operator">=</span> <span class="identifier">estimate</span> <span class="operator">+</span> <span class="number">2</span><span class="operator">*</span><span class="identifier">se</span>,
+                         <span class="identifier">variable</span> <span class="operator">=</span> <span class="identifier">reorder</span><span class="paren">(</span><span class="identifier">variable</span>, <span class="identifier">order</span><span class="paren">(</span><span class="identifier">estimate</span><span class="paren">)</span><span class="paren">)</span><span class="paren">)</span>
+
+<span class="comment"># note - the "reorder" was necessary to make the variables plot </span>
+<span class="comment"># in the right order in ggplot ... but it took TOO LONG to figure out!</span>
+                         
+<span class="identifier">ggplot</span><span class="paren">(</span><span class="identifier">beta.table</span>, <span class="identifier">aes</span><span class="paren">(</span><span class="identifier">y</span><span class="operator">=</span><span class="identifier">estimate</span>, <span class="identifier">x</span><span class="operator">=</span><span class="identifier">variable</span>, <span class="identifier">ymin</span><span class="operator">=</span><span class="identifier">low</span>, <span class="identifier">ymax</span><span class="operator">=</span><span class="identifier">high</span>, <span class="identifier">color</span> <span class="operator">=</span> <span class="paren">(</span><span class="identifier">p</span> <span class="operator">&lt;</span> <span class="number">0.05</span><span class="paren">)</span><span class="paren">)</span><span class="paren">)</span> <span class="operator">+</span> 
+            <span class="identifier">geom_pointrange</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span>  
+            <span class="identifier">geom_hline</span><span class="paren">(</span><span class="identifier">yintercept</span> <span class="operator">=</span> <span class="number">0</span>, <span class="identifier">col</span><span class="operator">=</span><span class="string">"darkgrey"</span>, <span class="identifier">lty</span> <span class="operator">=</span> <span class="number">3</span>, <span class="identifier">lwd</span><span class="operator">=</span><span class="number">2</span><span class="paren">)</span> <span class="operator">+</span> 
+            <span class="identifier">coord_flip</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span> <span class="identifier">theme_few</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span> <span class="identifier">ggtitle</span><span class="paren">(</span><span class="string">"Single main effect plot"</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-18-1.png" width="672"></p>
+</div>
+<div id="watching-out-for-correlated-covariates" class="section level3">
+<div name="watching_out_for_correlated_covariates" data-unique="watching_out_for_correlated_covariates"></div><h3>Watching out for correlated covariates!</h3>
+<p>Before blindly looking through your covariates to find the “best” model, it is important to see if any of the covariates are very closely correlated. The best way to do this is with the “pairs” plot, which is the default behavior when you plot a matrix. Weâ€™re not really interested (at least for now) in the time variables, only in the physical environmental variables.</p>
+<pre class="r"><code class="r"><span class="identifier">plot</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">[</span><span class="number">5</span><span class="operator">:</span><span class="number">12</span><span class="paren">]</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-19-1.png" width="960"></p>
+<p>Clearly, the two kinds of sand are very highly correlated, and both are very strongly negatively correlated with mud:</p>
+<pre class="r"><code class="r"><span class="identifier">cor</span><span class="paren">(</span><span class="identifier">Solea</span><span class="paren">[</span><span class="number">10</span><span class="operator">:</span><span class="number">12</span><span class="paren">]</span><span class="paren">)</span></code></pre>
+<pre><code>##               large_sand med_fine_sand        mud
+## large_sand     1.0000000     0.5605420 -0.8717915
+## med_fine_sand  0.5605420     1.0000000 -0.7789052
+## mud           -0.8717915    -0.7789052  1.0000000</code></pre>
+<p>This suggests that we can limit our substrate covariates to JUST mud (which is a proxy for “not sand”), so our (reduced) data are:</p>
+<pre class="r"><code class="r"><span class="identifier">Solea.redux</span> <span class="operator">&lt;-</span> <span class="identifier">Solea</span><span class="paren">[</span>,<span class="identifier">c</span><span class="paren">(</span><span class="number">5</span><span class="operator">:</span><span class="number">9</span>,<span class="number">12</span><span class="operator">:</span><span class="number">13</span><span class="paren">)</span><span class="paren">]</span></code></pre>
+</div>
+<div id="including-everything" class="section level3">
+<div name="including_everything" data-unique="including_everything"></div><h3>Including EVERYTHING</h3>
+<p>You can create a model that includes all main effects, using (in Râ€™s formula notation) just <code>~.</code>:</p>
+<pre class="r"><code class="r"><span class="identifier">maineffects.glm</span> <span class="operator">&lt;-</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> ., <span class="identifier">family</span><span class="operator">=</span><span class="string">"binomial"</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea.redux</span><span class="paren">)</span></code></pre>
+<p>We can take a look at an effects plot here too:</p>
+<pre class="r"><code class="r"><span class="identifier">Solea.redux.scaled</span> <span class="operator">&lt;-</span> <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">scale</span><span class="paren">(</span><span class="identifier">Solea.redux</span><span class="paren">[</span>,<span class="number">1</span><span class="operator">:</span><span class="number">6</span><span class="paren">]</span><span class="paren">)</span>, 
+                                 <span class="identifier">Solea_solea</span> <span class="operator">=</span> <span class="identifier">Solea.redux</span><span class="operator">$</span><span class="identifier">Solea_solea</span><span class="paren">)</span>
+<span class="identifier">me.glm.scaled</span> <span class="operator">&lt;-</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> ., <span class="identifier">family</span><span class="operator">=</span><span class="string">"binomial"</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea.redux.scaled</span><span class="paren">)</span>
+
+<span class="identifier">beta.table</span> <span class="operator">&lt;-</span> <span class="identifier">data.frame</span><span class="paren">(</span><span class="identifier">summary</span><span class="paren">(</span><span class="identifier">me.glm.scaled</span><span class="paren">)</span><span class="operator">$</span><span class="identifier">coef</span><span class="paren">)</span>
+<span class="identifier">beta.table</span><span class="operator">$</span><span class="identifier">variable</span> <span class="operator">&lt;-</span> <span class="identifier">row.names</span><span class="paren">(</span><span class="identifier">beta.table</span><span class="paren">)</span>
+<span class="identifier">beta.table</span> <span class="operator">&lt;-</span> <span class="identifier">mutate</span><span class="paren">(</span><span class="identifier">beta.table</span>, <span class="identifier">estimate</span> <span class="operator">=</span> <span class="identifier">Estimate</span>, 
+                 <span class="identifier">se</span> <span class="operator">=</span> <span class="identifier">Std..Error</span>, 
+           <span class="identifier">low</span> <span class="operator">=</span> <span class="identifier">Estimate</span> <span class="operator">-</span> <span class="number">2</span><span class="operator">*</span><span class="identifier">se</span>, 
+                 <span class="identifier">high</span> <span class="operator">=</span> <span class="identifier">Estimate</span> <span class="operator">+</span> <span class="number">2</span><span class="operator">*</span><span class="identifier">se</span>,
+                 <span class="identifier">p</span> <span class="operator">=</span> <span class="identifier">Pr...z</span>..<span class="paren">)</span>  
+
+<span class="identifier">ggplot</span><span class="paren">(</span><span class="identifier">beta.table</span>, <span class="identifier">aes</span><span class="paren">(</span><span class="identifier">y</span><span class="operator">=</span><span class="identifier">estimate</span>, <span class="identifier">x</span><span class="operator">=</span><span class="identifier">variable</span>, <span class="identifier">ymin</span><span class="operator">=</span><span class="identifier">low</span>, <span class="identifier">ymax</span><span class="operator">=</span><span class="identifier">high</span>, <span class="identifier">color</span> <span class="operator">=</span> <span class="paren">(</span><span class="identifier">p</span> <span class="operator">&lt;</span> <span class="number">0.05</span><span class="paren">)</span><span class="paren">)</span><span class="paren">)</span> <span class="operator">+</span> 
+            <span class="identifier">geom_pointrange</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span>  
+            <span class="identifier">geom_hline</span><span class="paren">(</span><span class="identifier">yintercept</span> <span class="operator">=</span> <span class="number">0</span>, <span class="identifier">col</span><span class="operator">=</span><span class="string">"darkgrey"</span>, <span class="identifier">lty</span> <span class="operator">=</span> <span class="number">3</span>, <span class="identifier">lwd</span><span class="operator">=</span><span class="number">2</span><span class="paren">)</span> <span class="operator">+</span> 
+            <span class="identifier">coord_flip</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span> <span class="identifier">theme_few</span><span class="paren">(</span><span class="paren">)</span> <span class="operator">+</span> <span class="identifier">ggtitle</span><span class="paren">(</span><span class="string">"Multiple main effect plot"</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-23-1.png" width="672"></p>
+<p>The analysis of deviance of the main effects model:</p>
+<pre class="r"><code class="r"><span class="identifier">anova</span><span class="paren">(</span><span class="identifier">maineffects.glm</span>, <span class="identifier">test</span><span class="operator">=</span><span class="string">"Chi"</span><span class="paren">)</span></code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model: binomial, link: logit
+## 
+## Response: Solea_solea
+## 
+## Terms added sequentially (first to last)
+## 
+## 
+##              Df Deviance Resid. Df Resid. Dev Pr(&gt;Chi)    
+## NULL                            64     87.492             
+## depth         1  11.3487        63     76.143 0.000755 ***
+## temperature   1   0.2190        62     75.924 0.639765    
+## salinity      1   8.1295        61     67.794 0.004355 ** 
+## transparency  1   0.0365        60     67.758 0.848523    
+## gravel        1   2.0728        59     65.685 0.149951    
+## mud           1   0.3753        58     65.310 0.540107    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>It looks like only depth and salinity are really significant players here. The <code>stepAIC</code> function (in <code>MASS</code>) uses AIC as a criterion to march through the inclusion and removal of different covariates to find the one with lowest AIC.</p>
+<pre class="r"><code class="r"><span class="keyword">require</span><span class="paren">(</span><span class="identifier">MASS</span><span class="paren">)</span>
+<span class="identifier">best.main.glm</span> <span class="operator">&lt;-</span> <span class="identifier">stepAIC</span><span class="paren">(</span><span class="identifier">maineffects.glm</span><span class="paren">)</span></code></pre>
+<pre><code>## Start:  AIC=79.31
+## Solea_solea ~ depth + temperature + salinity + transparency + 
+##     gravel + mud
+## 
+##                Df Deviance    AIC
+## - transparency  1   65.310 77.310
+## - depth         1   65.477 77.477
+## - mud           1   65.685 77.685
+## - temperature   1   65.722 77.722
+## &lt;none&gt;              65.310 79.310
+## - gravel        1   67.603 79.603
+## - salinity      1   72.965 84.965
+## 
+## Step:  AIC=77.31
+## Solea_solea ~ depth + temperature + salinity + gravel + mud
+## 
+##               Df Deviance    AIC
+## - depth        1   65.489 75.489
+## - mud          1   65.730 75.730
+## - temperature  1   65.883 75.883
+## &lt;none&gt;             65.310 77.310
+## - gravel       1   67.683 77.683
+## - salinity     1   73.011 83.011
+## 
+## Step:  AIC=75.49
+## Solea_solea ~ temperature + salinity + gravel + mud
+## 
+##               Df Deviance    AIC
+## - mud          1   65.884 73.884
+## - temperature  1   66.229 74.229
+## &lt;none&gt;             65.489 75.489
+## - gravel       1   67.846 75.846
+## - salinity     1   76.752 84.752
+## 
+## Step:  AIC=73.88
+## Solea_solea ~ temperature + salinity + gravel
+## 
+##               Df Deviance    AIC
+## - temperature  1   66.484 72.484
+## &lt;none&gt;             65.884 73.884
+## - gravel       1   67.976 73.976
+## - salinity     1   86.553 92.553
+## 
+## Step:  AIC=72.48
+## Solea_solea ~ salinity + gravel
+## 
+##            Df Deviance    AIC
+## &lt;none&gt;          66.484 72.484
+## - gravel    1   68.560 72.560
+## - salinity  1   87.317 91.317</code></pre>
+<p>It seems to like the salinity and gravel main effects model.</p>
+<p>What about with interactions? To add interactions: <code>~ (.)^2</code>.</p>
+<pre class="r"><code class="r"><span class="identifier">interactions.glm</span> <span class="operator">&lt;-</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> <span class="paren">(</span>.<span class="paren">)</span><span class="operator">^</span><span class="number">2</span>, <span class="identifier">family</span><span class="operator">=</span><span class="string">"binomial"</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea.redux</span><span class="paren">)</span>
+<span class="identifier">best.interaction.glm</span> <span class="operator">&lt;-</span> <span class="identifier">stepAIC</span><span class="paren">(</span><span class="identifier">interactions.glm</span>, <span class="identifier">trace</span> <span class="operator">=</span> <span class="number">0</span><span class="paren">)</span>
+<span class="identifier">anova</span><span class="paren">(</span><span class="identifier">best.interaction.glm</span>, <span class="identifier">test</span> <span class="operator">=</span> <span class="string">"Chi"</span><span class="paren">)</span></code></pre>
+<pre><code>## Analysis of Deviance Table
+## 
+## Model: binomial, link: logit
+## 
+## Response: Solea_solea
+## 
+## Terms added sequentially (first to last)
+## 
+## 
+##                          Df Deviance Resid. Df Resid. Dev Pr(&gt;Chi)    
+## NULL                                        64     87.492             
+## depth                     1  11.3487        63     76.143 0.000755 ***
+## temperature               1   0.2190        62     75.924 0.639765    
+## salinity                  1   8.1295        61     67.794 0.004355 ** 
+## transparency              1   0.0365        60     67.758 0.848523    
+## gravel                    1   2.0728        59     65.685 0.149951    
+## mud                       1   0.3753        58     65.310 0.540107    
+## depth:salinity            1   3.9958        57     61.314 0.045612 *  
+## depth:gravel              1   0.0336        56     61.280 0.854576    
+## depth:mud                 1   2.5044        55     58.776 0.113527    
+## temperature:salinity      1   3.9134        54     54.862 0.047902 *  
+## temperature:transparency  1   0.0965        53     54.766 0.756011    
+## salinity:transparency     1   2.7607        52     52.005 0.096609 .  
+## gravel:mud                1   5.3620        51     46.643 0.020581 *  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>There are multiple interactions that appear significant, and the residual deviance of 46.6 really does seem low. HOWEVER, we only have 65 rows of data! And six possible covariates … leading to 1 + 6 + 6*6 = 43 parameters to fit! This is almost certainly a case of serious overfitting, and a somewhat spurious result.</p>
+<p>In fact, when sample sizes are relatively small (e.g.&nbsp;when n / K &lt; 40 … so weâ€™re way off!) the recommendation is to use the “AICc” - or small-size corrected AIC - which provides extra penalities for more parameters. Its formula is: <span class="math display"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-10-Frame" tabindex="0" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;A&lt;/mi&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;I&lt;/mi&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;C&lt;/mi&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;c&lt;/mi&gt;&lt;/mrow&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;A&lt;/mi&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;I&lt;/mi&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;C&lt;/mi&gt;&lt;/mrow&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mfrac&gt;&lt;mrow&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/mrow&gt;&lt;mrow&gt;&lt;mi&gt;n&lt;/mi&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;/mrow&gt;&lt;/mfrac&gt;&lt;/math&gt;" role="presentation" style="text-align: center; position: relative;"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-141" style="width: 15.258em; display: inline-block;"><span style="display: inline-block; position: relative; width: 13.757em; height: 0px; font-size: 111%;"><span style="position: absolute; clip: rect(0.604em, 1013.76em, 3.246em, -999.997em); top: -2.279em; left: 0em;"><span class="mrow" id="MathJax-Span-142"><span class="texatom" id="MathJax-Span-143"><span class="mrow" id="MathJax-Span-144"><span class="mi" id="MathJax-Span-145" style="font-family: MathJax_Main;">A</span><span class="mi" id="MathJax-Span-146" style="font-family: MathJax_Main;">I</span><span class="mi" id="MathJax-Span-147" style="font-family: MathJax_Main;">C</span><span class="mi" id="MathJax-Span-148" style="font-family: MathJax_Main;">c</span></span></span><span class="mo" id="MathJax-Span-149" style="font-family: MathJax_Main; padding-left: 0.303em;">=</span><span class="texatom" id="MathJax-Span-150" style="padding-left: 0.303em;"><span class="mrow" id="MathJax-Span-151"><span class="mi" id="MathJax-Span-152" style="font-family: MathJax_Main;">A</span><span class="mi" id="MathJax-Span-153" style="font-family: MathJax_Main;">I</span><span class="mi" id="MathJax-Span-154" style="font-family: MathJax_Main;">C</span></span></span><span class="mo" id="MathJax-Span-155" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="mfrac" id="MathJax-Span-156" style="padding-left: 0.243em;"><span style="display: inline-block; position: relative; width: 6.73em; height: 0px; margin-right: 0.123em; margin-left: 0.123em;"><span style="position: absolute; clip: rect(3.126em, 1006.55em, 4.447em, -999.997em); top: -4.742em; left: 50%; margin-left: -3.3em;"><span class="mrow" id="MathJax-Span-157"><span class="mn" id="MathJax-Span-158" style="font-family: MathJax_Main;">2</span><span class="mo" id="MathJax-Span-159" style="font-family: MathJax_Main;">(</span><span class="mi" id="MathJax-Span-160" style="font-family: MathJax_Math-italic;">k</span><span class="mo" id="MathJax-Span-161" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="mn" id="MathJax-Span-162" style="font-family: MathJax_Main; padding-left: 0.243em;">1</span><span class="mo" id="MathJax-Span-163" style="font-family: MathJax_Main;">)</span><span class="mo" id="MathJax-Span-164" style="font-family: MathJax_Main;">(</span><span class="mi" id="MathJax-Span-165" style="font-family: MathJax_Math-italic;">k</span><span class="mo" id="MathJax-Span-166" style="font-family: MathJax_Main; padding-left: 0.243em;">+</span><span class="mn" id="MathJax-Span-167" style="font-family: MathJax_Main; padding-left: 0.243em;">2</span><span class="mo" id="MathJax-Span-168" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(3.126em, 1004.09em, 4.267em, -999.997em); top: -3.36em; left: 50%; margin-left: -2.099em;"><span class="mrow" id="MathJax-Span-169"><span class="mi" id="MathJax-Span-170" style="font-family: MathJax_Math-italic;">n</span><span class="mo" id="MathJax-Span-171" style="font-family: MathJax_Main; padding-left: 0.243em;">−</span><span class="mi" id="MathJax-Span-172" style="font-family: MathJax_Math-italic; padding-left: 0.243em;">k</span><span class="mo" id="MathJax-Span-173" style="font-family: MathJax_Main; padding-left: 0.243em;">−</span><span class="mn" id="MathJax-Span-174" style="font-family: MathJax_Main; padding-left: 0.243em;">2</span></span><span style="display: inline-block; width: 0px; height: 4.027em;"></span></span><span style="position: absolute; clip: rect(0.844em, 1006.73em, 1.264em, -999.997em); top: -1.318em; left: 0em;"><span style="display: inline-block; overflow: hidden; vertical-align: 0em; border-top: 1.3px solid; width: 6.73em; height: 0px;"></span><span style="display: inline-block; width: 0px; height: 1.084em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.285em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.93em; border-left: 0px solid; width: 0px; height: 2.67em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow class="MJX-TeXAtom-ORD"><mi mathvariant="normal">A</mi><mi mathvariant="normal">I</mi><mi mathvariant="normal">C</mi><mi mathvariant="normal">c</mi></mrow><mo>=</mo><mrow class="MJX-TeXAtom-ORD"><mi mathvariant="normal">A</mi><mi mathvariant="normal">I</mi><mi mathvariant="normal">C</mi></mrow><mo>+</mo><mfrac><mrow><mn>2</mn><mo stretchy="false">(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mi>k</mi><mo>+</mo><mn>2</mn><mo stretchy="false">)</mo></mrow><mrow><mi>n</mi><mo>−</mo><mi>k</mi><mo>−</mo><mn>2</mn></mrow></mfrac></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-10">\mathrm{AICc} = \mathrm{AIC} + \frac{2(k +1)(k + 2)}{n - k - 2}</script></span>.</p>
+<p>There is an extremely powerful function called <code>dredge</code> in package <code>MuMIn</code>, which will fit EVERY possible combination of ALL variables and assess the “best” model. It will automatically select the “best” criterion.</p>
+<pre class="r"><code class="r"><span class="keyword">require</span><span class="paren">(</span><span class="identifier">MuMIn</span><span class="paren">)</span>
+<span class="identifier">maineffects.glm</span> <span class="operator">&lt;-</span> <span class="identifier">glm</span><span class="paren">(</span><span class="identifier">Solea_solea</span> <span class="operator">~</span> ., <span class="identifier">family</span><span class="operator">=</span><span class="string">"binomial"</span>, <span class="identifier">data</span><span class="operator">=</span><span class="identifier">Solea.redux</span>, <span class="identifier">na.action</span> <span class="operator">=</span> <span class="identifier">na.pass</span><span class="paren">)</span>
+<span class="identifier">mega.model.comparison</span> <span class="operator">&lt;-</span> <span class="identifier">dredge</span><span class="paren">(</span><span class="identifier">maineffects.glm</span><span class="paren">)</span>
+<span class="identifier">head</span><span class="paren">(</span><span class="identifier">mega.model.comparison</span><span class="paren">)</span></code></pre>
+<pre><code>## Global model call: glm(formula = Solea_solea ~ ., family = "binomial", data = Solea.redux, 
+##     na.action = na.pass)
+## ---
+## Model selection table 
+##    (Intrc)  depth   gravl       mud   slnty   tmprt df  logLik AICc delta
+## 9    2.661                          -0.1299          2 -34.280 72.8  0.00
+## 11   2.746        0.04743           -0.1509          3 -33.242 72.9  0.12
+## 25   5.218                          -0.1412 -0.1033  3 -33.988 74.4  1.62
+## 27   5.371        0.04786           -0.1633 -0.1055  4 -32.942 74.6  1.80
+## 10   1.837 0.1416                   -0.1136          3 -34.127 74.6  1.89
+## 13   2.717                -0.006696 -0.1178          3 -34.185 74.8  2.01
+##    weight
+## 9   0.282
+## 11  0.265
+## 25  0.126
+## 27  0.115
+## 10  0.109
+## 13  0.103
+## Models ranked by AICc(x)</code></pre>
+<p>Ultimately, it also agrees that the best model only includes salinity, with gravel a close second. Thereâ€™s a wacky visualization that comes with this model comparison:</p>
+<pre class="r"><code class="r"><span class="identifier">plot</span><span class="paren">(</span><span class="identifier">mega.model.comparison</span><span class="paren">)</span></code></pre>
+<p><img src="./GLM_ Logistic Regression and Model Selection_files/unnamed-chunk-28-1.png" width="672"></p>
+<blockquote>
+<p>Note … a well-worded warning from the creators of <code>dredge</code>:</p>
+<blockquote>
+<p><strong>Users should keep in mind the hazards that a “thoughtless approach” of evaluating all possible models poses. Although this procedure is in certain cases useful and justified, it may result in selecting a spurious “best” model, due to the model selection bias.</strong></p>
+</blockquote>
+<blockquote>
+<p><strong>“Let the computer find out” is a poor strategy and usually reflects the fact that the researcher did not bother to think clearly about the problem of interest and its scientific setting (Burnham and Anderson, 2002).</strong></p>
+</blockquote>
+</blockquote>
+</div>
+</div>
+
+
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 4462.76px;"></div></div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+
+
+<div style="position: absolute; width: 0px; height: 0px; overflow: hidden; padding: 0px; border: 0px; margin: 0px;"><div id="MathJax_Font_Test" style="position: absolute; visibility: hidden; top: 0px; left: 0px; width: auto; padding: 0px; border: 0px; margin: 0px; white-space: nowrap; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; font-size: 40px; font-weight: normal; font-style: normal; font-family: MathJax_Main, sans-serif;"></div></div></body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>

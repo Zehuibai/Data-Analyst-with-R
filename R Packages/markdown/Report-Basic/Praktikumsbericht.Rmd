@@ -1,0 +1,71 @@
+---
+title: |
+  | Praktikum im Leibniz-Institut für Präventionsforschung und Epidemiologie
+author: |
+  | Zehui Bai
+  | Medical Biometry/Biostatistics
+  | Betreut von Dr. Ronja Foraita
+  | Matrikelnummer:3183673
+  | Zeitraum: 01.08.2019 -- 12.09.2019
+colorlinks: no
+output:
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: pdflatex
+    toc: yes
+    toc_depth: 2
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '2'
+editor_options:
+  chunk_output_type: console
+fontsize: 10pt
+geometry: margin=1in
+lang: de-De
+numbersections: yes
+csquotes: yes
+subtitle: Praktikumsbericht
+boldstyle: TeX
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE)
+library(knitr)
+```
+
+
+# Praktikumsstelle
+
+## Vorstellung der Praktikumsstelle
+
+Das Leibniz-Institut für Präventionsforschung und Epidemiologie – BIPS wurde 1981 als „Bremer Institut für Präventionsforschung und Sozialmedizin (BIPS)“  gegründet. Es ist damit eines der ältesten Epidemiologie-Institute Deutschlands.
+
+BIPS ist ein unabhängiges, interdisziplinär arbeitendes Epidemiologie-Forschungsinstitut, das seine Aufgabe in der Erforschung von Krankheitsursachen und der Vorbeugung gegen Erkrankungen sieht. Das Institut entwickelt mit seiner Forschung wirksame Strategien zur Prävention chronischer nichtübertragbarer Erkrankungen. Das BIPS erforscht Ursachen für Gesundheitsstörungen und entwickelt neue Konzepte, um Krankheiten vorzubeugen. Es untersucht, wie wirksam diese Maßnahmen sind und stellt die Forschungsergebnisse der Öffentlichkeit zur Verfügung. Neben der epidemiologischen Forschung sichert das Institut den Transfer seiner Forschungsergebnisse in die Praxis. Es entwickelt Präventionsprogramme und berät Entscheidungsträger auf nationaler und internationaler Ebene (BIPS-Allgemein, 01.10.2019).
+
+
+
+```
+\begin{center}
+\includegraphics[width=4.8in]{Fotos/Organigramm}
+\begin{figure}[!ht]
+\caption{Organisationsstruktur in BIPS}
+\end{figure}
+\end{center}
+```
+
+```{r echo=FALSE}  
+Variablensname <- c("ID_NO","Material","Spitted","Datum","GAWS","Projekt_Name",
+                    "extraConcentration","country","DNA_extraction")
+GWAS <- data.frame(Variablensname)
+knitr::kable(GWAS,format = "pandoc",caption="Datenstruktur von GWAS")
+```
+
+
+
+# Literatur
+
+[1] BIPS-Allgemein.(Tag des Zugriffs: 01.10.2019) 
+
+https://www.bips-institut.de/das-institut/ueber-das-institut.html 

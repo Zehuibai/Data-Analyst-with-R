@@ -1,0 +1,148 @@
+jQuery(document).ready(function($){
+	
+	$( 'body' ).delegate( '#dt-dsahboard-class', 'change', function(){	
+			
+		var class_id = $(this).val(),
+			curr_page = 1;
+
+		loadDashboardCourses(class_id, 1);
+
+		return false;
+		
+	});
+	
+	$( 'body' ).delegate( '#ajx_dashbord_class_courses_container .pagination a', 'click', function(){
+			
+		var curr_page = $(this).text();	
+		if($(this).hasClass('dt-prev')) {
+			curr_page = parseInt($(this).attr('cpage'))-1;
+		} else if($(this).hasClass('dt-next')) {
+			curr_page = parseInt($(this).attr('cpage'))+1;
+		} else {		
+			curr_page = parseInt(curr_page);
+		}
+		var class_id = $('#dt-dsahboard-class').val();
+
+		loadDashboardCourses(class_id, curr_page);
+		
+		return false;
+		
+	});
+	
+	function loadDashboardCourses(class_id, curr_page) {
+		
+		$.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data:
+			{
+				action        : 'dttheme_show_dashbord_class_courses',
+				class_id      : class_id,
+				curr_page     : curr_page,
+				dtLMSAjaxNonce: mytheme_urls.dtLMSAjaxNonce
+			},
+			beforeSend: function(){
+				$('#dt-sc-ajax-load-image').show();
+			},
+			error: function (xhr, status, error) {
+				$('#ajx_dashbord_class_courses_container').html('Something went wrong!');
+			},
+			success: function (response) {
+				$('#ajx_dashbord_class_courses_container').html(response);
+				$('.dt-sc-toggle').toggleClick(function(){ $(this).addClass('active'); },function(){ $(this).removeClass('active'); });
+				$('.dt-sc-toggle').on('click',function(){ $(this).next('.dt-sc-toggle-content').slideToggle(); });
+				$(".dt-sc-donutchart").each(function(){
+					var $this = $(this);
+					var $bgColor =  ( $this.data("bgcolor") !== undefined ) ? $this.data("bgcolor") : "#808080";
+					var $fgColor =  ( $this.data("fgcolor") !== undefined ) ? $this.data("fgcolor") : "#9bbd3c";
+					var $size = ( $this.data("size") !== undefined ) ? $this.data("size") : "130";
+					$this.donutchart({'size': $size, 'fgColor': $fgColor, 'bgColor': $bgColor , 'donutwidth' : 5 });
+					$this.donutchart('animate');
+				});
+			},
+			complete: function(){
+				$('#dt-sc-ajax-load-image').hide();
+			} 
+		});
+
+	}
+	
+	$( 'body' ).delegate( '#dt-sc-dashboard-user-allcourseslist .pagination a', 'click', function(){
+			
+		var curr_page = $(this).text();	
+		if($(this).hasClass('dt-prev')) {
+			curr_page = parseInt($(this).attr('cpage'))-1;
+		} else if($(this).hasClass('dt-next')) {
+			curr_page = parseInt($(this).attr('cpage'))+1;
+		} else {
+			curr_page = parseInt(curr_page);
+		}
+			
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data:
+			{
+				action: 'dt_dashboard_user_allcourseslist',
+				curr_page: curr_page,
+				dtLMSAjaxNonce: mytheme_urls.dtLMSAjaxNonce
+			},
+			beforeSend: function(){
+				$('#dt-sc-ajax-load-image').show();
+			},
+			error: function (xhr, status, error) {
+				$('#dt-sc-dashboard-user-allcourseslist').html('Something went wrong!');
+			},
+			success: function (response) {
+				$('#dt-sc-dashboard-user-allcourseslist').html(response);
+				$('.dt-sc-toggle').toggleClick(function(){ $(this).addClass('active'); },function(){ $(this).removeClass('active'); });
+				$('.dt-sc-toggle').on('click',function(){ $(this).next('.dt-sc-toggle-content').slideToggle(); });
+			},
+			complete: function(){
+				$('#dt-sc-ajax-load-image').hide();
+			} 
+		});
+
+		return false;
+		
+	});
+	
+	$( 'body' ).delegate( '#dt-sc-dashboard-user-allquizzes .pagination a', 'click', function(){
+			
+		var curr_page = $(this).text();	
+		if($(this).hasClass('dt-prev')) {
+			curr_page = parseInt($(this).attr('cpage'))-1;
+		} else if($(this).hasClass('dt-next')) {
+			curr_page = parseInt($(this).attr('cpage'))+1;
+		} else {
+			curr_page = parseInt(curr_page);
+		}
+			
+		jQuery.ajax({
+			type: "POST",
+			url: mytheme_urls.ajaxurl,
+			data:
+			{
+				action: 'dt_dashboard_user_allquizzeslist',
+				curr_page: curr_page,
+				dtLMSAjaxNonce: mytheme_urls.dtLMSAjaxNonce
+			},
+			beforeSend: function(){
+				$('#dt-sc-ajax-load-image').show();
+			},
+			error: function (xhr, status, error) {
+				$('#dt-sc-dashboard-user-allquizzes').html('Something went wrong!');
+			},
+			success: function (response) {
+				$('#dt-sc-dashboard-user-allquizzes').html(response);
+			},
+			complete: function(){
+				$('#dt-sc-ajax-load-image').hide();
+			} 
+		});
+
+		return false;
+		
+	});
+	  
+});

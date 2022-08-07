@@ -1,0 +1,102 @@
+---
+title: "Untitled"
+output: 
+  revealjs::revealjs_presentation:
+    theme: sky
+    highlight: pygments
+    center: true
+    transition: fade
+    self_contained: false
+    reveal_options:
+      slideNumber: true
+      previewLinks: true
+---
+
+
+
+# 1st: Set Up
+
+## R Markdown
+
+This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+
+
+
+
+
+
+## Display modes
+
+* 'f': enable fullscreen mode.
+* 'o': enable overview mode.
+* Pressing Esc exits all of these modes
+
+
+
+
+
+
+## Appearance and style {data-transition="slide-in fade-out"}
+
+theme specifies the theme to use for the presentation (available themes are "default", "simple", "sky", "beige", "serif", "solarized", "blood", "moon", "night", "black", "league", and "white").
+
+highlight specifies the syntax highlighting style. Supported styles include "default", "tango", "pygments", "kate", "monochrome", "espresso", "zenburn", and "haddock". Pass null to prevent syntax highlighting.
+
+center specifies whether you want to vertically center content on slides (this defaults to false).
+
+smart 指示是否产生印刷正确的输出，将直引号转换为弯引号，---转换为破折号，-转换为破折号，以及...转换为椭圆。 请注意，默认情况下启用智能。
+
+
+
+
+
+
+## 过渡样式 transition style {data-transition="zoom"}
+
+
+transition specifies the visual effect when moving between slides. Available transitions are "default", "fade", "slide", "convex", "concave", "zoom" or "none". 过渡指定在幻灯片之间移动时的视觉效果。 可用的过渡是“默认”，“淡入淡出”，“滑动”，“凸出”，“凹入”，“缩放”或“无”。
+
+background_transition specifies the background transition effect when moving between full page slides. Available transitions are "default", "fade", "slide", "convex", "concave", "zoom" or "none". 指定在整页幻灯片之间移动时的背景过渡效果
+
+
+
+
+
+## Slide backgrounds
+
+* ## CSS color background {data-background=#ff0000}
+* ## Full size image background {data-background="background.jpeg"}
+* ## Video background {data-background-video="background.mp4"}
+* ## A background page {data-background-iframe="https://example.com"}
+
+
+
+
+## Slide with Bullets {data-transition-speed="fast"}
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+
+
+
+
+
+
+# In the evening
+
+## Slide with R Code and Output
+
+```{r}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
