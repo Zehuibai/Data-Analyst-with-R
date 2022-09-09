@@ -7,6 +7,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+# remotes::install_github('rstudio/flexdashboard')
 library(flexdashboard)
 ## Sources: https://rmarkdown.rstudio.com/flexdashboard/
 ```
