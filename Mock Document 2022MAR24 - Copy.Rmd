@@ -1,0 +1,538 @@
+---
+title: 'R Markdown Analysis Mock'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+packages<-c("tidyverse", "knitr", "papeR")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+
+```{r mind map,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+library(mindr)
+# text -> widget
+# input <- c("# Chapter 1", "## Section 1.1", "### Section 1.1.1", "## Section 1.2", "# Chapter 2")
+# mm(from = input, root = "mindr")
+
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+# Descriptive analysis
+
+<!-- ---------------------------------------------------------------------- -->
+
+<!--          Example View missing values and descriptive statistics        -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+## missing values
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+### See the missing values
+data(Orthodont, package = "nlme")
+library(kableExtra)
+kable(sapply(Orthodont, function(x)sum(is.na(x))),
+      caption = "Missing data among variables", format = "html") %>%
+  kable_styling(latex_options = "striped")
+```
+
+## Continious variables
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+### Descriptive statistics for continious variables
+library(papeR)
+labels(Orthodont) <- c("fissure distance (mm)",
+                       "age (years)", "Subject", "Sex")
+DecConti <- papeR::summarize(Orthodont %>% dplyr::select(distance,age,Sex), 
+                             type = "numeric", group = "Sex",
+                             show.NAs = T,digits.pval = 3, smallest.pval = 0.05, 
+                             test = c("wilcox.test", "t.test"))
+rownames(DecConti) <- NULL
+DecConti %>% kable(caption = "Descriptive statistics of continious variables", format = "html") %>%
+  kable_styling(latex_options = "striped")
+```
+
+## Categorical variables
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+### Descriptive statistics for categorical variables
+DecCate <- summarize(Orthodont, type = "factor", variables = "Sex",
+                     test = F, smallest.pval = 0.05)
+rownames(DecCate) <- NULL
+DecCate %>% kable(caption = "Descriptive statistics of categorical variables", format = "html") %>%
+  kable_styling(latex_options = "striped")
+```
+
+## Other methods
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+### https://htmlpreview.github.io/?https://github.com/dcomtois/summarytools/blob/master/doc/rmarkdown.html
+### https://cran.r-project.org/web/packages/compareGroups/vignettes/compareGroups_vignette.html
+
+library(compareGroups)
+data(predimed)
+## Methods
+## 1 - forces analysis as "normal-distributed";
+## 2 - forces analysis as "continuous non-normal";
+## 3 - forces analysis as "categorical";
+## 4 - NA, which performs a Shapiro-Wilks test to decide between normal or non-normal.
+res <- compareGroups(group ~ . - toevent,
+                     data = predimed,
+                     method = c(wtn = 2, p14 = 2))
+
+## Create the descriptive table
+restab <- createTable(res, 
+                      digits = c(p14 = 0, hormo=1), type = 1,
+                      hide = c(sex = "Male"),
+                      hide.no = "no",
+                      show.n = TRUE)
+export2md(restab, header.labels = c(p.overall = "p-value"))
+
+```
+
+# Data visualization
+
+(R Graph Gallery)[<https://r-graph-gallery.com/>]
+
+## Piechart
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Severe retinal detachments", 
+          "Traumatic retinal detachments", 
+          "Giant retinal tears",
+          "Other retinal detachments",
+          "Lifting of the subluxated lens",
+          "Other diseases"),
+  value=c(234, 134, 167,343,232,76)
+)
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"),
+         group = paste(group,"(",prop, ")")) 
+### Converting all chr variables
+data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)], as.factor)
+
+
+# Basic piechart
+ggplot(data, aes(x="", y=value, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  scale_color_brewer(palette="Dark2") +
+  scale_fill_discrete(name = "Disease") +
+  labs(title="Disease requiring aid treatment with Perfluorocarbon RT DECALIN",
+       x="",
+       y="") +
+  theme(legend.position="right")+
+  theme(axis.line = element_blank(), 
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank())
+```
+
+## Barchart
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Very effective", 
+          "Effective", 
+          "Uncertain",
+          "Basically ineffective",
+          "Completely ineffective"),
+  value=c(32,12,44,23,34)
+)
+data$group <- factor(c("Very effective", 
+          "Effective", 
+          "Uncertain",
+          "Basically ineffective",
+          "Completely ineffective"))
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"))
+
+data$prop <- as.factor(data$prop)
+
+data %>% ggplot(aes(x = group, y = value)) +
+  geom_bar(stat = "identity", fill="#66a3ff", alpha=.6, width=.4) +
+  geom_text(aes(label=prop, vjust=1.4,hjust=0.5)) +
+  ylab("Number of events") +
+  xlab("Overall clinical therapeutic effect evaluation") +
+  theme_bw()
+```
+
+## Scatter plot
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data(iris)
+theme_set(theme_bw())
+ggplot(data = iris, mapping = aes(x = Petal.Length, y = Petal.Width, shape = Species)) +
+  geom_point(aes(color = Species), size = 3) +
+  scale_colour_manual(values=c("#3399CC","#33FF33","#FFCC33"))+
+  scale_shape_manual(values = c(1,2,3)) +
+  xlab("Petal Length") +  ylab("Petal Width") +
+  ylim(0, 3)+
+  ggtitle("Petal Width and Length") +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold"),
+        legend.title = element_blank(),
+        legend.position = c(0.1, 0.85))
+
+
+library("ggtext")
+library("cowplot")
+ggplot(mpg, aes(cty, hwy)) + 
+  geom_point() +
+  facet_wrap(~class) +
+  theme_half_open(12) +
+  background_grid() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_textbox(
+      size = 12,
+      color = "white", fill = "#5D729D", box.color = "#4A618C",
+      halign = 0.5, linetype = 1, r = unit(5, "pt"), width = unit(1, "npc"),
+      padding = margin(2, 0, 1, 0), margin = margin(3, 3, 3, 3)
+    )
+  )
+```
+
+## Dot Plot
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library(forcats)
+data("gss_cat")
+relig_summary <- gss_cat %>%
+  group_by(relig) %>%
+  summarise(
+    age = mean(age, na.rm = TRUE),
+    tvhours = mean(tvhours, na.rm = TRUE),
+    n = n()
+  )
+
+ggplot(relig_summary, 
+       aes(tvhours, fct_reorder(relig, tvhours))) +
+  geom_point()
+```
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+# Data Prep
+data("mtcars")  # load data
+mtcars$`car name` <- rownames(mtcars)  # create new column for car names
+mtcars$mpg_z <- round((mtcars$mpg - mean(mtcars$mpg))/sd(mtcars$mpg), 2)  # compute normalized mpg
+mtcars$mpg_type <- ifelse(mtcars$mpg_z < 0, "below", "above")  # above / below avg flag
+mtcars <- mtcars[order(mtcars$mpg_z), ]  # sort
+mtcars$`car name` <- factor(mtcars$`car name`, levels = mtcars$`car name`)  # convert to factor to retain sorted order in plot.
+
+ggplot(mtcars, aes(x=`car name`, y=mpg_z, label=mpg_z)) + 
+  geom_point(stat='identity', aes(col=mpg_type), size=6)  +
+  scale_color_manual(name="Mileage", 
+                     labels = c("Above Average", "Below Average"), 
+                     values = c("above"="#00ba38", "below"="#f8766d")) + 
+  geom_text(color="white", size=2) +
+  labs(title="Diverging Dot Plot", 
+       subtitle="Normalized mileage from 'mtcars': Dotplot") + 
+  ylim(-2.5, 2.5) +
+  coord_flip() +
+  theme(legend.position = "bottom")
+```
+
+## Dumbbell Plot
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library(ggalt) 
+
+health <- read.csv("https://raw.githubusercontent.com/selva86/datasets/master/health.csv")
+health$Area <- factor(health$Area, levels=as.character(health$Area))  # for right ordering of the dumbells
+
+# health$Area <- factor(health$Area)
+ggplot(health, aes(x=pct_2013, xend=pct_2014, y=Area, group=Area)) + 
+  geom_dumbbell(color="#a3c4dc", 
+                size=0.75, 
+                point.colour.l="#0e668b") + 
+  labs(x=NULL, 
+       y=NULL, 
+       title="Dumbbell Chart", 
+       subtitle="Pct Change: 2013 vs 2014", 
+       caption="Source: https://github.com/hrbrmstr/ggalt") +
+  theme_classic()+
+  theme(plot.title = element_text(hjust=0.5, face="bold"),
+        plot.background=element_rect(fill="#f7f7f7"),
+        panel.background=element_rect(fill="#f7f7f7"),
+        panel.grid.minor=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.major.x=element_line(),
+        axis.ticks=element_blank(),
+        legend.position="top",
+        panel.border=element_blank())
+```
+
+## Violin plot
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## ggstatsplot is an extension of ggplot2 package for creating graphics with details from statistical tests included in the information-rich plots themselves.
+library(ggstatsplot)
+library(palmerpenguins)
+
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+
+plt <- ggbetweenstats(
+  data = penguins,
+  x = species,
+  y = bill_length_mm
+)
+
+plt + 
+  # Add labels and title
+  labs(
+    x = "Penguins Species",
+    y = "Bill Length",
+    title = "Distribution of bill length across penguins species"
+  ) + 
+  # Customizations
+  theme(
+    # This is the new default font in the plot
+    text = element_text(family = "Roboto", size = 8, color = "black"),
+    plot.title = element_text(
+      family = "Lobster Two", 
+      size = 20,
+      face = "bold",
+      color = "#2a475e"
+    ),
+    # Statistical annotations below the main title
+    plot.subtitle = element_text(
+      family = "Roboto", 
+      size = 15, 
+      face = "bold",
+      color="#1b2838"
+    ),
+    plot.title.position = "plot", # slightly different from default
+    axis.text = element_text(size = 10, color = "black"),
+    axis.title = element_text(size = 12),
+    axis.ticks = element_blank(),
+    axis.line = element_line(colour = "grey50"),
+    panel.grid = element_line(color = "#b4aea9"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(linetype = "dashed"),
+    panel.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4"),
+    plot.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4")
+  )
+```
+
+## Forest Plot
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+Forest.df <- data.frame(study=c('S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7'),
+                        index=1:7,
+                        effect=c(-.4, -.25, -.1, .1, .15, .2, .3),
+                        lower=c(-.43, -.29, -.17, -.02, .04, .17, .27),
+                        upper=c(-.37, -.21, -.03, .22, .24, .23, .33))
+## create forest plot
+ggplot(data=Forest.df, 
+       aes(y=index, x=effect, xmin=lower, xmax=upper,
+           label=as.character(effect))) +
+  geom_label(vjust=-0.1) + 
+  geom_errorbarh(height=.1) +
+  scale_y_continuous(breaks=1:nrow(Forest.df), labels=Forest.df$study) +
+  labs(title='Effect Size by Study', 
+       x='Effect Size', 
+       y = 'Study') +
+  geom_vline(xintercept=0, color='black', linetype='dashed', alpha=.5) +
+  theme_classic() # theme_minimal()
+
+
+## https://bookdown.org/MathiasHarrer/Doing_Meta_Analysis_in_R/forest.html
+library("meta")
+data(Fleiss93)
+metaresult<-metabin(event.e, n.e,event.c,n.c,data=Fleiss93,sm="RR",
+                    studlab=paste(study, year),random=FALSE)
+forest(metaresult)
+```
+
+
+
+# Modeling
+
+## sjPlot for Models Summary
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library(sjPlot)
+library(forcats)
+data("efc")
+efc$c161sex <- as.factor(efc$c161sex)
+efc$c172code <- as.factor(efc$c172code)
+m1 <- lm(barthtot ~ c160age + c12hour + c161sex + c172code, data = efc)
+m2 <- lm(neg_c_7 ~ c160age + c12hour + c161sex + e17age, data = efc)
+
+## Customize table output
+## With collapse.ci and collapse.se, the columns for confidence intervals and standard errors can be collapsed into one column together with the estimates. Sometimes this table layout is required.
+tab_model(m1, collapse.ci = TRUE)   
+
+
+## Defining own labels
+tab_model(
+  m1, m2, 
+  pred.labels = c("Intercept", "Age (Carer)", "Hours per Week", "Gender (Carer)",
+                  "Education: middle (Carer)", "Education: high (Carer)", 
+                  "Age (Older Person)"),
+  dv.labels = c("First Model", "M2"),
+  string.pred = "Coeffcient",
+  string.ci = "Conf. Int (95%)",
+  string.p = "P-Value"
+)
+
+
+
+ 
+## create binrary response
+y <- ifelse(efc$neg_c_7 < median(na.omit(efc$neg_c_7)), 0, 1)
+## 绘制特定模型项的预测值（边际效应） 
+fit <- lm(barthtot ~ c12hour + neg_c_7 + c161sex + c172code, data = efc)
+
+plot_model(fit, type = "pred", terms = "c12hour")
+## plot coefficients
+plot_model(fit, colors = "black")
+```
+
+```{} 
+p = qnorm(1-0.05)/(qnorm(1-0.05) + qnorm(1-0.1))
+21*(0.2+p*(0.5-0.2))
+
+```
+
+# Included Figures
+
+<!-- ---------------------------------------------------------------------- -->
+
+<!--               Example for including figure in local path               -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+```{r , echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure:"}
+## knitr::include_graphics("./Background/christmas logo_small.png")
+```
+
+<!-- ---------------------------------------------------------------------- -->
