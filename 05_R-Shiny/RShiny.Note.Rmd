@@ -126,14 +126,17 @@ library(mindr)
 # mm(from = input, root = "mindr")
 
 
-input <- rstudioapi::getSourceEditorContext()$path 
+input <- rstudioapi::getSourceEditorContext()$path
+mm(from = input, type = 'file', widget_name = 'mindrtest.html')
+
 ## file.show(input) # Open the input file with the default program, if any
-input_txt <- readLines(input, encoding = "UTF-8")
+## Old
+# input_txt <- readLines(input, encoding = "UTF-8")
 ## Convert to mind map text, markdown outline, R script, and HTML widget ####
-mm_output <- mm(input_txt, 
-                output_type = c("widget"),
-                root = "")
-mm_output$widget
+# mm_output <- mm(input_txt, 
+#                 output_type = c("widget"),
+#                 root = "")
+# mm_output$widget
 ```
 
 # ui
