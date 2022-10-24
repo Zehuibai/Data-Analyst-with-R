@@ -45,6 +45,9 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 getwd()
 Sys.setlocale("LC_ALL","English")
 
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
 ### get the path
 # rstudioapi::getSourceEditorContext()$path
 # dirname(rstudioapi::getSourceEditorContext()$path)
