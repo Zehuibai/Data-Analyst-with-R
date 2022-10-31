@@ -1,0 +1,670 @@
+---
+title: 'PMCF Survey China – RT Decalin Analysis'
+author: "Zehui Bai"
+date: 'Stand: `r format(Sys.time(), "%F %H:%M Uhr")`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+packages<-c("pwr","tidyverse", "knitr", "papeR")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+# <!-- ---------------------------------------------------------------------- -->
+
+
+### Improt dataset from clipboard
+# copdat <- read.delim("clipboard")
+# Analysis_Domain_D01 <- copdat
+# saveRDS(Analysis_Domain_D01, "RT_Decalin_Domains")
+Analysis_Domain_D01 <- readRDS("RT_Decalin_Domains")
+ 
+
+ 
+### Convert Q4: Dosage of Intraocular filling in ml   	
+###         Q4: Dosage of lifting of subluxated lenses in ml	
+###         Q4: Dosage of pressure out the subretinal fluid in ml 
+### As numeric variables
+
+Analysis_Domain_D02 <- Analysis_Domain_D01 %>%
+  mutate(Q4ITM1 = case_when(Q4ITM1=="3-4"~"3.5",
+                            Q4ITM1=="3-5"~"4",
+                            Q4ITM1=="4"~"4",
+                            Q4ITM1=="4-5"~"4.5",
+                            Q4ITM1=="4-6"~"5",
+                            Q4ITM1=="4.5"~"4.5",
+                            Q4ITM1=="5"~"5",
+                            Q4ITM1=="6"~"6",
+                            Q4ITM1=="7"~"7"),
+         Q4ITM2 = case_when(Q4ITM2=="0"~"0",
+                            Q4ITM2=="2-3"~"2.5",
+                            Q4ITM2=="3-4"~"3.5",
+                            Q4ITM2=="3-5"~"4",
+                            Q4ITM2=="4"~"4",
+                            Q4ITM2=="4-5"~"4.5",
+                            Q4ITM2=="5"~"5",
+                            Q4ITM2=="7"~"7"),
+         Q4ITM3 = case_when(Q4ITM3=="0"~"0",
+                            Q4ITM3=="3"~"3", 
+                            Q4ITM3=="3-4"~"3.5", 
+                            Q4ITM3=="4"~"4",
+                            Q4ITM3=="4-5"~"4.5",
+                            Q4ITM3=="5"~"5",
+                            Q4ITM3=="7"~"7"),
+         Q4ITM1 = as.numeric(Q4ITM1),
+         Q4ITM2 = as.numeric(Q4ITM2),
+         Q4ITM3 = as.numeric(Q4ITM3)) 
+```
+ 
+
+# Descriptive analysis
+
+## Demographic and Treatment Information
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+
+xxx_replace_xxx_pcre <- function(string, patterns, replacements) {
+   for (i in seq_along(patterns))
+      string <- gsub(patterns[i], replacements[i], string, perl=TRUE)
+   string
+}
+ 
+
+## cat(paste(colnames(read.delim("clipboard")), collapse=","), "\n")
+
+  
+
+### Select variables
+Analysis_Domain_D03a <- Analysis_Domain_D02 %>%
+  select(HOSCODE, Q1NCASE, 
+         Q2SEXF, Q2SEXM,
+         Q2AGEL, Q2AGEH, Q2AGECAT1, Q2AGECAT2, Q2AGECAT3,
+         Q3DIS1, Q3DIS2, Q3DIS3, Q3DIS4OTH, Q3DIS4, Q3DIS5, Q3DIS6OTHa, Q3DIS6a,Q3DIS6OTHb, Q3DIS6b,
+         Q4ITM1,Q4ITM2,Q4ITM3,Q4ITM4OTH,Q4ITM4) %>%
+  mutate(Q2SEXF_N = Q2SEXF*Q1NCASE/100,
+         Q2SEXM_N = Q2SEXM*Q1NCASE/100,
+         Q2AGECAT1_N = Q2AGECAT1*Q1NCASE/100,
+         Q2AGECAT2_N = Q2AGECAT2*Q1NCASE/100,
+         Q2AGECAT3_N = Q2AGECAT3*Q1NCASE/100,
+         Q3DIS1_N = Q3DIS1*Q1NCASE/100,
+         Q3DIS2_N = Q3DIS2*Q1NCASE/100,
+         Q3DIS3_N = Q3DIS3*Q1NCASE/100,
+         Q3DIS4_N = Q3DIS4*Q1NCASE/100,
+         Q3DIS5_N = Q3DIS5*Q1NCASE/100,
+         Q3DIS6_N = (Q3DIS6a+Q3DIS6b)*Q1NCASE/100)
+
+### Check the percentage
+Analysis_Domain_D03a %>% filter(Q2SEXF+Q2SEXM!=100|
+                                  Q2AGECAT1+Q2AGECAT2+Q2AGECAT3!=100|
+                                  Q3DIS1+Q3DIS2+Q3DIS3+Q3DIS4+Q3DIS5+Q3DIS6a+Q3DIS6b!=100) %>%
+  nrow()
+
+
+### Hospitals participating in the survey 
+N_hospital <- nrow(Analysis_Domain_D02)
+N_hospital
+
+### Performed operations using Perfluorocarbon RT DECALIN
+N_case <- sum(Analysis_Domain_D02$Q1NCASE)
+N_case
+
+###  Gender
+apply(Analysis_Domain_D03a %>% select(Q2AGECAT1_N,Q2AGECAT2_N,Q2AGECAT3_N), 2, sum)
+
+###  Age (Range: 02-89 in years)
+apply(Analysis_Domain_D03a %>% select(Q2SEXF_N, Q2SEXM_N), 2, sum)
+min(Analysis_Domain_D03a$Q2AGEL)
+max(Analysis_Domain_D03a$Q2AGEH)
+
+
+### Disease requiring aid treatment with Perfluorocarbon RT DECALIN
+apply(Analysis_Domain_D03a %>% select(Q3DIS1_N, Q3DIS2_N, Q3DIS3_N, Q3DIS4_N, Q3DIS5_N, Q3DIS6_N), 2, sum)
+prop.table(apply(Analysis_Domain_D03a %>% select(Q3DIS1_N, Q3DIS2_N, Q3DIS3_N, Q3DIS4_N, Q3DIS5_N, Q3DIS6_N), 2, sum))
+
+### Other retinal detachments
+firstup <- function(x) {
+  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  x
+}
+firstup(names(table(Analysis_Domain_D03a$Q3DIS4OTH)))
+
+### Other diseases
+ 
+firstup(names(table(Analysis_Domain_D03a$Q3DIS6OTHa)))
+firstup(names(table(Analysis_Domain_D03a$Q3DIS6OTHb)))
+unique(firstup(c(names(table(Analysis_Domain_D03a$Q3DIS6OTHa)), names(table(Analysis_Domain_D03a$Q3DIS6OTHb)))))
+
+
+### Average clinical dosage by intraoperative treatment method (in mL)
+library(kableExtra)
+papeR::summarize(Analysis_Domain_D03a %>% select(Q4ITM1,Q4ITM2, Q4ITM3, Q4ITM4),
+                 type = "numeric", test = F, show.NAs = T) %>%
+  kable(caption = "Descriptive statistics of continious variables", format = "html") %>%
+  kable_styling(latex_options = "striped")
+```
+
+
+## Complications and Adverse Events Analysis
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+
+## cat(paste(colnames(read.delim("clipboard")), collapse=","), "\n")
+  
+### Select variables
+Analysis_Domain_D03b <- Analysis_Domain_D02 %>%
+  select(HOSCODE, Q1NCASE, 
+         Q5RESIDUE,Q5YESCAT1,Q5YESCAT2,Q5YESCAT3,Q5YESCAT4,Q5YESCAT5,Q5YESCAT6,Q5YESCAT7OTH,Q5YESCAT7,
+         Q6COMP,Q6COMPN,
+         Q7HAZARD,Q7HAZNAME,Q7HAZN,
+         Q8AE,Q8AEN) %>%
+  mutate(Q5YES_N = Q5YESCAT1+Q5YESCAT2+Q5YESCAT3+Q5YESCAT4+Q5YESCAT5+Q5YESCAT6+Q5YESCAT7)
+
+### Intraocular residue of Perfluorocarbon RT DECALIN after surgery
+sum(Analysis_Domain_D03b$Q5YES_N)
+sum(Analysis_Domain_D03b$Q5YES_N)/N_case  
+
+### Intraocular residual location1 
+apply(Analysis_Domain_D03b %>% select(Q5YESCAT1,Q5YESCAT2,Q5YESCAT3,Q5YESCAT4,Q5YESCAT5,Q5YESCAT6,Q5YESCAT7), 2, sum)
+apply(Analysis_Domain_D03b %>% select(Q5YESCAT1,Q5YESCAT2,Q5YESCAT3,Q5YESCAT4,Q5YESCAT5,Q5YESCAT6,Q5YESCAT7), 2, sum) %>% prop.table() %>% round(3)
+ 
+### Complications due to residual of Perfluorocarbon RT DECALIN1
+table(Analysis_Domain_D03b$Q6COMP) %>% prop.table()  
+ 
+### Other eye hazards caused by chemical or biological pollutants
+table(Analysis_Domain_D03b$Q7HAZARD) %>% prop.table()  
+
+### Adverse events or complications due to RT DECALIN residues
+table(Analysis_Domain_D03b$Q8AE) %>% prop.table() 
+sum(Analysis_Domain_D03b$Q8AEN)/N_case  
+ 
+```
+
+## Satisfaction Analysis
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+
+## cat(paste(colnames(read.delim("clipboard")), collapse=","), "\n")
+  
+### Select variables
+Analysis_Domain_D03c <- Analysis_Domain_D02 %>%
+  select(HOSCODE, Q1NCASE, Q10EFFECT,Q11SUREXP,Q12SAFETY,Q13ECO,Q14RECOM) 
+
+table(Analysis_Domain_D03c$Q10EFFECT) %>% prop.table()  
+table(Analysis_Domain_D03c$Q11SUREXP) %>% prop.table()  
+table(Analysis_Domain_D03c$Q12SAFETY) %>% prop.table()   
+table(Analysis_Domain_D03c$Q13ECO) %>% prop.table()  
+table(Analysis_Domain_D03c$Q14RECOM) %>% prop.table() 
+```
+
+
+
+
+
+# Grapic analysis
+
+## Sex
+
+<!-- ---------------------------------------------------------------------- -->
+<!--          Example View missing values and descriptive statistics        -->
+<!-- ---------------------------------------------------------------------- -->
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Female", "Male"),
+  value=c(6267,9315 )
+)
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"),
+         group = paste(group,"(",prop, ")")) 
+### Converting all chr variables
+data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)], as.factor)
+
+# Basic piechart
+ggplot(data, aes(x="", y=value, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  scale_fill_discrete(name = "Gender") +
+  scale_color_brewer(palette="Dark2") +
+  labs(title="Demographic: Gender",
+       x="",
+       y="") +
+  theme(legend.position="bottom")+
+  theme(axis.line = element_blank(), 
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank())
+```
+
+
+
+## Age
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("< 18 years old", "18 to 59 years old", "\u2265 60 years old"),
+  value=c(803, 9154, 5625 )
+)
+
+
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"),
+         group = paste(group,"(",prop, ")")) 
+
+ 
+ data$group
+
+  
+
+
+# Basic piechart
+ggplot(data, aes(x="", y=value, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  scale_color_brewer(palette="Dark2") +
+  scale_fill_discrete(name = "Age", breaks=c('< 18 years old ( 5.2 % )', '18 to 59 years old ( 58.7 % )', '\u2265 60 years old ( 36.1 % )'))+
+  labs(title="Demographic: Age",
+       x="",
+       y="") +
+  theme(legend.position="bottom")+
+  theme(axis.line = element_blank(), 
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank())
+```
+
+
+## Disease 
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Severe retinal detachments", 
+          "Traumatic retinal detachments", 
+          "Giant retinal tears",
+          "Other retinal detachments",
+          "Lifting of the subluxated lens",
+          "Other diseases"),
+  value=c(7468 , 2843 , 2889 ,827 ,1320 ,235 )
+)
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"),
+         group = paste(group,"(",prop, ")")) 
+### Converting all chr variables
+data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)], as.factor)
+
+data$group
+# Basic piechart
+ggplot(data, aes(x="", y=value, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  scale_color_brewer(palette="Dark2") +
+  scale_fill_discrete(name = "Disease",
+                      breaks=c("Severe retinal detachments ( 47.9 % )",
+                              "Traumatic retinal detachments ( 18.2 % )",
+                              "Giant retinal tears ( 18.5 % )",
+                              "Other retinal detachments ( 5.3 % )",
+                              "Lifting of the subluxated lens ( 8.5 % )",
+                              "Giant retinal tears ( 18.5 % )",
+                              "Other diseases ( 1.5 % )")) +
+  labs(title="Disease requiring aid treatment with Perfluorocarbon RT DECALIN",
+       x="",
+       y="") +
+  theme(legend.position="right")+
+  theme(axis.line = element_blank(), 
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank())
+```
+
+
+## Intraocular residual location
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Anterior chamber", 
+          "Vitreous cavity", 
+          "Above the retina",
+          "Under the retina",
+          "Under the macular retina",
+          "Under the posterior capsule of lens",
+          "Other location"),
+  value=c(16,35,39,21,4,11,0)
+)
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"),
+         group = paste(group,"(",prop, ")")) 
+### Converting all chr variables
+data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)], as.factor)
+
+data$group
+
+# Basic piechart
+ggplot(data, aes(x="", y=value, fill=group)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  scale_color_brewer(palette="Dark2") +
+  scale_fill_discrete(name = "Intraocular residual location",
+                      breaks=c("Anterior chamber ( 12.7 % )",
+                              "Vitreous cavity ( 27.8 % )",
+                              "Above the retina ( 31 % )",
+                              "Under the retina ( 16.7 % )",
+                              "Under the macular retina ( 3.2 % )",
+                              "Under the posterior capsule of lens ( 8.7 % )",
+                              "Other location ( 0 % )"),
+                      labels=c("Anterior chamber ( 12.7 % )",
+                              "Vitreous cavity ( 27.8 % )",
+                              "Above the retina ( 31.0 % )",
+                              "Under the retina ( 16.7 % )",
+                              "Under the macular retina ( 3.2 % )",
+                              "Under the posterior capsule of lens ( 8.7 % )",
+                              "Other location ( 0.0 % )"))+
+  labs(title="Intraocular residual location",
+       x="",
+       y="") +
+  theme(legend.position="right")+
+  theme(axis.line = element_blank(), 
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid  = element_blank())
+```
+ 
+
+## Satisfaction 
+
+### 1. Overall clinical therapeutic effect evaluatio
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Very effective", 
+          "Effective", 
+          "Uncertain",
+          "Basically ineffective",
+          "Completely ineffective"),
+  value=c(19,12,0,0,0)
+)
+data$group <- factor(c("Very effective", 
+          "Effective", 
+          "Uncertain",
+          "Basically ineffective",
+          "Completely ineffective"),
+          levels = c("Very effective", 
+          "Effective", 
+          "Uncertain",
+          "Basically ineffective",
+          "Completely ineffective"))
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"))
+
+data$prop <- as.factor(data$prop)
+
+data %>% ggplot(aes(x = group, y = value)) +
+  geom_bar(stat = "identity", fill="#66a3ff", alpha=.6, width=.4) +
+  geom_text(aes(label=prop, vjust=1.4,hjust=0.5)) +
+  ylab("Number of events") +
+  xlab("Overall clinical therapeutic effect evaluation") +
+  theme_bw()
+```
+
+
+### 2. Satisfaction with the surgical experience
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"),
+  value=c(16,15,0,0,0)
+)
+
+data$group <- factor(c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"),
+          levels = c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"))
+
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"))
+
+data$prop <- as.factor(data$prop)
+
+
+data %>% ggplot(aes(x = group, y = value)) +
+  geom_bar(stat = "identity", fill="#4d94ff", alpha=.6, width=.4) +
+  geom_text(aes(label=prop, vjust=1.4,hjust=0.5)) +
+  ylab("Number of events") +
+  xlab("Satisfaction with the surgical experience") +
+  theme_bw()
+```
+
+
+
+### 3. Satisfaction with the visual field clarity and surgical safety 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"),
+  value=c(16,15,0,0,0)
+)
+data$group <- factor(c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"),
+          levels = c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"))
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"))
+
+data$prop <- as.factor(data$prop)
+
+data %>% ggplot(aes(x = group, y = value)) +
+  geom_bar(stat = "identity", fill="#3385ff", alpha=.6, width=.4) +
+  geom_text(aes(label=prop, vjust=1.4,hjust=0.5)) +
+  ylab("Number of events") +
+  xlab("Satisfaction with the visual field clarity and surgical safety ") +
+  theme_bw()
+```
+
+
+
+
+### 4. Economic applicability and patient satisfaction with finical burden
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"),
+  value=c(19,10,1,1,0)
+)
+data$group <- factor(c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"),
+          levels = c("Very satisfied", 
+          "Satisfied", 
+          "Uncertain",
+          "Dissatisfied",
+          "Very dissatisfied"))
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"))
+
+data$prop <- as.factor(data$prop)
+
+data %>% ggplot(aes(x = group, y = value)) +
+  geom_bar(stat = "identity", fill="#005ce6", alpha=.6, width=.4) +
+  geom_text(aes(label=prop, vjust=1.4,hjust=0.5)) +
+  ylab("Number of events") +
+  xlab("Economic applicability and patient satisfaction with finical burden") +
+  theme_bw()
+```
+
+
+
+
+
+### 5. Recommendation using RT DECALIN
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- data.frame(
+  group=c("Definitely", 
+          "Probably", 
+          "Uncertain",
+          "Unwilling",
+          "Definitely not"),
+  value=c(23,8,0,0,0)
+)
+data$group <- factor(c("Definitely", 
+          "Probably", 
+          "Uncertain",
+          "Unwilling",
+          "Definitely not"),
+          levels = c("Definitely", 
+          "Probably", 
+          "Uncertain",
+          "Unwilling",
+          "Definitely not"))
+
+# Compute the position of labels
+data <- data %>% 
+  arrange(desc(group)) %>%
+  mutate(prop = paste(round(value / sum(data$value) *100,1),"%"))
+
+data$prop <- as.factor(data$prop)
+
+data %>% ggplot(aes(x = group, y = value)) +
+  geom_bar(stat = "identity", fill="#0047b3", alpha=.6, width=.4) +
+  geom_text(aes(label=prop, vjust=1.4,hjust=0.5)) +
+  ylab("Number of events") +
+  xlab("Recommendation using RT DECALIN") +
+  theme_bw()
+```

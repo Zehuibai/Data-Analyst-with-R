@@ -1,0 +1,188 @@
+---
+title: 'R Markdown Analysis Mock'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+packages<-c("tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+
+```{r mind map,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+library(mindr)
+# text -> widget
+# input <- c("# Chapter 1", "## Section 1.1", "### Section 1.1.1", "## Section 1.2", "# Chapter 2")
+# mm(from = input, root = "mindr")
+
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+ 
+ 
+##  GSRS
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+copdat <- read.delim("clipboard")
+
+Data_D01 <- copdat
+
+Data_D01$Visit <- factor(Data_D01$Visit, 
+                         levels = c("T1: Baseline","T2: Week 2", "T3: Week 4"))
+Data_D01$Score <- factor(Data_D01$Score, 
+                         levels = c("Overall score", "Diarrhoea subscore",
+                                    "Indigestion subscore","Constipation subscore",
+                                    "Abdominal subscore","Reflux subscore"))
+Data_D01$Indication <- as.factor(Data_D01$Indication)
+
+
+str(Data_D01)
+   
+ 
+# saveRDS(Data_D01,file = "BULL-PMS_GSRS")
+ 
+
+LinePlot <- function(Plot_Out){
+  Data_D01 %>% filter(Indication==Plot_Out) %>%
+  ggplot(aes(x=Visit, y=Mean, group=Score, color=Score)) + 
+  geom_line() +
+  geom_point()+
+  geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=.3,
+                 position=position_dodge(0.00)) +
+  labs(title=paste("Line plot for indication:",Plot_Out), x="Visit", y = "Mean")+
+   theme_classic()
+}
+
+ 
+
+LinePlot(Plot_Out = "Irritable bowel syndrome (IBS)")
+LinePlot(Plot_Out = "Acute gastrointestinal problems")
+LinePlot(Plot_Out = "Functional dyspepsia")
+
+
+
+
+Data_D01 %>% filter(Indication=="Stomach discomfort" |
+                      Indication == "Bloating"|
+                      Indication == "Flatulence"|
+                      Indication == "Diarrhea"|
+                      Indication == "Others") %>%
+  ggplot(aes(x=Visit, y=Mean, group=Indication, color=Indication)) + 
+  geom_line() +
+  geom_point()+
+  geom_errorbar(aes(ymin=Mean-SD, ymax=Mean+SD), width=.3,
+                 position=position_dodge(0.00)) +
+  labs(title="Line plot by subindication of indication acute gastrointestinal problems", 
+       color ="Subindication",
+       x="Visit", y = "Mean")+
+  theme_classic() 
+
+
+
+
+```
+
+
+ 
