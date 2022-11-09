@@ -1,0 +1,372 @@
+---
+title: 'Radar Chart'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+# devtools::install_github("ricardo-bion/ggradar")
+
+packages<-c("tidyverse", "knitr", "kableExtra", "papeR", "fmsb", "ggradar", "ggpubr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+ 
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+
+```{r mind map,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+library(mindr)
+# text -> widget
+# input <- c("# Chapter 1", "## Section 1.1", "### Section 1.1.1", "## Section 1.2", "# Chapter 2")
+# mm(from = input, root = "mindr")
+
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+
+
+# Ref
+
+* https://www.datanovia.com/en/blog/beautiful-radar-chart-in-r-using-fmsb-and-ggplot-packages/
+
+
+
+# Radar plot use fmsb package
+
+## Data
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+exam_scores <- data.frame(
+    row.names = c("Student.1", "Student.2", "Student.3"),
+      Biology = c(7.9, 3.9, 9.4),
+      Physics = c(10, 20, 0),
+        Maths = c(3.7, 11.5, 2.5),
+        Sport = c(8.7, 20, 4),
+      English = c(7.9, 7.2, 12.4),
+    Geography = c(6.4, 10.5, 6.5),
+          Art = c(2.4, 0.2, 9.8),
+  Programming = c(0, 0, 20),
+        Music = c(20, 20, 20)
+)
+
+exam_scores %>% kable(caption = "Demo Data", format = "html") %>%
+  kable_styling(latex_options = "striped")
+
+# Define the variable ranges: maximum and minimum
+max_min <- data.frame(
+  Biology = c(20, 0), Physics = c(20, 0), Maths = c(20, 0),
+  Sport = c(20, 0), English = c(20, 0), Geography = c(20, 0),
+  Art = c(20, 0), Programming = c(20, 0), Music = c(20, 0)
+)
+rownames(max_min) <- c("Max", "Min")
+
+# Bind the variable ranges to the data
+df <- rbind(max_min, exam_scores)
+df %>% kable(caption = "Demo Data with variable ranges", format = "html") %>%
+  kable_styling(latex_options = "striped")
+```
+
+## Radar plot 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+student1_data <- df[c("Max", "Min", "Student.1"), ]
+student1_data %>% radarchart()
+
+
+# Helper function to produce a beautiful radar chart
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(data), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+# Reduce plot margin using par()
+op <- par(mar = c(1, 2, 2, 1))
+create_beautiful_radarchart(student1_data, caxislabels = c(0, 5, 10, 15, 20))
+par(op)
+
+
+# Create radar charts for multiple individuals
+# Reduce plot margin using par()
+op <- par(mar = c(1, 2, 2, 2))
+# Create the radar charts
+create_beautiful_radarchart(
+  data = df, caxislabels = c(0, 5, 10, 15, 20),
+  color = c("#00AFBB", "#E7B800", "#FC4E07")
+)
+# Add an horizontal legend
+legend(
+  x = "bottom", legend = rownames(df[-c(1,2),]), horiz = TRUE,
+  bty = "n", pch = 20 , col = c("#00AFBB", "#E7B800", "#FC4E07"),
+  text.col = "black", cex = 1, pt.cex = 1.5
+  )
+par(op)
+
+
+# Define colors and titles
+colors <- c("#00AFBB", "#E7B800", "#FC4E07")
+titles <- c("Student.1", "Student.2", "Student.3")
+
+# Reduce plot margin using par()
+# Split the screen in 3 parts
+op <- par(mar = c(1, 1, 1, 1))
+par(mfrow = c(1,3))
+
+# Create the radar chart
+for(i in 1:3){
+  create_beautiful_radarchart(
+    data = df[c(1, 2, i+2), ], caxislabels = c(0, 5, 10, 15, 20),
+    color = colors[i], title = titles[i]
+    )
+}
+par(op)
+```
+
+
+# ggplot radar chart using the ggradar R package
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+# Put row names into  a column named group
+df <- exam_scores %>% rownames_to_column("group")
+df
+```
+
+## Basic radar plot
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+# Plotting student 1
+ggradar(
+  df[1, ], 
+  values.radar = c("0", "10", "20"),
+  grid.min = 0, grid.mid = 10, grid.max = 20
+  )
+```
+  
+## Customize radar charts
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+ggradar(
+  df[1, ], 
+  values.radar = c("0", "10", "20"),
+  grid.min = 0, grid.mid = 10, grid.max = 20,
+  # Polygons
+  group.line.width = 1, 
+  group.point.size = 3,
+  group.colours = "#00AFBB",
+  # Background and grid lines
+  background.circle.colour = "white",
+  gridline.mid.colour = "grey"
+  )
+```
+
+
+## Radar chart with multiple individuals or groups 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+ggradar(
+  df, 
+  values.radar = c("0", "10", "20"),
+  grid.min = 0, grid.mid = 10, grid.max = 20,
+  # Polygons
+  group.line.width = 1, 
+  group.point.size = 3,
+  group.colours = c("#00AFBB", "#E7B800", "#FC4E07"),
+  # Background and grid lines
+  background.circle.colour = "white",
+  gridline.mid.colour = "grey",
+  legend.position = "bottom"
+  )
+```
+
+# lolliplot/dotchart
+
+A circular plot is difficult to read. An alternative to a radar chart is an ordered lolliplot or dotchart using ggpubr package
+
+## Data preparation
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+df2 <- t(exam_scores) %>%
+  as.data.frame() %>%
+  rownames_to_column("Field")
+df2
+
+```
+
+## Displaying one individual
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+ggdotchart(
+  df2, x = "Field", y = "Student.1",
+  add = "segments", sorting = "descending",
+  ylab = "Exam Score", title = "Student 1"
+  )
+```
+
+## Displaying two individuals
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Displaying two individuals
+df3 <- df2 %>%
+  select(Field, Student.1, Student.2) %>%
+  pivot_longer(
+    cols = c(Student.1, Student.2),
+    names_to = "student",
+    values_to = "value"
+  )
+ggdotchart(
+  df3, x = "Field", y = "value", 
+  group = "student", color = "student", palette = "jco",
+  add = "segment", position = position_dodge(0.3),
+  sorting = "descending"
+  )
+```
+
+## Displaying multiple individuals
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+df4 <- df2 %>%
+  select(Field, Student.1, Student.2, Student.3) %>%
+  pivot_longer(
+    cols = c(Student.1, Student.2, Student.3),
+    names_to = "student",
+    values_to = "value"
+  )
+head(df4)
+
+ggdotchart(
+  df4, x = "Field", y = "value", 
+  group = "student", color = "student", palette = "jco",
+  add = "segment", position = position_dodge(0.3),
+  sorting = "descending", facet.by = "student",
+  rotate = TRUE, legend = "none"
+  )
+```
+ 
+ 
