@@ -1,0 +1,12 @@
+install.packages("shiny", dependencies=TRUE);
+install.packages("arm", dependencies=TRUE);
+install.packages("MCMCpack", dependencies=TRUE);
+install.packages("coda", dependencies=TRUE);
+install.packages("fBasics", dependencies=TRUE);
+install.packages("stats4", dependencies=TRUE);
+install.packages("MASS", dependencies=TRUE);
+install.packages("vcd", dependencies=TRUE);
+install.packages("caret", dependencies=TRUE);
+install.packages("pROC", dependencies=TRUE);
+install.packages("ROCR", dependencies=TRUE);
+install.packages("BoomSpikeSlab", dependencies=TRUE);
