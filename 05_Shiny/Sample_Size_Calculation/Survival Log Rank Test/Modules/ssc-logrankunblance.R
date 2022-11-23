@@ -1,7 +1,17 @@
 
 alpha <- 0.05
+k <- 1
+Power <- 0.8
+S1 <- 0.75
+S2 <- 0.85
+Ratio_N2_N1 <- 2
+Lost2Follow <- 0
+
+
+
+alpha <- 0.05
 k <- 2
-Power <- 0.81772
+Power <- 0.81
 S1 <- 0.5
 S2 <- 0.7
 Ratio_N2_N1 <- 1
@@ -27,6 +37,10 @@ LogrankCR2 <- function(alpha, k, Power, S1, S2, Ratio_N2_N1, Lost2Follow){
   N1 <- ceiling(N/(1+Ratio_N2_N1))
   N2 <- ceiling(N*Ratio_N2_N1/(1+Ratio_N2_N1))
   N <- N1 + N2
+  paste0("Overall = ", N)
+  paste0("Treatment Group 1 = ", N1)
+  paste0("Treatment Group 2 = ", N2)
+  
   E1 <-  -log(S1)*N1
  
   
