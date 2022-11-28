@@ -11,7 +11,7 @@ Lost2Follow <- 0
 
 alpha <- 0.05
 k <- 2
-Power <- 0.81
+Power <- 0.817
 S1 <- 0.5
 S2 <- 0.7
 Ratio_N2_N1 <- 1
@@ -23,6 +23,27 @@ Lost2Follow <- 0
 # S_cr=S_cr, P1=HighDist, P2=1-HighDist, T=5.0000000001, R=0.0000000001)[1:7]
 
 
+ 
+pwr.logRank <- function(S.trt, S.ctrl, sig.level = 0.05, power = 0.8, 
+                        alternative = c("two.sided", "less", "greater"),
+                        method = c("Freedman")) {
+  
+  # FIXME: Relabel S.trt and S.ctrl as S.ctrl and S.trt
+  alt <- match.arg(alternative)
+  za <- if (alt == "two.sided") {
+    stats::qnorm(sig.level / 2) 
+  } else {
+    stats::qnorm(sig.level)
+  }
+  zb <- stats::qnorm(1 - power)
+  haz.ratio <- log(S.trt) / log(S.ctrl)
+  cat("Expected number of events:", 4 * (za + zb) ^ 2 / log(1 / haz.ratio) ^ 2)
+  cat("\n")
+  (((haz.ratio + 1) / (haz.ratio - 1)) ^ 2) * 
+    (za + zb) ^ 2 / (2 - S.trt - S.ctrl)
+}
+pwr.logRank(0.5,0.7,power = 0.817)
+ 
 
 LogrankCR2 <- function(alpha, k, Power, S1, S2, Ratio_N2_N1, Lost2Follow){
   
