@@ -1,0 +1,211 @@
+---
+title: 'Split, Combine and Compress PDF files'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+packages<-c("tidyverse", "knitr", "papeR", "qpdf")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("////", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("////", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+
+```{r mind map,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+library(mindr)
+# text -> widget
+# input <- c("# Chapter 1", "## Section 1.1", "### Section 1.1.1", "## Section 1.2", "# Chapter 2")
+# mm(from = input, root = "mindr")
+
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+# Reference
+
+* https://cran.r-project.org/web/packages/qpdf/qpdf.pdf
+
+```
+pdf_split(input, output = NULL, password = "")
+
+pdf_length(input, password = "")
+
+pdf_subset(input, pages = 1, output = NULL, password = "")
+
+pdf_combine(input, output = NULL, password = "")
+
+pdf_compress(input, output = NULL, linearize = FALSE, password = "")
+
+pdf_overlay_stamp(input, stamp, output = NULL, password = "")
+
+pdf_rotate_pages(
+  input,
+  pages,
+  angle = 90,
+  relative = FALSE,
+  output = NULL,
+  password = ""
+)
+
+```
+
+# Extract
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2022_23.pdf", 
+           pages = c(3,124:132), 
+           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2022_23.pdf", 
+           password = "")
+
+
+pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2021_22.pdf", 
+           pages = c(2,129:138), 
+           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2021_22.pdf", 
+           password = "")
+
+pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2020_21.pdf", 
+           pages = c(3,259:275), 
+           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2020_21.pdf", 
+           password = "")
+
+pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2019_20.pdf", 
+           pages = c(3,253:270), 
+           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2019_20.pdf", 
+           password = "")
+
+pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2018_19.pdf", 
+           pages = c(53,245:259),
+           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2018_19.pdf", 
+           password = "")
+
+pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2017_18.pdf", 
+           pages = c(119:126, 137), 
+           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2017_18.pdf", 
+           password = "")
+
+```
+
+
+# Compress
+ 
+```
+pdf_compress("~/Downloads/v71i02.pdf")
+```
