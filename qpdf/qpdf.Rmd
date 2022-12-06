@@ -176,31 +176,6 @@ pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf
            password = "")
 
 
-pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2021_22.pdf", 
-           pages = c(2,129:138), 
-           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2021_22.pdf", 
-           password = "")
-
-pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2020_21.pdf", 
-           pages = c(3,259:275), 
-           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2020_21.pdf", 
-           password = "")
-
-pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2019_20.pdf", 
-           pages = c(3,253:270), 
-           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2019_20.pdf", 
-           password = "")
-
-pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2018_19.pdf", 
-           pages = c(53,245:259),
-           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2018_19.pdf", 
-           password = "")
-
-pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2017_18.pdf", 
-           pages = c(119:126, 137), 
-           output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2017_18.pdf", 
-           password = "")
-
 ```
 
 
