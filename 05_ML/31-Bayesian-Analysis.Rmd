@@ -1,0 +1,1267 @@
+# Bayesian Theory
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+input <- rstudioapi::getSourceEditorContext()$path
+mm(from = input, type = 'file', widget_name = '31_Bayesian Theory.html', root = "")
+```
+
+## Introduction of Bayesian
+
+### Frequency and Bayesian
+
+-   A set of random samples, the frequency school believes that the
+    overall parameters are constant, and the samples are obtained
+    randomly;
+-   The Bayesian school believes that the **overall parameters** are
+    random, and the sample obtained is constant. The Bayesian school
+    does not care much about the correct parameters, but needs to obtain
+    the **posterior** by adding the **acquired data to the prior
+    knowledge**
+
+一组随机样本，频率学派认为总体的参数是不变的，样本是随机获取的；
+而贝叶斯学派认为总体参数是随机的，而获样本是不变的.
+
+-   如果总体参数固定，那么随机获得的样本就是理想实体的不完美映射。相应的，如果获得了这些样本证据
+    ,利用极大似然法，推断出获得这些样本最有可能的参数。
+-   贝叶斯不关心正确的参数到底是多少，而是需要通过获取的数据加上先验知识得出后验
+    概率进行统计推断
+
+The posterior distribution summarises our uncertainty over the value of
+a parameter. If the distribution is narrower, then this indicates that
+we have greater confidence in our estimates of the parameter's value.
+More narrow posterior distributions can be obtained by collecting more
+data.
+
+-   先验是一种概率分布，描述了我们在收集和分析数据之前对假设的信念。
+-   在贝叶斯推理中，我们对该假设的分析后信念为后验。 后验概率分布
+    $$\mathrm{P}(\theta | \text{data})$$是贝叶斯推理的主要目标。
+    后验分布总结了我们对参数值的不确定性。如果分布范围更窄，则表明我们对参数值的估计更有信心。通过收集更多数据可以获得更窄的后验分布。后验分布还用于预测实验的未来结果和模型测试。
+    
+
+### Bayesian and classical methods 
+
+Advantages of Bayesian analysis over classical analysis of clinical trials include the ability to incorporate prior information regarding treatment efficacies into the analysis; the ability to make multiple unscheduled inspections of accumulating data without increasing the error rate of the study; and the ability to calculate the probability that one treatment is more effective than another. 
+
+> 贝叶斯分析相对于临床试验的经典分析的优势包括能够将有关治疗效果的先前信息纳入分析；在不增加研究错误率的情况下对累积数据进行多次计划外检查的能力；以及计算一种治疗比另一种治疗更有效的概率的能力。
+
+ 
+
+Bayesian and classical methods differ in the way data are used to reach conclusions. Bayesian analysis is conditional on the observed data; it is concerned with the probability that a conclusion or hypothesis is true given the available data. Classical inference is not conditional on the observed data; rather, it is concerned with the behavior of a statistical procedure over an infinite number of repetitions considering all data that might have been observed, given a hypothesis. Bayesians deal with the probabilities of hypotheses, given a data set, whereas frequentists deal with the probabilities of data sets, given a hypothesis. 
+
+> 贝叶斯方法和经典方法在使用数据得出结论的方式上有所不同。贝叶斯分析以观察到的数据为条件；它与给定可用数据的结论或假设为真的概率有关。经典推理不以观察到的数据为条件；相反，它关注的是统计过程在无限次重复中的行为，考虑到所有可能已经观察到的数据，给定一个假设。贝叶斯主义者在给定数据集的情况下处理假设的概率，而频率论者在给定假设的情况下处理数据集的概率。
+
+Classical hypothesis testing hangs on a double negative and entails five possible steps: definition of null and alternate hypotheses, calculating a P value, and accepting or rejecting the null hypothesis.
+
+> 经典假设检验基于双重否定，需要五个可能的步骤：定义零假设和替代假设，计算 P 值，以及接受或拒绝零假设。
+
+The most fundamental is that classical hypothesis testing does not provide the information that the clinician or investigator desires, namely, the probability that the alternate hypothesis, or any other hypothesis, is true.
+
+> 不幸的是，可能有许多与原始假设不同的替代假设，如果它们被提出，这些假设可能已经被接受。例如，在一项比较两种治疗下生存率的研究中，零假设可能是 A 和 B 的生存率相等，而一个明确的替代假设可能是 A 的生存率比 B 的生存率至少高 10%。另一种假设可能是 A 的存活率仅高出 5%，而三分之一的假设可能是 A 的存活率仅高出 1%。如果我们拒绝原假设，我们默认接受最初提出的替代假设；不可能使用经典假设检验来确定可能提出的哪些可能的替代假设最接近事实。尽管样本量和功效计算可能有助于选择一个现实的替代方案：假设，但它们不能提供两个这样的替代方案的相对优点的指示。尽管经典的统计分析已经取得了高度的实际成功，但它也存在一些似乎无法克服的长期问题。最基本的一点是，经典假设检验不提供临床医生或研究人员想要的信息，即替代假设或任何其他假设为真的概率。
+
+A related problem in classical hypothesis testing is that peeking at the data as they accumulate affects the analysis.
+
+> 经典假设检验中的一个相关问题是，在数据积累时偷看数据会影响分析。考虑一项比较两种药物 A 和 B 的研究，发现 60 名患者中有 24 名（40%）对药物 A 有阳性反应，61 名患者中有 13 名（21%）对药物 B 有阳性反应。经典分析通过双尾 Fisher 精确检验得出的这些结果中的 P = .031，从而得出药物 A 与显着更大的阳性反应相关的结论。假设研究人员在较早的时候分析了结果，当时 30 名患者中有 12 名（40%）对药物 A 有反应，30 名患者中的严重（23%）对药物 B 有反应。这里的双尾 P 值为 0.267，所以他们继续在试验中招募新患者，因为他们认为有利于药物 A 的趋势是真实的，尽管它没有统计学意义。 （如果他们获得了显着的 P 值，他们会在这一点停止并发表。）因为最终分析是第二次观察，研究人员必须将显着性的 a 水平调整为 0.029（通过 Pocock 方法）以保持整个试验的总体 a 为 0.05。 7现在最终数据不显着，药物和反应之间没有关联的零假设未被拒绝。在经典统计学中，随着数据的积累而观察数据，如果结果足够令人信服则停止试验，这可以改变对最终数据集的解释。这个事实对大多数研究人员来说是违反直觉的。对于贝叶斯来说，这是荒谬的。
+
+Bayes' theorem allows one to calculate the probability that a particular hypothesis regarding treatment efficacies is true, based on an observed set of data and our estimates (before we knew the data) of the probabilities that various hypotheses were true. These probability estimates, made before observing the data, are called the prior probabilities. In determining the prior probabilities, we should incorporate all available information regarding the efficacies of the control and test treatments. If the information is vague, unreliable, or biased, as in the case in which only anecdotal reports of the efficacy of the test treatment are available, then this uncertainty regarding the accuracy of the prior information can be incorporated quantitatively into the analysis. 
+
+> 贝叶斯定理允许人们根据一组观察到的数据和我们对各种假设为真的概率的估计（在我们知道数据之前）来计算关于治疗效果的特定假设为真的概率。在观察数据之前做出的这些概率估计称为先验概率。在确定先验概率时，我们应该结合所有关于控制和测试治疗效果的可用信息。如果信息是模糊的、不可靠的或有偏见的，例如只有关于测试治疗效果的轶事报告，那么这种关于先前信息准确性的不确定性可以定量地纳入分析中。
+
+A Bayesian analysis entails four basic steps: definition of knowledge prior to the study, acquisition of the data, revision of the prior information to form posterior estimates, and interpretation of the resulting posterior estimates. 
+
+> 贝叶斯分析需要四个基本步骤：在研究之前定义知识、获取数据、修改先验信息以形成后验估计，以及解释所得的后验估计。
+    
+A Bayesian analysis proceeds as follows: 
+
+* First, define prior knowledge. Information regarding the likely efficacy of the treatments and the uncertainty in this prior information may be obtained from the medical literature, pilot studies, or recognized experts in the clinical area in which the trial is to be conducted. It is important that the experts represent a range of points of view, so that the uncertainty in their estimates is appreciated. This information is expressed mathematically as a probability distribution. Frequently, it is useful to assume that very little prior knowledge exists to avoid biasing the results if the available information is unreliable. In most practical situations, the particular form of the prior information has little influence on the final conclusion because it is overwhelmed by the weight of experimental evidence. This practical point prevents one from unduly influencing the trial resuh by using an overly optimistic or pessimistic set of prior estimates. 
+* Second, acquire the data. Unlike a classical trial, the number of patients to be enrolled in the trial or the timing of the interim analyses do not need to be predetermined. Other considerations, such as the rate of patient recruitment or funding constraints, can be used to determine the number and timing of the data analyses. 
+* Third, revise the prior estimates. The data obtained from the trial are used with Bayes' theorem to revise the prior estimates of treatment efficacy and create "posterior" estimates. These posterior estimates will have a narrower range of uncertainty; reflecting the additional information now available. 
+* Fourth, interpret the posterior estimates. The posterior estimates contain the information from both the prior estimates and the experimental observations. They allow the calculation of the probability that the efficacy of the control or test treatments, or the difference in efficacy, falls into a given range. 
+
+> * 首先，定义先验知识。有关治疗的可能疗效和该先前信息的不确定性的信息可以从医学文献、试点研究或将要进行试验的临床领域的公认专家获得。专家代表一系列观点很重要，这样他们的估计中的不确定性才能得到重视。该信息在数学上表示为概率分布。通常，假设存在非常少的先验知识以避免在可用信息不可靠时对结果产生偏差是有用的。在大多数实际情况下，先验信息的特定形式对最终结论的影响很小，因为它被实验证据的权重所压倒。这一点可以防止人们通过使用一组过于乐观或悲观的先前估计来过度影响试验结果。
+* 其次，获取数据。与经典试验不同，参加试验的患者人数或中期分析的时间不需要预先确定。其他考虑因素，例如患者招募率或资金限制，可用于确定数据分析的数量和时间。
+* 第三，修正先前的估计。从试验中获得的数据与贝叶斯定理一起使用，以修正先前的治疗效果估计并创建“后验”估计。这些后验估计的不确定性范围更窄；反映现在可用的附加信息。
+* 第四，解释后验估计。后验估计包含来自先前估计和实验观察的信息。它们允许计算对照或测试治疗的功效或功效差异落入给定范围的概率。
+
+
+阴性和阳性试验结果之间没有任意的分界点。这与经典假设检验形成对比，其中 0.049 的 P 值可能被认为是正的，而 0.051 的 P 值可能被认为是负的。与经典分析不同，贝叶斯分析给出了假设为真的概率。例如，贝叶斯分析可以支持这样的陈述，
+
+Based on our prior information regarding the treatment's efficacy and on the data observed in this trial, there is an 87% probability that the treatment increases survival by 10% or more over the placebo."
+
+> “根据我们先前关于治疗效果的信息和在本试验中观察到的数据，治疗有 87% 的可能性使生存率比安慰剂提高 10% 或更多。”
+
+这比经典陈述“治疗被证明与增加生存率具有统计学意义相关，P 值小于 0.052”更具临床相关性，因为人们可以从后验估计中计算出感兴趣变量所在的概率在任何特定范围内，很容易找到变量具有给定发生概率（通常为 95% 或 99%）的最小范围。这样的区间可以解释为 95% 或 99% 的“置信区间”。虽然在经典分析中也可以计算置信区间，但经典置信区间的解释略有不同。因此，贝叶斯置信区间称为概率区间，而经典区间简称为“置信区间”。贝叶斯概率区间实际上具有包含感兴趣变量的真实值的规定概率，而经典 confid ence 间隔可能不会。
+
+### Bayes' Rule
+
+$$
+\overbrace{p(\theta/D)}^{Posterior}=\frac{\overbrace{p(D/\theta)}^{Likelihood}.\overbrace{p(\theta)}^{Prior}}{\underbrace{p(D)}_{Evidence}}
+$$
+
+
+$$
+P(H\mid E)={\frac {P(E\mid H)\cdot P(H)}{P(E)}}
+$$
+
+$P(H)$ 先验概率，是在观察到当前数据E之前，假设概率H的估计.
+边缘概率（又称先验概率）：某个事件发生的概率。边缘概率是这样得到的：在联合概率中，把最终结果中那
+些不需要的事件通过合并成它们的全概率，而消去它们（对离散随机变量用求和得全概率，对连续随机变量用
+积分得全概率），这称为边缘化（marginalization），比如A的边缘概率表示为P(A)，B的边缘概率表示为P(B)。
+
+$$\textstyle P(H\mid E)$$
+后验概率：事件A在另外一个事件B已经发生条件下的发生概率。条件概率表示为P(A\|B)，
+读作"在B条件下**A**的概率",。The posterior distribution summarises our
+uncertainty over the value of a parameter. If the distribution is
+narrower, then this indicates that we have greater confidence in our
+estimates of the parameter's value. More narrow posterior distributions
+can be obtained by collecting more data.
+
+-   The posterior probability is the probability of the parameters
+    $\theta$ given the evidence $X: p(\theta \mid X)$
+-   It contrasts with the likelihood function, which is the probability
+    of the evidence given the parameters: $p(X \mid \theta)$
+
+$$\textstyle P(E\mid H)$$
+贝叶斯方法的核心就是通过先验知识不断更新后验概率密度来分析参数的可能性分布，如果继续进行实验
+，之前的后验概率密度就变成了先验知识，这样最终就会越来越接近参数的真实分布。需要注意的是，一
+般来讲如果当前的样本量比先验知识的样本量大很多，那么先验知识就可以忽略不计。
+
+### Bootstrap
+
+Bootstrap
+是一种用小样本来估计大样本的统计方法，斯坦福统计系主任的Bradley
+Efron在70年代提出。
+中心思想是通过从样本中重抽样（resample），构建某个估计的置信区间。抽象的说，通过样本得到的估
+计并没有榨干样本中的信息，bootstrap利用重抽样，把剩余价值发挥在了构建置信区间上。
+
+-   首先，Bootstrap通过重抽样，可以避免了Cross-Validation造成的样本减少问题
+-   其次，Bootstrap也可以用于创造数据的随机性。比如，我们所熟知的随机森林算法第一步就是从原始训
+    练数据集中，应用bootstrap方法有放回地随机抽取k个新的自助样本集，并由此构建k棵分类回归树。
+
+**Bootstrap VS Monte Carlo**
+
+-   Bootstrap是对现有的数据，不断再随机取小的样本，对每个小样处理数据,得到estimator.从而来了解
+    estimator 的variation or distribution.
+-   Monte Carlo
+    是用一个algorithm,依次输出数组，然后对这些数组处理，得到想要的结果。数组之间的
+    关系由algorithm来决定。Monte Carlo 的概念更广泛。Bootstrap
+    其实是一种Monte Carlo. {从某种意义上，Mente
+    Carlo是一种计算积分的方法，期望，方差等等都是在概率空间的积分，先采样，
+    再加和。一般用在两个地方，一是在closed
+    form拿不到的情况下来做的，二是空间维度非常高，因为 Mente
+    Carlo的收敛阶依赖于采样点的个数（半阶收敛）而和空间维数没有关系，在特别高维的问题中计算
+    积分，Mente Carlo甚至成为了唯一可行的方法。}
+
+### Posterior Distribution
+
+Given an independent and identically distributed (later abbreviated as
+iid) sample $\mathscr{D}_{n}=\left(x_{1}, \ldots, x_{n}\right)$ from a
+density $f(x \mid \theta)$, depending upon an unknown parameter
+$\theta \in \Theta$, for instance the mean $\mu$ of the benchmark normal
+distribution, the associated likelihood function is $$
+\ell\left(\theta \mid \mathscr{D}_{n}\right)=\prod_{i=1}^{n} f\left(x_{i} \mid \theta\right)
+$$ This function of $\theta$ is a fundamental entity for the analysis of
+the information provided about $\theta$ by the sample $\mathscr{D}_{n}$,
+and Bayesian analysis relies on (2.1) to draw its inference on $\theta$.
+For instance, when $\mathscr{D}_{n}$ is a normal
+$\mathscr{N}\left(\mu, \sigma^{2}\right)$ sample of size $n$ and
+$\theta=\left(\mu, \sigma^{2}\right)$, we get
+
+$$
+\begin{array}{l}
+\ell\left(\theta \mid \mathscr{D}_{n}\right)=\prod_{i=1}^{n} \exp \left\{-\left(x_{i}-\mu\right)^{2} / 2 \sigma^{2}\right\} / \sqrt{2 \pi} \sigma\\
+\propto \exp \left\{-\sum_{i=1}\left(x_{i}-\mu\right)^{2} / 2 \sigma^{2}\right\} / \sigma^{n} \\
+\propto \exp \left\{-\left(n \mu^{2}-2 n \bar{x} \mu+\sum_{i=1} x_{i}^{2}\right) / 2 \sigma^{2}\right\} / \sigma^{n} \\
+\propto \exp \left\{-\left[n(\mu-\bar{x})^{2}+s^{2}\right] / 2 \sigma^{2}\right\} / \sigma^{n}
+\end{array}
+$$
+
+where $\bar{x}$ denotes the empirical mean and where $s^{2}$ is the sum
+$\sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)^{2}$. This shows in particular
+that $\bar{x}$ and $s^{2}$ are sufficient statistics.
+
+The major input of the Bayesian approach, compared with a traditional
+likelihood approach, is that it modifies the likelihood function into a
+posterior distribution, which is a valid probability distribution on
+$\Theta$ defined by the classical Bayes' formula (or theorem) $$
+\pi\left(\theta \mid \mathscr{D}_{n}\right)=\frac{\ell\left(\theta \mid \mathscr{D}_{n}\right) \pi(\theta)}{\int \ell\left(\theta \mid \mathscr{D}_{n}\right) \pi(\theta) \mathrm{d} \theta}
+$$ The factor $\pi(\theta)$ is called the prior and it obviously has to
+be chosen to start the analysis.
+
+### Bayesian Credible Intervals
+
+Bayesian approach is a complete inferential approach. Therefore, it
+covers confidence evaluation, testing, prediction, model checking, and
+point estimation. As with everything else, the derivation of the
+confidence intervals (or confidence regions in more general settings) is
+based on the posterior distribution
+$\pi\left(\theta \mid \mathscr{D}_{n}\right) .$ Since the Bayesian
+approach processes $\theta$ as a random variable, a natural definition
+of a confidence region on $\theta$ is to determine
+$C\left(\mathscr{D}_{n}\right)$ such that $$
+\pi\left(\theta \in C\left(\mathscr{D}_{n}\right) \mid \mathscr{D}_{n}\right)=1-\alpha
+$$ where $\alpha$ is a predetermined level such as $0.05$
+
+The important difference with a traditional perspective is that the
+integration is done over the parameter space, rather than over the
+observation space. The quantity $1-\alpha$ thus corresponds to the
+probability that a random $\theta$ belongs to this set
+$C\left(\mathscr{D}_{n}\right)$, rather than to the probability that the
+random set contains the "true" value of $\theta$. Given this drift in
+the interpretation of a confidence set (rather called a credible set by
+Bayesians), the determination of the best credible set turns out to be
+easier than in the classical sense: indeed, this set simply corresponds
+to the values of $\theta$ with the highest posterior values, $$
+C\left(\mathscr{D}_{n}\right)=\left\{\theta ; \pi\left(\theta \mid \mathscr{D}_{n}\right) \geq k_{\alpha}\right\}
+$$ where $k_{\alpha}$ is determined by the coverage constraint. This
+region is called the highest posterior density $(\mathrm{HPD})$ region.
+
+<!-- 贝叶斯方法是一种完全推理方法。因此，它涵盖了置信度评估、测试、预测、模型检查和点估计。与传统视角的重要区别在于，积分是在参数空间上完成的，而不是在观察空间上完成的。因此，数量 $1-\alpha$ 对应于随机 $\theta$ 属于该集合 $C\left(\mathscr{D}_{n}\right)$ 的概率，而不是随机 set 包含 $\theta$ 的“真”值。 鉴于置信集（贝叶斯学派称为可信集）的解释存在这种偏差，确定最佳可信集比传统意义上更容易：事实上，这个集合只是对应 到具有最高后验值的 $\theta$ 的值，该区域称为最高后验密度 $(\mathrm{HPD})$ 区域。 -->
+
+## Parameter estimates
+
+想要确定数据对应的概率密度分布，就需要确定两个东西：概率密度函数的形式和概率密度函数的参数。
+
+-   有时可能知道的是概率密度函数的形式(高斯、瑞利等等)，但是不知道具体的参数，例如均值或者方差；
+-   有时候可能不知道概率密度的类型，但是知道一些估计的参数，比如均值和方差。
+
+在一个基础模型之下我们需要去一估计些未知的参数（比如在linear regression,
+需要去计算**W这个向量**),
+但在贝叶斯模型下我们需要去计算的是**W的分布（而不是W的点估计**)，用其分布直接计算对y的预测值p(y\|x,D)，所以我们需要去需要整合W，也就是说我们把**所有可能的W向量都会去考虑**.这也为什么贝叶斯模型通常棘手的。所以我们需要用**MCMC**，不是直接用优化的方法。
+
+在贝叶斯模型之下， 随着我们观察到越来越多的数据，
+我们会对**W向量的分布会有更清晰的推断**，这其实就是**posterior
+inference**. 我们比较三种预测
+
+1.  Maximum likelihood estimation (ML) (point estimation)
+2.  Maximum a posteriori estimation（MAP) (point estimation)
+3.  Bayesian Model (distribution estimation)
+
+### Maximum likelihood estimation
+
+极大似然估计是最简单的point estimation, 也就是我们需要去计算P(D\|W),
+从而找到最优化的W. 它的缺点就是数据比较少的时候往往过度拟合
+
+基本的假设
+
+-   第一：假设M个类别的数据子集的概率密度函数形式一样，只是参数的取值不同；
+-   第二：假设类别i中的数据和类别j中的数据是相互独立抽样的，即类别j的参数仅仅根据类别j的数据就可以估计出来，类别i的数据并不能影响类别j的参数估计，反之亦然；
+-   第三：每个类别内的样本之间具有统计独立性，即每个类别内的样本之间是**独立同分布**
+    (iid) 的。
+
+设x1,x2,...,xN 是从概率密度函数p(x;θ)
+中随机抽取的样本，那么就可以得到联合概率密度函数 p(X;θ)，
+
+$$
+p(X;\theta)\equiv p(x_1,x_2,...,x_N;\theta)=\prod_{k=1}^Np(x_k;\theta)
+$$
+
+此时，就可以使用最大似然估计(Maximum Likelihood,ML)来估计参数θ：
+
+$$
+\hat{\theta}_{ML}=arg\max_{\theta}\prod_{k=1}^Np(x_k;\theta)
+$$
+
+为了得到最大值，$$\theta^{\text{ML}}$$
+必须满足的必要条件是,似然函数对θ的梯度必须为0，即：
+
+$$
+\frac{\partial \prod_{k=1}^Np(x_k;\theta)}{\partial\theta}=0
+$$
+
+一般我们取其对数形式：
+
+$$
+L(\theta)\equiv ln\prod_{k=1}^Np(x_k;\theta)
+$$
+
+$$
+\frac{\partial L(\theta)}{\partial \theta}=\sum_{k=1}^N  \frac{\partial ln p(x_k;\theta)}{\partial \theta}=\sum_{k=1}^N\frac{1}{p(x_k;\theta)} \frac{\partial p(x_k;\theta)}{\partial \theta}=0
+$$
+
+极大似然估计有两个非常重要的性质：使得极大似然估计的成为了非常简单而且实用的参数估计方法。这里假设$$θ_0$$是密度函数p(x;θ)
+中未知参数的准确值。
+
+-   渐进无偏
+-   渐进一致性， 有了这两个性质，
+
+极大似然估计是渐进无偏的，即：$$\lim_{N \to \infty}E[\hat{\theta}_{ML}]=\theta_0$$,
+也就是说，这里认为估计值\*\*
+θ\^ML本身是一个随机变量**（因为不同的样本集合X会得到不同的 θ\^ML），
+那么其**均值就是未知参数的真实值\*\*，这就是渐进无偏。
+
+极大似然估计是渐进一致的，即：$$\lim_{N \to \infty}prob\{ \lVert \hat{\theta}_{ML}- \theta_0 \rVert \leqslant \epsilon\} = 1$$,这个公式还可以表示为:
+$$\lim_{N \to \infty} E \lVert \hat{\theta}_{ML}- \theta_0 \rVert^2 = 0$$,
+对于一个估计器而言，一致性是非常重要的，因为存在满足无偏性，但是不满足一致性的情况，比如，θ^ML^
+在 θ-0-周围震荡。如果不满足一致性，那么就会出现很大的方差.
+以上两个性质，都是在渐进的前提下（$$N \to \infty$$）才能讨论的，即只有N足够大时，上面两个性质才能成立.
+
+### Maximum a posteriori estimation
+
+在最大似然估计中，将θ看做是未知的参数，说的通俗一点，**最大似然估计是θ的函数**，其求解过程就是找到使得最大似然函数最大的那个参数θ。
+**从最大后验估计开始，将参数θ看成一个随机变量**，并在已知样本集{x1,x2,...,xN}的条件下，估计参数θ。
+
+-   在**最大似然估计中，参数θ是一个定值，只是这个值未知**，最大似然函数是θ的函数，这里θ
+    是没有概率意义的。
+-   在最大后验估计中，**θ是有概率意义的，θ有自己的分布**，而这个分布函数，需要**通过已有的样本集合X得到**，即最大后验估计需要计算的是
+    **p(θ\|X)**. Maximum a posteriori estimation (MAP).
+    他是在ML的基础上加了prior,
+    也就是假定了一些P(θ)的分布根据贝叶斯理论：
+
+$$
+p(\theta|X)=\frac{p(\theta)p(X|\theta)}{p(X)}
+$$
+
+这就是参数θ关于已有数据集合X的后验概率，**要使得这个后验概率最大，和极大似然估计一样，这里需要对后验概率函数求导**。由于分子中的p(X)相对于θ是独立的，随意可以直接忽略掉p(X)。
+
+$$
+\hat{\theta}_{MAP}=arg\max_{\theta}p(\theta|X)=arg\max_{\theta}p(\theta)p(X|\theta)
+$$
+
+为了得到参数θ，和ML一样，需要对p(θ\|X)求梯度，并使其等于0：
+
+$$
+\frac{p(\theta|X)}{\partial\theta}=\frac{p(\theta)p(X|\theta）}{\partial\theta}=0
+$$
+
+这里**p(X\|θ)和极大似然估计中的似然函数p(X;θ)**
+是一样的，只是记法不一样。MAP和ML的区别是：MAP是在ML的基础上加上了p(θ).
+
+在MAP中，p(θ)称为θ的先验，假设其服从均匀分布，即对于所有θ取值，p(θ)都是同一个常量，则MAP和ML会得到相同的结果。当然了，如果p(θ)的方差非常的小，也就是说，**p(θ)是近似均匀分布的话，MAP和ML的结果自然也会非常的相似**。
+
+**MAP and MLE**
+
+The similarity of maximum a posteriori estimator (MAP) $$
+\hat{\theta}=\arg \max _{\theta} \pi\left(\theta \mid \mathscr{D}_{n}\right)=\arg \max _{\theta} \pi(\theta) \ell\left(\theta \mid \mathscr{D}_{n}\right)
+$$ with the maximum likelihood estimator (MLE): The influence of the
+prior distribution $\pi(\theta)$ on the estimate progressively
+disappears as the number of observations $n$ increases, and the MAP
+estimator often recovers the asymptotic properties of the MLE.
+
+For normaldata, since the posterior distribution on $\sigma^{-2}$ is a
+$\mathscr{G}(32,1.82)$ distribution, the posterior expectation of
+$\sigma^{-2}$ given Illingworth's experimental data is
+$32 / 1.82=17.53$. The posterior expectation of $\sigma^{2}$ requires a
+supplementary effort in order to derive the mean of an inverse gamma
+distribution (see Exercise 2.2), namely $$
+\mathbb{E}^{\pi}\left[\sigma^{2} \mid \mathscr{D}_{n}\right]=1.82 /(33-1)=0.057
+$$
+
+Similarly, the MAP estimate is given here by $$
+\arg \max _{\theta} \pi\left(\sigma^{2} \mid \mathscr{D}_{n}\right)=1.82 /(33+1)=0.054
+$$ These values therefore reinforce our observation that the
+Michelson-Morley precision is not appropriate for the Illingworth
+experiment, which is much more precise indeed.
+
+### Bayesian Model
+
+MAP的一些limitation 贝叶斯可以帮我们解决.
+贝叶斯的特点就是**考虑整个X的分布**，而不是**通过已有的样本集合X得到得到的θ的**分布函数。
+所以自然而然也就是防止overfitting.
+
+防止标号混淆，这里定义已有的样本集合为D，而不是之前的X。
+样本集合D中的样本都是从一个
+固定但是未知的概率密度函数p(x)中独立抽取出来的，要求根据这些样本估计x的概率分布，**记为p(x\|D)**，并且使得p(x\|D)尽量的接近p(x)，这就是贝叶斯估计的核心问题。在这里我们是计算x的分布，而不是x的一个最优化的值！
+
+虽然p(x)是未知的，但是前面提到过，一个密度分布的两个要素为：形式和参数，
+我们可以假设p(x)的形式已知，但是参数θ的取值未知。这里就有了贝叶斯估计的第一个重要元素**p(x\|θ)**,
+这是一个条件概率密度函数，准确的说，是一个类条件概率密度函数.
+p(x\|θ)的形式是已知的，只是参数θ的取值未知。由于这里的x可以看成一个测试样本，
+所以这个条件密度函数，从本质上讲，是θ在点 x 处的似然估计。
+
+由于参数θ的取值未知，且，我们将θ看成一个随机变量，那么，在观察到具体的训练样本之前，
+关于θ的全部知识，可以用一个先验概率密度函数p(θ)来表示，对于训练样本的观察，
+使得我们能够把这个先验概率密度转化成为后验概率密度函数p(θ\|D)，
+根据后验概率密度相关的论述知道，我们希望p(θ\|D)在θ的真实值附近有非常显著的尖峰。
+这里的这个后验概率密度**p(θ\|D)**，就是贝叶斯估计的第二个主要元素。
+
+现在，将贝叶斯估计核心问题p(x\|D)，和贝叶斯估计的两个重要元素：p(x\|θ)、p(θ\|D)联系起来
+
+$$
+p(x|D)=\int p(x,\theta|D) d\theta=\int p(x|\theta,D)p(\theta|D)d\theta
+$$
+
+-   x 是测试样本
+-   D 是训练集，x和D的选取是独立进行的, 因此，p(x\|θ,D)可以写成p(x\|θ),
+    所以，贝叶斯估计的核心问题就是下面这个公式：
+
+$$
+p(x|D)=\int p(x|\theta)p(\theta|D)d\theta
+$$
+
+-   p(x\|D) 根据这些样D本估计x的概率分布
+
+-   p(x\|θ) 假设p(x)的形式已知，但是参数θ的取值未知,
+    p(x\|θ)的形式是已知的，只是参数θ的取值未知, 这里p(x\|θ)
+
+    是θ关于测试样本x这一个点的似然估计
+
+-   p(θ\|D)
+    在观察到具体的训练样本之前，关于θ的全部知识，可以用一个先验概率密度函数p(θ)来表示，对于训练样本的观察，使得我们能够把这个先验概率密度转化成为后验概率密度函数p(θ\|D)
+    (p(θ\|D)是θ在已有样本集合上的后验概率)
+
+$$
+p(\theta|D)=\frac{p(D|\theta)p(\theta)}{p(D)}=\frac{p(D|\theta)p(\theta)}{\int p(D|\theta)p(\theta)d\theta}
+$$
+
+$$
+p(D|\theta)=\prod_{k=1}^N p(x_k|\theta)
+$$
+
+#### Full-Bayesian
+
+与最大似然估计，最大后验估计（MAP）不同之处在于它得到的是测试数据在整个空间上的一个概率分布，而不单纯是一个点估计。它的精髓就在于这个**加权积分：考虑到了参数的所有情况，并且加以不同的权重（后验分布的值）**，自然就避免了过拟合。此外，很多情况下比起单纯的点估计，我们更需要一个分布来获得更多的信息
+
+-   Step 1:
+    用训练数据得到似然函数likelihood，再加上一个先验分布prior，得到一个后验分布posterior.
+-   Step 2:
+    对于一个新的测试数据x，用之前得到的posterior作为权重在整个参数空间里计算一个加权积分，得到一个预测分布。
+
+在实际中，除了少数情况（比如先验和似然函数都是高斯分布），那个后验分布的形式一般都很复杂，第二步里的积分是积不出来的。这时候就要采取一些近似方法，近似方法又分为两大类：
+
+-   简化复杂的后验分布，然后就能算出积分的解析形式了。具体方法有变分推断，Laplace近似等。这类方法的特点是人算起来困难，机器跑起来快。
+-   用采样的方法搞定后验分布。具体方法有Gibbs采样，HMC采样等。这类方法反过来了，人算起来简单，但是机器跑起来慢。采样方法还有一个好处，就是精度算得比谁都高
+
+## Prior Distributions
+
+### Conjugate Prior Distributions
+
+<!-- 先验分布的选择是贝叶斯统计中的一个重要问题。当有关数据或模型的先验信息可用时，它可以（并且必须）用于构建先验. 然而，在许多情况下，由于缺乏可靠的先验信息，先验分布的选择非常微妙，必须选择默认解决方案。由于先验分布的选择  对结果推断有相当大的影响，因此必须非常小心地进行此推断步骤。从计算的角度来看，先验分布最方便的选择是模拟先验内的似然结构。 -->
+
+<!-- 在最有利的情况下，先验和后验保持在同一个参数化族中。这种先验称为共轭。对于大多数常见的家庭，包括正态分布，都存在这样的先验。 由于共轭先验使得先验密度和后验密度属于同一参数族，因此使用观察归结为先验参数的更新。为了避免混淆，模型参数的先验分布中涉及的参数通常称为超参数。 （它们本身可以与先验分布相关联，然后称为超先验。） -->
+
+An important feature of conjugate priors is that one has a priori to
+select two hyperparameters, e.g., a mean and a variance in the normal
+case. On the one hand, this is an advantage when using a conjugate
+prior, namely that one has to select only a few parameters to determine
+the prior distribution. On the other hand, this is a drawback in that
+the information known a priori on $\mu$ may be either insufficient to
+determine both parameters or incompatible with the structure imposed by
+conjugacy.
+
+<!-- 共轭先验的一个重要特征是可以先验地选择两个超参数，例如正常情况下的均值和方差。一方面，这是使用共轭先验时的优势，即只需要选择几个参数来确定先验分布。另一方面，这是一个缺点，因为在 μ 上先验已知的信息可能不足以确定两个参数或与共轭强加的结构不兼容. -->
+
+```{r echo =F, error=FALSE, message=FALSE, warning=FALSE, fig.cap="Conjugate priors for the most common statistical families"}
+knitr::include_graphics("./02_Plots/Conjugate.png")
+```
+
+### Non-informativ Priors
+
+确定先验主要有**四个方向:**
+
+1.  无信息先验分布
+2.  共轭先验分布
+3.  经验Bayes方法
+4.  专家验定先验分布
+
+通常在贝叶斯分析中，我们需要指定一个先验，但事实在很多前提下，我们是不知道其先验的，这时我们就可以采用无信息先验分布来进行分析计算。
+
+#### Jeffreys Prior
+
+-   Jeffreys在他的书里提出了Jeffreys 先验，
+    其最主要性质就是不变性（invariant），即先验的形式不随着参数形式变化而变化。
+-   较好地解决了无信息先验中的一个矛盾：若对参数θ选用均匀分布，则其函数g(θ)往往不是均匀分布。
+-   采用Fisher信息阵的平方根作为θ的无信息先验分布
+
+#### Reference Prior
+
+-   Reference prior解决了Jeffreys prior在多元情况下的一些问题
+-   Reference
+    prior是在极大样本下使得先验分布和后验分布的Kullback--Leibler
+    divergence最大的reference prior。
+    先验分布和后验分布的Kullback--Leibler
+-   divergence可以被理解成这两个分布之间的信息差，而这个信息差显然来自于样本的信息，使得这个信息差最大就说明后验分布主要体现的是样本的信息，reference
+    prior对我们得到的信息几乎没有影响。所以这种先验分布可以叫做noninformative
+    prior。
+
+## MCMC
+
+MCMC由两个MC组成，即蒙特卡罗方法（Monte Carlo
+Simulation，简称MC）和马尔科夫链（Markov Chain ，也简称MC）
+
+### Monte Carlo Simulation
+
+蒙特卡罗原来是一个赌场的名称，用它作为名字大概是因为蒙特卡罗方法是一种随机模拟的方法，这很像赌博场里面的扔骰子的过程。最早的蒙特卡罗方法都是为了求解一些不太好求解的求和或者积分问题。比如积分：
+$$\theta = \int_a^b f(x)dx$$
+
+如果我们可以得到x在[a,b]的概率分布函数p(x)，那么我们的定积分求和可以这样进行：
+
+$$
+\theta = \int_a^b f(x)dx =  \int_a^b \frac{f(x)}{p(x)}p(x)dx \approx \frac{1}{n}\sum\limits_{i=0}^{n-1}\frac{f(x_i)}{p(x_i)}
+$$
+
+最右边的这个形式就是蒙特卡罗方法的一般形式。当然这里是连续函数形式的蒙特卡罗方法，但是在离散时一样成立。假设x在[a,b]之间是均匀分布的时候，
+$p(x_i) = 1/(b-a)$，带入我们有概率分布的蒙特卡罗积分的上式，可以得到：
+
+$$
+\frac{1}{n}\sum\limits_{i=0}^{n-1}\frac{f(x_i)}{1/(b-a)} = \frac{b-a}{n}\sum\limits_{i=0}^{n-1}f(x_i)
+$$
+
+### 概率分布采样
+
+蒙特卡罗方法的**关键是得到x的概率分布**。如果求出了x的概率分布，我们可以基于概率分布去采样基于这个概率分布的n个x的样本集，带入蒙特卡罗求和的式子即可求解。
+
+还有一个关键的问题需要解决，即**如何基于概率分布去采样基于这个概率分布的n个x的样本集**。
+
+对于常见的均匀分布uniform(0,1)是非常容易采样样本的，一般通过线性同余发生器可以很方便的生成(0,1)之间的伪随机数样本。而其他常见的概率分布，无论是离散的分布还是连续的分布，它们的样本都可以通过uniform(0,1)的样本转换而得。
+
+-   比如二维正态分布的样本$$(Z_1,Z_2)$$
+    可以通过通过独立采样得到的uniform(0,1)样本对$$(X_1,X_2)$$通过如下的式子转换而得：
+
+$$
+Z_1 = \sqrt{-2 ln X_1}cos(2\pi X_2)
+$$
+
+$$
+Z_2 = \sqrt{-2 ln X_1}sin(2\pi X_2)
+$$
+
+-   其他一些常见的连续分布，比如t分布，F分布，Beta分布，Gamma分布等，都可以通过类似的方式从uniform(0,1)得到的采样样本转化得到。
+
+### 接受-拒绝采样
+
+对于概率分布不是常见的分布，一个可行的办法是采用接受-拒绝采样来得到该分布的样本。既然
+p(x) 太复杂在程序中没法直接采样，那么我**设定一个程序可采样的分布 q(x)**
+比如高斯分布，然后按照一定的方法**拒绝某些样本，以达到接近 p(x)
+分布的目的**，其中**q(x)叫做 proposal distribution**。
+
+具体采用过程如下，设定一个方便采样的常用概率分布函数 q(x)，以及一个常量
+k，使得 p(x) 总在 kq(x)
+的下方。如上图。首先，采样得到q(x)的一个样本z0，采样方法如第三节。然后，从均匀分布
+$$(0, kq(z_0))$$ 中采样得到一个值u.
+如果u落在了上图中的灰色区域，则拒绝这次抽样，否则接受这个样本z0。重复以上过程得到n个接受的样本z0,z1,...zn−1,则最后的蒙特卡罗方法求解结果为：
+
+$$
+\frac{1}{n}\sum\limits_{i=0}^{n-1}\frac{f(z_i)}{p(z_i)}
+$$
+
+### Markov Chain
+
+马尔科夫链定义本身比较简单，它假设某一时刻状态转移的概率只依赖于它的前一个状态。如果用精确的数学定义来描述，则假设我们的序列状态是
+$$...X_{t-2}, X_{t-1}, X_{t},  X_{t+1},...$$
+那么我们的在时刻Xt+1的状态的条件概率仅仅依赖于时刻Xt，即：
+
+$$
+P(X_{t+1} |...X_{t-2}, X_{t-1}, X_{t} ) = P(X_{t+1} | X_{t})
+$$
+
+既然某一时刻状态转移的概率只依赖于它的前一个状态，那么我们只要能求出系统中任意两个状态之间的转换概率，这个马尔科夫链的模型就定了。
+
+```{r echo =F, error=FALSE, message=FALSE, warning=FALSE}
+knitr::include_graphics("./02_Plots/MCMC1.png")
+```
+
+例如马尔科夫链是表示股市模型的，共有三种状态：牛市（Bull market）,
+熊市（Bear market）和横盘（Stagnant
+market）。每一个状态都以一定的概率转化到下一个状态。比如，牛市以0.025的概率转化到横盘的状态。这个状态概率转化图可以以矩阵的形式表示。如果我们定义矩阵阵P某一位置$$P(i,j)$$的值为
+$$P(j|i)$$ 即从状态i转化到状态j的概率，并定义牛市为状态0， 熊市为状态1,
+横盘为状态2. 这样我们得到了马尔科夫链模型的状态转移矩阵为：
+
+$$
+P=\left( \begin{array}{ccc} 0.9&0.075&0.025 \\ 0.15&0.8& 0.05 \\ 0.25&0.25&0.5 \end{array} \right)
+$$
+
+尽管这次采用了不同初始概率分布，最终状态的概率分布趋于同一个稳定的概率分布[0.625
+0.3125 0.0625]，
+也就是说我们的**马尔科夫链模型的状态转移矩阵收敛到的稳定概率分布与我们的初始状态概率分布无关**。也就是说，如果我们得到了这个稳定概率分布对应的马尔科夫链模型的状态转移矩阵，则我们可以用任意的概率分布样本开始，带入马尔科夫链模型的状态转移矩阵，这样经过一些序列的转换，最终就可以得到符合对应稳定概率分布的样本。
+
+### 马尔科夫链的收敛性质
+
+如果一个非周期的马尔科夫链有状态转移矩阵P,
+并且它的任何两个状态是连通的，那么 $\lim_{n \to \infty}P_{ij}^n$
+与i无关，我们有： 1. $\lim_{n \to \infty}P_{ij}^n = \pi(j)$ 2.
+$\lim_{n \to \infty}P^n = \left( \begin{array}{ccc} \pi(1)&\pi(2)&\ldots&\pi(j)&\ldots \\ \pi(1)&\pi(2)&\ldots&\pi(j)&\ldots \\ \ldots&\ldots&\ldots&\ldots&\ldots \\ \pi(1)&\pi(2)&\ldots&\pi(j)&\ldots \\ \ldots&\ldots&\ldots&\ldots&\ldots \end{array} \right)$
+3. $\pi(j) = \sum\limits_{i=0}^{\infty}\pi(i)P_{ij}$ 4. $\pi$是方程的
+$\pi P = \pi$\$ 唯一非负解，其中：
+$\pi = [\pi(1),\pi(2),...,\pi(j),...]\;\; \sum\limits_{i=0}^{\infty}\pi(i) = 1$
+
+上面的性质中需要解释的有：
+
+1.  非周期的马尔科夫链：这个主要是指马尔科夫链的状态转化不是循环的，如果是循环的则永远不会收敛。幸运的是我们遇到的马尔科夫链一般都是非周期性的。用数学方式表述则是：对于任意某一状态i，d为集合
+    $\{n \mid n \geq 1,P_{ii}^n>0 \}$ 的最大公约数，如果 d=1d=1
+    ，则该状态为非周期的
+2.  任何两个状态是连通的：这个指的是从任意一个状态可以通过有限步到达其他的任意一个状态，不会出现条件概率一直为0导致不可达的情况。
+3.  马尔科夫链的状态数可以是有限的，也可以是无限的。因此可以用于连续概率分布和离散概率分布。
+4.  $\pi$通常称为马尔科夫链的平稳分布。
+
+### 基于马尔科夫链采样
+
+如果我们得到了某个平稳分布所对应的马尔科夫链状态转移矩阵，我们就很容易采用出这个平稳分布的样本集。假设我们任意初始的概率分布是
+$\pi_0(x)$ ,
+经过第一轮马尔科夫链状态转移后的概率分布是$\pi_1(x)$，。。。第i轮的概率分布是$\pi_i(x)$。假设经过n轮后马尔科夫链收敛到我们的平稳分布$\pi(x)$，即：
+
+$$
+\pi_n(x) = \pi_{n+1}(x) = \pi_{n+2}(x) =... = \pi(x)
+$$
+
+对于每个分布$\pi_i(x)$，我们有：
+
+$$
+\pi_i(x) = \pi_{i-1}(x)P = \pi_{i-2}(x)P^2 = \pi_{0}(x)P^i
+$$
+
+现在我们可以开始采样了，首先，基于初始任意简单概率分布比如高斯分布π0(x)采样得到状态值x0，基于条件概率分布
+$P(x|x_0)$
+采样状态值x1，一直进行下去，当状态转移进行到一定的次数时，比如到n次时，我们认为此时的采样集
+$(x_n,x_{n+1},x_{n+2},...)$
+即是符合我们的平稳分布的对应样本集，可以用来做蒙特卡罗模拟求和了。
+
+总结下基于马尔科夫链的采样过程:
+
+-   
+
+    1)  输入马尔科夫链状态转移矩阵 $$P$$, 设定状态转移次数间值 $n_{1},$
+        需要的样本个数 $n_{2}$
+
+-   
+
+    2)  从任意简单概率分布采样得到初始状态值 $x_{0}$
+
+-   
+
+    3)  for $t=0$ to $n_{1}+n_{2}-1:$ 从条件概率分布
+        $P\left(x \mid x_{t}\right)$ 中采样得到样本 $x_{t+1}$ 样本集
+        $\left(x_{n_{1}}, x_{n_{1}+1}, \ldots, x_{n_{1}+n_{2}-1}\right)$
+        即为我们需要的平稳分布对应的样本集。
+
+如果假定我们可以得到我们需要采样样本的平稳分布所对应的马尔科夫链状态转移矩阵，那么我们就可以用马尔科夫链采样得到我们需要的样本集，进而进行蒙特卡罗模拟。但是一个重要的问题是，随意给定一个平稳分布π,如何得到它所对应的马尔科夫链状态转移矩阵P呢？这是个大问题。我们绕了一圈似乎还是没有解决任意概率分布采样样本集的问题。幸运的是，MCMC采样通过迂回的方式解决了上面这个大问题.
+
+### MCMC采样
+
+#### 马尔科夫链的细致平稳条件
+
+在解决从平稳分布π,
+找到对应的马尔科夫链状态转移矩阵P之前，我们还需要先看看马尔科夫链的细致平稳条件》如果非周期马尔科夫链的状态转移矩阵P和概率分布π(x)对于所有的i,j满足：
+
+$$
+\pi(i)P(i,j) = \pi(j)P(j,i)
+$$
+
+则称概率分布π(x)是状态转移矩阵P的平稳分布。证明如下
+
+$$
+\sum\limits_{i=1}^{\infty}\pi(i)P(i,j)  = \sum\limits_{i=1}^{\infty} \pi(j)P(j,i) =  \pi(j)\sum\limits_{i=1}^{\infty} P(j,i) =  \pi(j)
+$$
+
+将上式用矩阵表示即为： $\pi P = \pi$
+
+不过不幸的是，仅仅从细致平稳条件还是很难找到合适的矩阵P。比如我们的目标平稳分布是π(x),随机找一个马尔科夫链状态转移矩阵Q,它是很难满足细致平稳条件的，即：
+
+$$
+\pi(i)Q(i,j) \neq \pi(j)Q(j,i)
+$$
+
+可以对上式做一个改造，使细致平稳条件成立。方法是引入一个 $\alpha(i,j)$
+,使上式可以取等号，即：
+
+$$
+\pi(i)Q(i,j)\alpha(i,j) = \pi(j)Q(j,i)\alpha(j,i)
+$$
+
+$$\alpha(i,j)$$满足下两式即可：
+
+$$
+\alpha(i,j) = \pi(j)Q(j,i)
+$$
+
+$$
+\alpha(j,i) = \pi(i)Q(i,j)
+$$
+
+我们就得到了我们的分布π(x)对应的马尔科夫链状态转移矩阵P，满足：
+
+$$
+P(i,j) = Q(i,j)\alpha(i,j)
+$$
+
+$\alpha(i,j)$一般称之为**接受率**。取值在[0,1]之间，可以理解为一个概率值。即目标矩阵P可以通过任意一个马尔科夫链状态转移矩阵Q以一定的接受率获得
+
+#### 总结下MCMC的采样过程
+
+-   
+
+    1)  输入我们任意选定的马尔科夫链状态转移矩阵 $Q,$ 平稳分布 $\pi(x),$
+        设定状态转移次数间值 $n_{1},$ 需要的样本个数 $n_{2}$
+
+-   
+
+    2)  从任意简单概率分布采样得到初始状态值 $x_{0}$
+
+-   
+
+    3)  for $t=0$ to $n_{1}+n_{2}-1$ :
+
+    -   
+
+        a)  从条件概率分布 $Q\left(x \mid x_{t}\right)$ 中采样得到样本
+            $x_{*}$
+
+    -   
+
+        b)  从均匀分布采样 $u \sim$\$ \$$uniform [0,1]$
+
+    -   
+
+        c)  如果
+            $u<\alpha\left(x_{t}, x_{*}\right)=\pi\left(x_{*}\right) Q\left(x_{*}, x_{t}\right),$
+            则接受转移 $x_{t} \rightarrow x_{*},$ 即 $x_{t+1}=x_{*}$
+
+    -   
+
+        d)  否则不接受转移, 即 $x_{t+1}=x_{t}$
+
+样本集 $\left(x_{n_{1}}, x_{n_{1}+1}, \ldots, x_{n_{1}+n_{2}-1}\right)$
+即为我们需要的平稳分布对应的样本集。
+
+但是这个采样算法还是比较难在实际中应用，问题在上面第三步的c步骤，由于
+$\alpha(x_t,x_{*})$可能非常的小，比如0.1，导致我们大部分的采样值都被拒绝转移，采样效率很低。有可能我们采样了上百万次马尔可夫链还没有收敛，也就是上面这个n1要非常非常的大，这让人难以接受，怎么办呢？这时就轮到我们的**M-H采样**出场了。
+
+### M-H采样
+
+M-H采样是Metropolis-Hastings采样的简称，这个算法首先由Metropolis提出，被Hastings改进，因此被称之为Metropolis-Hastings采样或M-H采样.
+M-H采样解决了我们上一节MCMC采样接受率过低的问题。
+
+回到MCMC采样的细致平稳条件：
+$\pi(i)Q(i,j)\alpha(i,j) = \pi(j)Q(j,i)\alpha(j,i)$
+
+我们采样效率低的原因是 $\alpha(i,j)$
+太小了，比如为0.1，而$\alpha(j,i)$为0.2。即：
+$\pi(i)Q(i,j)\times 0.1 = \pi(j)Q(j,i)\times 0.2$ ,
+这时我们可以看到，如果两边同时扩大五倍，接受率提高到了0.5，但是细致平稳条件却仍然是满足的，即：
+$\pi(i)Q(i,j)\times 0.5 = \pi(j)Q(j,i)\times 1$
+这样我们的接受率可以做如下改进，即：
+
+$$
+\alpha(i,j) = min\{ \frac{\pi(j)Q(j,i)}{\pi(i)Q(i,j)},1\}
+$$
+
+通过这个微小的改造，我们就得到了可以在实际应用中使用的M-H采样算法过程如下：
+
+-   
+
+    1)  输入我们任意选定的马尔科夫链状态转移矩阵 $Q,$ 平稳分布 $\pi(x),$
+        设定状态转移次数间值 $n_{1},$ 需要的样本个数 $n_{2}$
+
+-   
+
+    2)  从任意简单概率分布采样得到初始状态值 $x_{0}$
+
+-   
+
+    3)  for $t=0$ to $n_{1}+n_{2}-1$ :
+
+    -   
+
+        a)  从条件概率分布 $Q\left(x \mid x_{t}\right)$ 中采样得到样本
+            $x_{*}$
+
+    -   
+
+        b)  从均匀分布采样 $u \sim$ uniform [0,1]
+
+    -   
+
+        c)  如果
+            $u<\alpha\left(x_{t}, x_{*}\right)=\min \left\{\frac{\pi(j) Q(j, i)}{\pi(i) Q(i, j)}, 1\right\},$
+            则接受转移 $x_{t} \rightarrow x_{*},$ 即 $x_{t+1}=x_{*}$
+
+    -   
+
+        d)  否则不接受转移， 即 $x_{t+1}=x_{t}$
+
+样本集 $\left(x_{n_{1}}, x_{n_{1}+1}, \ldots, x_{n_{1}+n_{2}-1}\right)$
+即为我们需要的平稳分布对应的样本集。 很多时候,
+我们选择的马尔科夫链状态转移矩阵Q如果是对称的, 即满足
+$Q(i, j)=Q(j, i)$,这时我们的接受率可以进一步简化为：
+
+$$
+\alpha(i, j)=\min \left\{\frac{\pi(j)}{\pi(i)}, 1\right\}
+$$
+
+M-H采样完整解决了使用蒙特卡罗方法需要的任意概率分布样本集的问题，因此在实际生产环境得到了广泛的应用.
+但是在大数据时代，M-H采样面临着两大难题：
+
+1.  我们的数据特征非常的多，M-H采样由于接受率计算式$\frac{\pi(j)Q(j,i)}{\pi(i)Q(i,j)}$的存在，在高维时需要的计算时间非常的可观，算法效率很低。同时$\alpha(i,j)$一般小于1，有时候辛苦计算出来却被拒绝了。能不能做到不拒绝转移呢？
+2.  由于特征维度大，很多时候我们甚至很难求出目标的各特征维度联合分布，但是可以方便求出各个特征之间的条件概率分布。这时候我们能不能只有各维度之间条件概率分布的情况下方便的采样呢？
+
+Gibbs采样解决了上面两个问题
+
+### Gibbs采样
+
+M-H采样已经可以很好的解决蒙特卡罗方法需要的任意概率分布的样本集的问题。但是M-H采样有两个缺点：一是需要计算接受率，在高维时计算量大。并且由于接受率的原因导致算法收敛时间变长。二是有些高维数据，特征的条件概率分布好求，但是特征的联合分布不好求。因此需要一个好的方法来改进M-H采样
+
+细致平稳条件：如果非周期马尔科夫链的状态转移矩阵P和概率分布π(x)对于所有的i,j满足：$\pi(i)Q(i,j)\alpha(i,j) = \pi(j)Q(j,i)\alpha(j,i)$则称概率分布π(x)是状态转移矩阵P的平稳分布。现在我们换一个思路,
+重新寻找合适的细致平稳条件
+
+从二维的数据分布开始，假设$\pi(x_1,x_2)$是一个二维联合数据分布，观察第一个特征维度相同的两个点$A(x_1^{(1)},x_2^{(1)})$和$B(x_1^{(1)},x_2^{(1)})$，容易发现下面两式成立：
+
+$$
+\pi(x_1^{(1)},x_2^{(1)}) \pi(x_2^{(2)} | x_1^{(1)}) = \pi(x_1^{(1)})\pi(x_2^{(1)}|x_1^{(1)}) \pi(x_2^{(2)} | x_1^{(1)})
+$$
+
+$$
+\pi(x_1^{(1)},x_2^{(2)}) \pi(x_2^{(1)} | x_1^{(1)}) = \pi(x_1^{(1)}) \pi(x_2^{(2)} | x_1^{(1)})\pi(x_2^{(1)}|x_1^{(1)})
+$$
+
+由于两式的右边相等，因此我们有：
+
+$$
+\pi(x_1^{(1)},x_2^{(1)}) \pi(x_2^{(2)} | x_1^{(1)})  = \pi(x_1^{(1)},x_2^{(2)}) \pi(x_2^{(1)} | x_1^{(1)})
+$$
+
+$$
+\pi(A) \pi(x_2^{(2)} | x_1^{(1)})  = \pi(B) \pi(x_2^{(1)} | x_1^{(1)})
+$$
+
+观察上式再观察细致平稳条件的公式, 我们发现在 $x_{1}=x_{1}^{(1)}$
+这条直线上, 如果用条件概率分布 $\pi\left(x_{2} \mid x_{1}^{(1)}\right.)$
+作为马尔科夫链的状态转移概率, 则任意两 个点之间的转移满足细致平稳条件!
+同样的道理, 在在 $x_{2}=x_{2}^{(1)}$ 这条直线上, 如果用条件概率分布
+$\pi\left(x_{1} \mid x_{2}^{(1)}\right.)$ 作为马尔科夫链的状态 转移概率,
+则任意两个点之间的转移也满足细致平稳条件。那是因为假如有一点
+$C\left(x_{1}^{(2)}, x_{2}^{(1)}\right)$,我们可以得到:
+
+$$
+\pi(A) \pi\left(x_{1}^{(2)} \mid x_{2}^{(1)}\right)=\pi(C) \pi\left(x_{1}^{(1)} \mid x_{2}^{(1)}\right)
+$$
+
+基于上面的发现, 我们可以这样构造分布 $\pi\left(x_{1}, x_{2}\right)$
+的马尔可夫链对应的状态转移矩阵 $P$ :
+
+$$
+\begin{array}{c}
+P(A \rightarrow B)=\pi\left(x_{2}^{(B)} \mid x_{1}^{(1)}\right) \text {  if  } x_{1}^{(A)}=x_{1}^{(B)}=x_{1}^{(1)} \\
+P(A \rightarrow C)=\pi\left(x_{1}^{(C)} \mid x_{2}^{(1)}\right) \text {  if  } x_{2}^{(A)}=x_{2}^{(C)}=x_{2}^{(1)} \\
+P(A \rightarrow D)=0 \text { else }
+\end{array}
+$$
+
+有了上面这个状态转移矩阵，我们很容易验证平面上的任意两点E,F，满足细致平稳条件：
+
+$$
+\pi(E)P(E \to F)  = \pi(F)P(F \to E)
+$$
+
+#### 二维Gibbs采样
+
+利用状态转移矩阵，我们就得到了二维Gibbs采样，这个采样需要两个维度之间的条件概率。具体过程如下：
+
+-   
+
+    1)  输入平稳分布 $\pi\left(x_{1}, x_{2}\right),$
+        设定状态转移次数间值 $n_{1},$ 需要的样本个数 $n_{2}$
+
+-   
+
+    2)  随机初始化初始状态值 $x_{1}^{(0)}$ 和 $x_{2}^{(0)}$
+
+-   
+
+    3)  for $t=0$ to $n_{1}+n_{2}-1$:
+
+    -   
+
+        a)  从条件概率分布 $P\left(x_{2} \mid x_{1}^{(t)}\right)$
+            中采样得到样本 $x_{2}^{t+1}$
+
+    -   
+
+        b)  从条件概率分布 $P\left(x_{1} \mid x_{2}^{(t+1)}\right)$
+            中采样得到样本 $x_{1}^{t+1}$
+
+样本集
+$\left\{\left(x_{1}^{\left(n_{1}\right)}, x_{2}^{\left(n_{1}\right)}\right),\left(x_{1}^{\left(n_{1}+1\right)}, x_{2}^{\left(n_{1}+1\right)}\right), \ldots,\left(x_{1}^{\left(n_{1}+n_{2}-1\right)}, x_{2}^{\left(n_{1}+n_{2}-1\right)}\right)\right\}$
+即为我们需要的平稳分布对应的样本集。
+
+整个采样过程中，我们通过轮换坐标轴, 采样的过程为：
+
+$$
+\left(x_{1}^{(1)}, x_{2}^{(1)}\right) \rightarrow\left(x_{1}^{(1)}, x_{2}^{(2)}\right) \rightarrow\left(x_{1}^{(2)}, x_{2}^{(2)}\right) \rightarrow \ldots \rightarrow\left(x_{1}^{\left(n_{1}+n_{2}-1\right)}, x_{2}^{\left(n_{1}+n_{2}-1\right)}\right)
+$$
+
+采样是在两个坐标轴上不停的轮换的。当然，坐标轴轮换不是必须的，我们也可以每次随机选择一个坐标轴进行采样。不过常用的Gibbs采样的实现都是基于坐标轴轮换的。由于Gibbs采样在高维特征时的优势，目前我们通常意义上的MCMC采样都是用的Gibbs采样。当然Gibbs采样是从M-H采样的基础上的进化而来的，同时Gibbs采样要求数据至少有两个维度，一维概率分布的采样是没法用Gibbs采样的,这时M-H采样仍然成立。有了Gibbs采样来获取概率分布的样本集，有了蒙特卡罗方法来用样本集模拟求和，他们一起就奠定了MCMC算法在大数据时代高维数据模拟求和时的作用。
+
+## Regression and Variable Selection
+
+### Classical Least Squares Estimator
+
+毛毛虫数据集是从 1973
+年对松林毛虫的研究中提取的：它评估了一些森林聚落特征对毛毛虫群落发展的影响。响应变量是在
+500
+平方米（对应于毛虫的最后一列）面积内每棵树的平均毛虫巢数的对数变换。在 n
+= 33 个区域上定义了 p = 8 个潜在的解释变量， x1 是海拔（米），x2
+是坡度（度），x3 是该地区的松树数量，x4
+是在中心采样的树的高度（米）区域，x5 是该区域的方向（从 1 如果向南则为
+2，否则为 2），x6 是优势树的高度（以米为单位），x7 是植被层数，x8
+是混合沉降指数（如果是从 1如果混合，则不混合为
+2）。回归分析的目标是确定哪些解释变量对巢的数量有很大影响，以及这些影响如何相互重叠。
+
+For caterpillar, where $n=33$ and $p=8$, we thus assume that the
+expected lognumber $y_{i}$ of caterpillar nests per tree over an area is
+modeled as a linear combination of an intercept and eight predictor
+variables $(i=1, \ldots, n)$, $$
+\mathbb{E}\left[y_{i} \mid \alpha, \boldsymbol{\beta}, \sigma^{2}\right]=\alpha+\sum_{j=1}^{8} \beta_{j} x_{i j}
+$$
+
+```{r t caterpillar, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(bayess)
+## Demo code https://rdrr.io/cran/bayess/f/
+
+data(caterpillar)
+y=log(caterpillar$y)
+X=as.matrix(caterpillar[,1:8])
+vnames=names(caterpillar)
+
+par(mfrow=c(2,4),mar=c(4.2,2,2,1.2))
+for (i in 1:8) plot(X[,i],y,xlab=vnames[i],pch=19, col="sienna4",xaxt="n",yaxt="n")
+S=readline(prompt="Type  <Return>   to continue : ")
+```
+
+The parameter $\boldsymbol{\beta}$ can obviously be estimated via
+maximum likelihood estimation. In order to avoid non-identifiability and
+uniqueness problems, we assume that
+$\left[\mathbf{1}_{n} \quad \mathbf{X}\right]$ is of full
+$\operatorname{rank}$, that is,
+$\operatorname{rank}\left[\mathbf{1}_{n} \quad \mathbf{X}\right]=p+1$.
+This also means that there is no redundant structure among the
+explanatory variables. We suppose in addition that $p+$ $1<n$ in order
+to obtain well-defined estimates for all parameters.
+
+<!-- 通过最大似然估计来估计参数 β。 为了避免不可识别性和唯一性问题，我们假设[1n X]是满秩的，即秩[1n X] = p+1。 这也意味着解释变量之间没有冗余结构。我们另外假设 p + 1 < n 以获得所有参数的明确估计。 -->
+
+The likelihood
+$\ell\left(\alpha, \boldsymbol{\beta}, \sigma^{2} \mid \mathbf{y}\right)$
+of the standard normal linear model is provided by the following matrix
+representation: $$
+\frac{1}{\left(2 \pi \sigma^{2}\right)^{n / 2}} \exp \left\{-\frac{1}{2 \sigma^{2}}\left(\mathbf{y}-\alpha \mathbf{1}_{n}-\mathbf{X} \boldsymbol{\beta}\right)^{\mathrm{T}}\left(\mathbf{y}-\alpha \mathbf{1}_{n}-\mathbf{X} \boldsymbol{\beta}\right)\right\}
+$$ The maximum likelihood estimators of $\alpha$ and
+$\boldsymbol{\beta}$ are then the solution of the (least squares)
+minimization problem $$
+\begin{array}{l}
+\min _{\alpha, \boldsymbol{\beta}}\left(\mathbf{y}-\alpha \mathbf{1}_{n}-\mathbf{X} \boldsymbol{\beta}\right)^{\mathrm{T}}\left(\mathbf{y}-\alpha \mathbf{1}_{n}-\mathbf{X} \boldsymbol{\beta}\right) \\
+\quad=\min _{\alpha, \boldsymbol{\beta}} \sum_{i=1}^{n}\left(y_{i}-\alpha-\beta_{1} x_{i 1}-\ldots-\beta_{p} x_{i p}\right)^{2}
+\end{array}
+$$ We get solutions $$
+\hat{\alpha}=\overline{\mathbf{y}}, \quad \hat{\boldsymbol{\beta}}=\left(\mathbf{X}^{\top} \mathbf{X}\right)^{-1} \mathbf{X}^{\top}(\mathbf{y}-\bar{y})
+$$
+
+**best linear unbiased estimator**
+
+(see, e.g., Christensen, 2002) states that $(\hat{\alpha}, \hat{\beta})$
+is the best linear unbiased estimator of $(\alpha, \beta)$. This means
+that, for all $a \in \mathbb{R}^{p+1}$, and with the abuse of notation
+that, here, $(\hat{\alpha}, \hat{\beta})$ represents a column vector, $$
+\mathbb{V}\left(a^{\top}(\hat{\alpha}, \hat{\beta}) \mid \alpha, \boldsymbol{\beta}, \sigma^{2}\right) \leq \mathbb{V}\left(a^{\top}(\tilde{\alpha}, \tilde{\beta}) \mid \alpha, \boldsymbol{\beta}, \sigma^{2}\right)
+$$ for any unbiased linear estimator $(\tilde{\alpha}, \tilde{\beta})$
+of $(\alpha, \beta)$.
+
+An unbiased estimator of $\sigma^{2}$ is $$
+\hat{\sigma}^{2}=\frac{1}{n-p-1}\left(\mathbf{y}-\hat{\alpha} \mathbf{1}_{n}-\mathbf{X} \hat{\boldsymbol{\beta}}\right)^{\top}\left(\mathbf{y}-\hat{\alpha} \mathbf{1}_{n}-\mathbf{X} \hat{\boldsymbol{\beta}}\right)=\frac{s^{2}}{n-p-1}
+$$ and $\hat{\sigma}^{2}\left(\mathbf{X}^{\top} \mathbf{X}\right)^{-1}$
+approximates the covariance matrix of $\hat{\boldsymbol{\beta}}$. Note
+that the MLE of $\sigma^{2}$ is $\operatorname{not} \hat{\sigma}^{2}$
+but $\tilde{\sigma}^{2}=s^{2} / n$
+
+    X=scale(X)
+    summary(lm(y~X))
+    ## S=readline(prompt="Type  <Return>   to continue : ")
+
+### The Jeffreys Prior Analysis
+
+<!-- 仅考虑线性模型参数完全缺乏先验信息的情况，我们首先描述基于 Jeffreys 先验的非信息性解决方案   -->
+
+Considering only the case of a complete lack of prior information on the
+parameters of the linear model, we first describe a noninformative
+solution based on the Jeffreys prior. It is rather easy to show that the
+Jeffreys prior in this case is $$
+\pi^{J}\left(\alpha, \boldsymbol{\beta}, \sigma^{2}\right) \propto \sigma^{-2}
+$$ which is equivalent to a flat prior on
+$\left(\alpha, \boldsymbol{\beta}, \log \sigma^{2}\right)$.
+
+We could deduce the following (conditional and marginal) posterior distributions
+
+$$
+\begin{aligned}
+\alpha \mid \sigma^{2}, \mathbf{y} \sim \mathscr{N} &\left(\hat{\alpha}, \sigma^{2} / n\right) \\
+\boldsymbol{\beta} \mid \sigma^{2}, \mathbf{y} & \sim \mathscr{N}_{p}\left(\hat{\boldsymbol{\beta}}, \sigma^{2}\left(\mathbf{X}^{\top} \mathbf{X}\right)^{-1}\right) \\
+\sigma^{2} \mid \mathbf{y} & \sim \mathscr{I} \mathscr{G}\left((n-p-1) / 2, s^{2} / 2\right)
+\end{aligned}
+$$
+
+The corresponding Bayesian estimates of $\alpha, \boldsymbol{\beta}$ and $\sigma^{2}$ are thus given by
+$$
+\mathbb{E}^{\pi}[\alpha \mid \mathbf{y}]=\hat{\alpha}, \quad \mathbb{E}^{\pi}[\boldsymbol{\beta} \mid \mathbf{y}]=\hat{\boldsymbol{\beta}} \quad \text { and } \quad \mathbb{E}^{\pi}\left[\sigma^{2} \mid \mathbf{y}\right]=\frac{s^{2}}{n-p-3}
+$$
+respectively. Unsurprisingly, the Jeffreys prior estimate of $\alpha$ is the empirical mean. Further, the posterior expectation of $\boldsymbol{\beta}$ is the maximum likelihood estimate. Note also that the Jeffreys prior estimate of $\sigma^{2}$ is larger (and thus more pessimistic) than both the maximum likelihood estimate $s^{2} / n$ and the classical unbiased estimate $s^{2} /(n-p-1)$.
+
+不出所料，Jeffreys 对 $\alpha$ 的先验估计是经验平均值。 此外，$\boldsymbol{\beta}$ 的后验期望是最大似然估计。 另请注意，Jeffreys 对 $\sigma^{2}$ 的先验估计比最大似然估计 $s^{2}/n$ 和经典无偏估计 $s^{2}$ 更大（因此更悲观） $/(np-1)$。
+
+
+### Zellner’s G-prior analysis 
+
+Zellner提出的一种不同的非信息性方法，用于从贝叶斯角度处理线性回归。 这种方法是一种中间观点，其中一些关于 β 的先验信息可能可用，它被称为 Zellner 的 G-prior，“G”是 Zellner 在先验方差中使用的符号。
+
+**Semi-noninformative Solution**
+
+虑到线性回归模型的自然共轭先验具有严重的局限性，需要更精细的策略。 Zellner 的 G-prior 建模的核心思想是允许实验者引入（可能很弱）关于回归位置参数的信息，但绕过先验规范中最困难的方面，即先验相关结构的推导.这个结构在 Zellner 的提议中是固定的. Zellner 的 G-prior 因此被分解为 β 的（条件）高斯先验和 (α, σ2) 的inproper (Jeffreys) 先验。
+
+We could deduce that, conditionally on $\mathbf{y}, \mathbf{X}$ and $\sigma^{2}$, the parameters $\alpha$ and $\boldsymbol{\beta}$ are independent and such that
+$$
+\begin{array}{c}
+\alpha \mid \sigma^{2}, \mathbf{y} \sim \mathscr{N}_{1}\left(\overline{\mathbf{y}}, \sigma^{2} / n\right) \\
+\boldsymbol{\beta} \mid \mathbf{y}, \sigma^{2} \sim \mathscr{N}_{p}\left(\frac{g}{g+1}(\hat{\boldsymbol{\beta}}+\mathbf{X} \tilde{\boldsymbol{\beta}} / g), \frac{\sigma^{2} g}{g+1}\left\{\mathbf{X}^{\mathrm{T}} \mathbf{X}\right\}^{-1}\right)
+\end{array}
+$$
+where $\hat{\boldsymbol{\beta}}=\left\{\mathbf{X}^{\mathrm{T}} \mathbf{X}\right\}^{-1} \mathbf{X}^{\mathrm{T}} \mathbf{y}$ is the maximum likelihood (and least squares) estimator of $\boldsymbol{\beta}$. The posterior independence between $\alpha$ and $\boldsymbol{\beta}$ is due to the fact that $\mathbf{X}$ is centered and that $\alpha$ and $\boldsymbol{\beta}$ are a priori independent.
+Moreover, the posterior distribution of $\sigma^{2}$ is given by
+$$
+\sigma^{2} \mid \mathbf{y} \sim I \mathscr{G}\left[(n-1) / 2, s^{2}+(\tilde{\boldsymbol{\beta}}-\hat{\boldsymbol{\beta}})^{\mathrm{T}} \mathbf{X}^{\mathrm{T}} \mathbf{X}(\tilde{\boldsymbol{\beta}}-\hat{\boldsymbol{\beta}}) /(g+1)\right]
+$$
+where $I \mathscr{G}(a, b)$ is an inverse Gamma distribution with mean $b /(a-1)$ and where $s^{2}=\left(\mathbf{y}-\overline{\mathbf{y}} \mathbf{1}_{n}-\mathbf{X} \hat{\boldsymbol{\beta}}\right)^{\mathrm{T}}\left(\mathbf{y}-\overline{\mathbf{y}} \mathbf{1}_{n}-\mathbf{X} \hat{\boldsymbol{\beta}}\right)$ corresponds to the (classical) residual sum of squares.
+
+```{r t Zellner, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(bayess)
+## Demo code https://rdrr.io/cran/bayess/f/
+
+## postmeancoeff posterior mean of the regression coefficients
+## postsqrtcoeff posterior standard deviation of the regression coefficients
+## log10bf log-Bayes factors against the full model
+## postmeansigma2 posterior mean of the variance of the model
+## postvarsigma2 posterior variance of the variance of the model
+data(faithful)
+BayesReg(faithful[,1],faithful[,2])
+```
+
+
+## Bayesian linear regression
+
+```{r Bayesian linear regression, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ 
+# suppressPackageStartupMessages(library(rstanarm))
+# suppressPackageStartupMessages(library(bayestestR))
+# suppressPackageStartupMessages(library(bayesplot))
+# suppressPackageStartupMessages(library(insight))
+ 
+
+## use the BostonHousing data from mlbench package
+library(mlbench)
+data("BostonHousing")
+str(BostonHousing)
+bost <- BostonHousing[,c("medv","age","dis","chas")]
+summary(bost)
+
+## Classical linear regression model
+model_freq<-lm(medv~., data=bost)
+library(broom)
+tidy(model_freq)
+
+# ## Bayesian regression
+# library(rstanarm)
+# https://www.r-bloggers.com/2020/04/bayesian-linear-regression/
+```
+
+
+
+ 
+
+## Item Response Theory
+
+### Item response theory
+
+IRT (item response theory 项目反映理论) 楻型。IRT模型用来描述被试者能力和项目特性之间的关系。在现实生活中，由于 被试者的能力不能通过可观测的数据进行描述，所以IRT楛型用一个潛变量 $\theta$ 来表示，并考虑与项目相关的一组参数来分析正确回答 测试项目的概率。目前常见的IRT楛型有2-PL楻型和3-PL楻型。其具体表达式如下:
+
+**two-parameter logistic (2-PL) Model**
+
+2-PL楻型的表达式如下:
+$$
+p_{i, j}\left(\theta_{i}\right)=\frac{1}{1+\exp \left[-D a_{j}\left(\theta_{i}-b_{j}\right)\right]}
+$$
+其种 $\theta_{i}$ 是被试者能力的参数， $a_{j}$ 和 $b_{j}$ 分别代表的是题目的区分度参数和难度参数，D是为 $1.7$ 的常数。
+
+**3-PL Model**
+
+3-PL模型是在模型中引入了预测参数 $c_{j}$ ，该参数的含义是描述被试者在没有任何先验知识的情况下，回答正确某项目的概率。 常见的例子有学生在做选择题时，即使对该问题没有任何相关知识的获取，也有一定的概率答对该题目。
+3-PL模型的表达式如下:
+$$
+p_{i, j}\left(\theta_{i}\right)=c_{j}+\frac{1-c_{j}}{1+\exp \left[-D a_{j}\left(\theta_{i}-b_{j}\right)\right]}
+$$
+$c_{j}$ 表示的是预测参数，其余的参数含义和2-PL模型中的一致。
+
+**Assumptions**
+
+IRT模型满足三条基本假设：
+
+1) 潜在单调性，IRT㮛型是连续严格单调的函数。
+2) 条件独立性，IRT模型认为给定 $\theta_{i}$ ，对于第 $i$ 个被试者， $Y_{i, j}$ 是独立的; 而对于不同的被试者，其各自的答莞 $Y_{i}$ 也是相互独 立的。
+3) 单维性假设，IRT模型认为某个测试的所有项目都是测量同一个潜在特质。
+
+### EM algorithm  
+
+极大似然估计是利用已知的样本结果，去反推最有可能（最大概率）导致这样结果的参数值，也就是在给定的观测变量下去估计参数值。然而现实中可能存在这样的问题，除了观测变量之外，还存在着未知的隐变量，因为变量未知，因此无法直接通过最大似然估计直接求参数值。EM算法是一种迭代算法，用于含有隐变量的概率模型的极大似然估计，或者说是极大后验概率估计。
+
+引入一个例子来说明隐变量存在的问题。假设有3枚硬币，分别记作A，B，C。这些硬币正面出现的概率分别是π，p，q。我们的实验过程如下，先投掷硬币A，根据其结果选出硬币B和硬币C，正面选B，反面选C；然后投掷选出的硬币，此时出现正面记作1，出现反面记作0。在这个例子中我们观察到的变量只是B或者C的结果，而对A的结果并不知道，在这里A的结果也就是我们的隐变量。A的结果对最终的结果是有影响的，因此在估计参数时必须将A的结果考虑进去。
+
+我们将观测变量表示为$\mathrm{Y}=\left(\mathrm{Y}_{1}, \mathrm{Y}_{2}, \ldots, \mathrm{Y}_{\mathrm{n}}\right)$, 隐变量表示为$\mathrm{Z}=\left(\mathrm{Z} 1, \mathrm{Z}_{2}, \ldots, \mathrm{Z}_{\mathrm{n}}\right)$, 则观测数据的似然函数可以表示为 $P(Y \mid \theta)=\sum_{\mathrm{Z}} P(Z \mid \theta) P(Y \mid Z, \theta)$
+
+在这里 $P(Y \mid \theta)$ 是 $P(Y, Z \mid \theta)$ 的边缘概率，通过转换后可以表示成右边的形式，我们将其转换成对数形式，这样便于求联合概率
+$$
+\begin{aligned}
+L(\theta) &=\log P(Y \mid \theta)=\log \sum_{Z} P(Y, Z \mid \theta) \\
+&=\log \left(\sum_{Z} P(Y \mid Z, \theta) P(Z \mid \theta)\right)
+\end{aligned}
+$$
+然而对于这样的式子直接根据极大化求 $\theta$ 的值是很困难的，因为这里还存在隐变量 $\mathrm{Z}$ ，在这里引入 $\mathrm{EM}$ 算法，通过迭代求解，假设 在第i 次迭代后 $\theta$ 的估计值为 $\theta^{(i)}$ 。我们希望新估计值能是 $L(\theta)$ 增加，通过迭代逐步的达到最大值。为此我们考豦第 $+1$ 步迭代后两者的 差:
+$$
+L(\theta)-L\left(\theta^{(i)}\right)=\log \left(\sum_{Z} P(Y \mid Z, \theta) P(Z \mid \theta)\right)-\log P\left(Y \mid \theta^{(i)}\right)
+$$
+利用Jensen不等式将上述式子展开并得到其下界（对数函数是凹函数）：
+$$
+\begin{aligned}
+L(\theta)-L\left(\theta^{(i)}\right) &=\log \left(\sum_{Z} P\left(Y \mid Z, \theta^{(i)}\right) \frac{P(Y \mid Z, \theta) P(Z \mid \theta)}{P\left(Y \mid Z, \theta^{(i)}\right)}\right)-\log P\left(Y \mid \theta^{(i)}\right) \\
+& \geqslant \sum_{Z} P\left(Z \mid Y, \theta^{(i)}\right) \log \frac{P(Y \mid Z, \theta) P(Z \mid \theta)}{P\left(Z \mid Y, \theta^{(i)}\right)}-\log P\left(Y \mid \theta^{(i)}\right) \\
+&=\sum_{Z} P\left(Z \mid Y, \theta^{(i)}\right) \log \frac{P(Y \mid Z, \theta) P(Z \mid \theta)}{P\left(Z \mid Y, \theta^{(i)}\right) P\left(Y \mid \theta^{(i)}\right)}
+\end{aligned}
+$$
+$$
+B\left(\theta, \theta^{(i)}\right) \triangleq L\left(\theta^{(i)}\right)+\sum_{Z} P\left(Z \mid Y, \theta^{(i)}\right) \log \frac{P(Y \mid Z, \theta) P(Z \mid \theta)}{P\left(Z \mid Y, \theta^{(i)}\right) P\left(Y \mid \theta^{(i)}\right)}
+$$
+则有
+$$
+L(\theta) \geqslant B\left(\theta, \theta^{(i)}\right)
+$$
+在这里 $B\left(\theta, \theta^{(i)}\right)$ 是 $L(\theta)$ 的一个下界，而且由的表达式可知
+$$
+L\left(\theta^{(i)}\right)=B\left(\theta^{(i)}, \theta^{(i)}\right)
+$$
+
+因此任何能使得 $B\left(\theta, \theta^{(i)}\right)$ 増大的 $\theta$ ，也能使得 $L(\theta)$ 增大。因此求 $\theta$ 值使得 $B\left(\theta, \theta^{(i)}\right)$ 增大就可以转变成求 $\theta$ 使得 $L(\theta)$ 增大，即求 $\theta^{(i+1)}=\arg \max _{\theta} B\left(\theta, \theta^{(i)}\right)$
+将上述式子展开可得 (在这里去掉常数项，因为常数项不会影响最终的结果)
+$$
+\begin{aligned}
+\theta^{(i+1)} &=\arg \max _{\theta}\left(L\left(\theta^{(i)}\right)+\sum_{Z} P\left(Z \mid Y, \theta^{(i)}\right) \log \frac{P(Y \mid Z, \theta) P(Z \mid \theta)}{P\left(Z \mid Y, \theta^{(i)}\right) P\left(Y \mid \theta^{(i)}\right)}\right) \\
+&=\arg \max _{\theta}\left(\sum_{Z} P\left(Z \mid Y, \theta^{(i)}\right) \log (P(Y \mid Z, \theta) P(Z \mid \theta))\right) \\
+&=\arg \max _{\theta}\left(\sum_{Z} P\left(Z \mid Y, \theta^{(i)}\right) \log P(Y, Z \mid \theta)\right) \\
+&=\arg \max _{\theta} Q\left(\theta, \theta^{(i)}\right)
+\end{aligned}
+$$
+因此问题就演变成了求 $Q$ 函数的极大化。EM算法的整体思路就是初始化 $\theta$ 的值为 $\theta^{(0)}$ ，然后通过迭代去求得最终的 $\theta$ 值，迭代的终 条件应该是 $L(\theta)$ 的增加不明显 (具体可以设定一个增加值来控制) 。
+下面的图可以形象的表示EM算法的迭代更新过程
+
+```{r , echo=FALSE, fig.align="center", out.width = '100%'}
+knitr::include_graphics("./02_Plots/EMAlgorim.png")
+```
+EM算法分为 E步和 M步
+
+* E步：计算联合分布的条件概率期望。
+* M步：极大化对数似然函数的条件期望求解参数
+
+For 2-PL Model
+
+* 观测数据: 我们把被试者 $i$ 对项目 $j$ 的作答反映记为 $y_{i, j}$ ，又记向量 $y_{i}=\left(y_{i 1}, y_{i 2}, \ldots \ldots, y_{i m}\right)$ ，称为观测数据，其中 $i=1,2, \ldots, N, j=1,2, \ldots, m$ 。对于两级计分模型（在这里我们只考虑两级计分模型，即模型输出的结果只有二分类）， $y_{i j}$ 的取值有 0 和 1 ，分别表示被试者答错和答对题目。除了两级计分模型，还会有多级计分模型（即输出的结果为多分类）。
+* 隐变量 (缺失数据) : 我们把每个被试者的潜在的不可观测的能力值称为缺失数据，记为 $\theta=\left(\theta_{1}, \theta_{2}, \ldots \ldots, \theta_{N}\right) ，$ 其中 $\theta_{i}$ 是被试者 $i$ 的暳在能力值。
+* 完全数据: 完全数据对每一个被试者来说就是观宗数据加缺失数据，记作 $\left[\left(y_{1}, \theta_{1}\right),\left(y_{2}, \theta_{2}\right), \ldots,\left(y_{N}, \theta_{N}\right)\right]$ 。
+
+将EM算法应用到IRT模型中来，则E步和M步可以描述为：
+
++ E步：即在给定缺失数据的分布，观察数据和参数初值时，求完全数据的对数似然函数的条件期望。
++ M步：即使用E步计算出的完全数据充分统计量的条件期望值，极大化完全数据的对数似然函数的条件期望求解参数的值。
++ 不断的循环迭代E步和M步，直到参数估计收敛。
+
+在IRT模型当中，我们通常认为能力参数 $\theta$ 是连续随机变量，故可以取任意值。在EM算法估计参数的过程中，我们是能力参数 $\theta$ 为离散分布。能力值只能取 $q_{1}, q_{2}, \ldots \ldots, q_{K}, \mathrm{~K}$ 个值中的一个，且 $P\left(\theta=q_{k}\right)=\pi_{k}$ 。
+在给定了反应矩阵 $Y$ 的情况下，假设项目参数 $\Delta=\left[\delta_{1}, \ldots \ldots, \delta_{J}\right]$ ，能力分布参数 $\pi=\left(\Pi_{1}, \ldots \ldots, \Pi_{K}\right)$ 。则E步中计 算的条件期望推到如下:
+$$
+\begin{aligned}
+Q\left(\Delta, \pi \mid \Delta^{(s)}, \pi^{(s)}\right) &=\mathrm{E}_{Z_{\mathrm{mis}} \mid Z_{\mathrm{obs}}, \Delta^{(s)}, \pi^{(s)}}\left[\log L\left(\Delta, \pi \mid Z_{\mathrm{obs}}, Z_{\mathrm{mis}}\right)\right] \\
+&=\mathrm{E}_{\theta \mid Y, \Delta^{(s)}, \pi^{(s)}}[\log L(\Delta, \pi \mid Y, \theta)] \\
+&=\mathrm{E}_{\theta \mid Y, \Delta^{(s)}, \pi^{(s)}}\left[\log \prod_{i=1}^{N} f\left(\mathbf{y}_{i}, \theta_{i} \mid \Delta, \pi\right)\right] \\
+&=\sum_{i=1}^{N} \mathrm{E}_{\theta_{i} \mid \mathbf{y}_{i}, \Delta^{(s)}, \pi^{(s)}}\left[\log f\left(\mathbf{y}_{i}, \theta_{i} \mid \Delta, \pi\right)\right]
+\end{aligned}
+$$
+对上面的公式做一些转换表示为:
+$$
+Q\left(\Delta, \pi \mid \Delta^{(s)}, \pi^{(s)}\right)=\phi(\Delta)+\psi(\pi)
+$$
+其中 $\phi(\Delta)$ 和 $\psi(\pi)$ 的表达式如下:
+$$
+\begin{array}{c}
+\phi(\Delta)=\sum_{k=1}^{K} \sum_{j=1}^{J}\left\{\log \left[P\left(q_{k}, \delta_{j}\right)\right] r_{j k}^{(s)}+\log \left[Q\left(q_{k}, \delta_{j}\right)\right]\left(n_{k}^{(s)}-r_{j k}^{(s)}\right)\right\} \\
+\end{array}
+$$
+$$
+\psi(\pi)=\sum_{k=1}^{K} \log \left(\pi_{k}\right) n_{k}^{(s)}
+$$
+
+
+其中:
+$$
+\begin{aligned}
+n_{k}^{(s)} &=\sum_{i=1}^{N} \frac{f\left(\mathbf{y}_{i} \mid q_{k}, \Delta^{(s)}\right) \pi_{k}^{(s)}}{\sum_{k^{\prime}=1}^{K} f\left(\mathbf{y}_{i} \mid q_{k^{\prime}}, \Delta^{(s)}\right) \pi_{k^{\prime}}^{(s)}} \\
+r_{j k}^{(s)} &=\sum_{i=1}^{N} \frac{y_{i j} f\left(\mathbf{y}_{i} \mid q_{k}, \Delta^{(s)}\right) \pi_{k}^{(s)}}{\sum_{k^{\prime}=1}^{K} f\left(\mathbf{y}_{i} \mid q_{k^{\prime}}, \Delta^{(s)}\right) \pi_{k^{\prime}}^{(s)}} \\
+f\left(\mathbf{y}_{i} \mid q_{k}, \Delta^{(s)}\right) &=\prod_{j=1}^{J} P\left(q_{k}, \delta_{j}^{(s)}\right)^{y_{i j}}\left[1-P\left(q_{k}, \delta_{j}^{(s)}\right)\right]^{1-y_{i j}}
+\end{aligned}
+$$
+在上面式子中的 $n_{k}^{(s)}$ 可以理解为在 $N$ 个被试者中能加水平为 $q_{k}$ 的被试数目的期望 (即能力为 $q_{k}$ 的被试者的个数)， $r_{j k}^{(s)}$ 可 以理解为在 $N$ 个被试者中具有能力水平 $q_{k}$ 的被试者答对第 $j$ 个项目的个数。 $n_{k}^{(s)}$ 和 $r_{j k}^{(s)}$ 都是人工数据。
+
+应用EM算法的第 $s$ 步迭代中
+E步: 利用第 $s-1$ 步得到的参数估计值 $\Delta^{(s)}$ 和 $\pi_{k}^{(s)}$ 计算 $n_{k}^{(s)}$ 和 $r_{j k}^{(s)}$ (首次迭代时初始化 $\Delta^{(0)}$ 和 $\pi_{k}^{(0)}$ 的值) 。
+M步: 将E步计算出的 $n_{k}^{(s)}$ 和 $r_{j k}^{(s)}$ 代入到 $\phi(\Delta)$ 和 $\psi(\pi)$ 中，对两项分别极大化可得参数 $\Delta$ 和 $\pi$ 的估计值 $\Delta^{(s+1)}$ 和 $\pi_{k}^{(s+1)}$ 具体的求解如下:
+$$
+\pi_{k}^{(s+1)}=\frac{n_{k}^{(s)}}{\sum_{k^{\prime}=1}^{K} n_{k^{\prime}}^{(s)}}
+$$
+$\pi_{k}^{(s+1)}$ 的值可以直接用上述表达式求出
+而对于 $\Delta^{(s+1)}$ 在这里要用牛顿-拉弗逊方法求解。
+
+EM算法估计IRT模型的步骤如下:
+
+1) E步:
+首先确定 $q_{k}$ 和 $\pi_{k}$; 用前一次迭代参数 $\Delta^{(s)}$ 和 $\pi_{k}^{(s)}$ 求出 $n_{k}^{(s)}$ 和 $r_{j k}^{(s)}$ 。
+2) M步:
+计算$\delta_{j}^{(s+1)}$和$\pi^{(s+1)}$
+3) 重曷E步和M步直到项目参数收敛为止。
+
+
+### MCMC algorithm
+
+在MCMC算法中，为了在一个指定的分布上采样，根据马尔可夫过程，首先从任一状态出发，模拟马尔可夫过程，不断进行状态转移，最终收敛到平稳分布。用MCMC算法在这里估计参数，事实上就是建立一条参数的马尔科夫链，根据参数的状态转移矩阵来输出马尔科夫链上的样本，当马尔科夫链到一定长度时就会开始收敛于某一值。
+
+首先来看看MCMC算法在 $2-\mathrm{PL}$ 模型上的参数估计步骤:
+1) 取模型参数的先验分布: $\theta N(0,1), \log (a) N(0,1), b N(0,1)$ ，则初始化被试能力参数，项目参数的初始值 $\theta_{0}=0, a_{0}=1, b_{0}=0$ 。
+
+2) 根据项目参数初值 $a_{0}, b_{0}$ ，估计被试者的能力参数 $\theta_{1}$ 。
+各被试的能力参数 $\theta_{*}$ 独立地从建议性分布 $q_{\theta}$ 中选取，我们去被试能力参数的建议分布为 $\theta_{*} N\left(\theta_{0}, c_{\theta}^{2}\right)$ 。其中一般 $c_{\theta}=1.1$ 。
+计算从状态 $\theta_{0}$ 转移到状态 $\theta_{1}$ 的接受概率 $a\left(\theta_{0}, \theta_{*}\right)=\min \left(1, R_{\theta}^{0}\right)$ ，由它来决定是否发生状态的转移。
+$$
+R_{\theta} 0=\frac{\left[\prod_{j} p_{i j}\left(\theta_{i}^{*}, a_{j}^{0}, b_{j}^{0}\right)^{x_{i j}}\left(1-p_{i j}\left(\theta_{i}^{*}, a_{j}^{0}, b_{j}^{0}\right)\right)^{1-x_{i j}}\right] \exp -\frac{1}{2 \sigma_{\theta}^{2}}\left(\theta_{i}^{*}\right)^{2}}{\left[\prod_{j} p_{i j}\left(\theta_{i}^{0}, a_{j}^{0}, b_{j}^{0}\right)^{x_{y_{y}}}\left(1-p_{i j}\left(\theta_{i}^{0}, a_{j}^{0}, b_{j}^{0}\right)\right)^{1-x_{y}}\right] \exp -\frac{1}{2 \sigma_{\theta}^{2}}\left(\theta_{i}^{0}\right)^{2}}
+$$
+其中
+$$
+p_{i j}\left(\theta_{i}, a_{j}^{0}, b_{j}^{0}\right)=\frac{1}{1+\exp \left[-1.7 a_{i}^{0}\left(\theta_{i}+b_{i}^{0}\right)\right]}
+$$
+生成随机数 $r_{1} U(0,1)$ ，比较 $r_{1}$ 与接受概率 $a\left(\theta_{0}, \theta_{*}\right)$ 的大小，进行状态转移判断:
+若 $a\left(\theta_{0}, \theta_{*}\right) \geq r_{1}$ ，则有 $\theta_{1}=\theta_{*}$ ；否则 $\theta_{1}=\theta_{*}$ 。
+
+3) 根据止骤 (2) 计算出来的被试能力参数 $\theta_{1}$ ，估计项目参数 $a_{1}, b_{1}$ 。
+各项目的区分度参数和难度参数 $a_{*}, b_{*}$ 分别独立地从建议分布 $q_{a}, q_{b}$ 中选取，我们取区分度参数和难度参数的建议分布为 $\log \left(a_{*}\right) N\left(a_{0}, c_{a}^{2}\right), b * N\left(b_{0}, c_{b}^{2}\right)$, 其中 $c_{a}=0.3, c_{b}=0.3$ 。
+计算从状态 $\left(a_{0}, b_{0}\right)$ 转移至状态 $\left(a_{*}, b_{*}\right)$ 的接收概率 $\alpha\left(a_{0}, b_{0}, a_{*}, b_{*}\right)=\min \left(1, R_{a, b}^{0}\right)$ ，由它来决定是否发生状态的 转移。
+$R_{a, b} 0=\frac{\left[\prod_{j} p_{i j}\left(\theta_{i}^{1}, a_{j}^{*}, b_{j}^{*}\right)^{x_{j}}\left(1-p_{i j}\left(\theta_{i}^{1}, a_{j}^{*}, b_{j}^{*}\right)\right)^{1-x_{j}}\right] \exp -\frac{1}{2 \sigma_{b}^{2}}\left(b_{j}^{*}\right)^{2} \frac{1}{a_{j}^{*}} \exp -\frac{1}{2 \sigma_{a}^{2}} \log \left(a_{j}^{*}\right)^{2}}{\left[\prod_{j} p_{i j}\left(\theta_{i}^{1}, a_{j}^{0}, b_{j}^{0}\right)^{x_{j}}\left(1-p_{i j}\left(\theta_{i}^{1}, a_{j}^{0}, b_{j}^{0}\right)\right)^{1-x_{j}}\right] \exp -\frac{1}{2 \sigma_{b}^{2}}\left(b_{j}^{0}\right)^{2} \frac{1}{a_{j}^{0}} \exp -\frac{1}{2 \sigma_{a}^{2}} \log \left(a_{j}^{0}\right)^{2}} \times \frac{a_{j}^{0}}{a_{j}^{*}}$
+其中
+$$
+p_{i j}\left(\theta_{i}^{1}, a_{j}, b_{j}\right)=\frac{1}{1+\exp \left[-1.7 a_{j}\left(\theta_{i}^{1}+b_{j}\right)\right]}
+$$
+生成随机数 $r_{2} U(0,1)$ ，比较 $r_{2}$ 与 $\alpha\left(a_{0}, b_{0}, a_{*}, b_{*}\right)$ 的大小, 进行状态转移判断:
+若 $\alpha\left(a_{0}, b_{0}, a_{*}, b_{*}\right) \geq r_{2}$ ，则 $a_{1}=a_{*}, b_{1}=b_{*}$; 否则 $a_{1}=a_{0}, b_{1}=b_{0}$ 。
+
+4) 重复步骤 (2) 和 (3) $n$ 次，删除为首的 $w$ 次，取剩余的 $m=n-w$ 次迭代所得结果的均值即为参数的估计值。
+
+5) 步骤 (4) 会生成一条长度为 $n$ 的 Markov 链，重复步骤 (4) $i$ 次 ( $i$ 次一般小于 5 )，即可以得到 $i$ 条 Markov 链, 将这 $i$ 条链得到的参数估计值的均值为最终的参数估计值。
+ 
+
+
+### Unidimensional IRT Models 
+
+**For Dichotomously Scored Responses**
+
+
+
+
+

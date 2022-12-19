@@ -1,0 +1,392 @@
+# Regularization Penalized Regression 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+input <- rstudioapi::getSourceEditorContext()$path
+mm(from = input, type = 'file', widget_name = '30_Regularization Penalized Regression.html', root = "")
+```
+
+
+## Introduction
+
+
+
+### Motivation
+
+* 当今很多数据集具有数量庞大的特征，即 使与观测值的数量相比也毫不逊色，这正如人们所称——高维性
+* 随着我们要处理的数据规模不断增大，最优子集和逐步特征选择这样的技术会造成难以承受的时间成本——即使使用高速计算机。在很多情况下，要得到一个最优子集的解需要花费数小时。
+* 在过去的二十多年中，人们已经开发和提炼了更新的技术，它们提供的预测能力和解释性已经远远超过了我们在前面章节中讨论过的线性模型.
+
+
+正则化会对系数进行限制，甚至 将其缩减到0
+
+* 岭回归
+* 最小化绝对收缩
+* 选择算子
+* 弹性网络
+
+Regularization for linear regression
+$$Y ≈ β0 + β1X1 + β2X2 + …+ βpXp$$
+拟合过程涉及损失函数，称为残差平方和或RSS。 
+$${\displaystyle \operatorname {RSS} =\sum _{i=1}^{n}(y_{i}-f(x_{i}))^{2}}$$
+$${\displaystyle \operatorname {RSS} =\sum _{i=1}^{n}(\varepsilon _{i})^{2}=\sum _{i=1}^{n}(y_{i}-(\alpha +\beta x_{i}))^{2}}$$
+
+通过正则化，我们会在RSS的最小化过程中加入一个新项，称之为收缩惩罚
+$$y = β0 + β1x1 + β2x2 + ··· βkxk + λ(slope) ²$$
+λ被称为调优参数。如果λ = 0，模型就等价于OLS，因为规范化项目都被抵消了。
+
+**Strengthness**
+
+* 正则化方法在计算上 非常有效。如果使用最优子集法，我们需要在一个大数据集上测试$2^p$个模型，如果使用正则化方法，对于每个λ值，我们只需拟合一个模型，因此效率会有极大提升
+* 偏差-方差权衡问题。在线性模型中，响应变量和预测变量之间的关系接近于线性，最小二乘估计接近于无偏，但可能有很高的方差。这意味着，训练集中的微小变动会导致最小二乘系数估计结果的巨大变动(James，2013)。正则化通过恰当地选择λ和规范化， 可以使偏差方差权衡达到最优，从而提高模型拟合的效果
+* 系数的正则化还可以用来解 决多重共线性的问题。
+
+
+**Sources of Multicollinearity**
+
+* 数据收集。在这种情况下，数据是从自变量的狭窄子空间中收集的。多重共线性是通过抽样方法创建的，它在总体中不存在。在扩展范围内获得更多数据将解决此多重共线性问题。极端的例子是当您尝试将一条线拟合到单个点时。
+* 过度定义的模型。在这里，变量多于观察值。应该避免这种情况。
+* 模型选择或规格。多重共线性的来源来自使用独立变量，这些变量是原始变量集的幂或相互作用。应该注意的是，如果自变量的采样子空间很窄，那么这些变量的任何组合都将进一步加剧多重共线性问题。
+* 离群值。 X空间中的极值或离群值会导致多重共线性以及隐藏多重共线性。我们称此为异常值引起的多重共线性。在应用岭回归之前，应通过除去异常值来进行纠正。
+
+
+
+### Data preparation
+
+* lcavol:肿瘤体积的对数值
+* lweight:前列腺重量的对数值
+* age:患者年龄(以年计)
+* lbph:良性前列腺增生(BPH)量的对数值，非癌症性质的前列腺增生。
+* svi:贮精囊侵入，一个指标变量，表示癌细胞是否已经透过前列腺壁侵入贮精囊(1=是，0=否)。
+* lcp:包膜穿透度的对数值，表示癌细胞扩散到前列腺包膜之外的程度。
+* gleason:患者的Gleason评分;由病理学家进行活体检查后给出(2~10)，表示癌细胞的变异程度——评分越高，程度越危险。
+* pgg45:Gleason评分为4或5所占的百分比(高等级癌症)。
+* lpsa:PSA值的对数值，响应变量。
+* train:一个逻辑向量(TRUE或FALSE，用来区分训练数据和测试数据)
+
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(car)      # package to calculate Variance Inflation Factor
+library(corrplot) # correlation plots
+library(leaps)    # best subsets regression
+library(glmnet)   # allows ridge regression, LASSO and elastic net
+library(caret)    # this will help identify the appropriate parameters
+
+prostate <- read.delim("./01_Datasets/prostate.txt", header=T)
+## 统计图或表格来理解数据
+
+
+## 可以看出，结果变 量lpsa和预测变量lcavol之间确实存在明显的线性关系
+plot(prostate)
+## 专门为特征Gleason建立一个统计图
+plot(prostate$gleason, ylab = "Gleason Score")
+table(prostate$gleason)
+## 解决方法
+#  完全删除这个特征;
+#  仅删除值为8.0和9.0的那些评分;
+#  对特征重新编码，建立一个指标变量。
+#  建立一个横轴为Gleason Score，纵轴为Log of PSA的箱线图，会对我们的选择有所帮助
+#  最好的选择是，将这个特征转换为一个指标变量，0表示评分为6，1表示评分为7或更高。删除特征可能会损失模型的预测能力。缺失值也可能会在我们将要使用的 glmnet包中引起问题。
+boxplot(prostate$lpsa ~ prostate$gleason, xlab = "Gleason Score", 
+        ylab = "Log of PSA")
+## 对指标变量的编码使用ifelse()命令
+prostate$gleason <- ifelse(prostate$gleason == 6, 0, 1)
+table(prostate$gleason)
+
+## 相关性统计图，表示特征之间是否存在相关性或依赖
+## 发现问题：PSA和肿瘤体积的对数(lcavol)高度相关 0.73, 多重共线: 肿瘤体积还与包膜穿透相关，而包膜穿透还与贮精囊侵入相关
+p.cor = cor(prostate[,-1])
+corrplot.mixed(p.cor)
+
+## 开始机器学习之前，必须先建立训练数据集和测试数据集
+## 观测值中已经有一个特征指 明这个观测值是否属于训练集，我们就可以使用subset()命令将train值为TRUE的观测值分到 训练集中，将train值为FALSE的观测值分到测试集
+train <- subset(prostate, train == TRUE)[, 2:10]
+str(train)
+test = subset(prostate, train==FALSE)[,2:10]
+str(test)
+```
+
+
+### Best subset regression 
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 通过regsubsets()命令建立一个最小子集对象
+subfit <- regsubsets(lpsa ~ ., data = train)
+b.sum <- summary(subfit)
+## 使用贝叶斯信息准则，三特征模型具有最小的BIC值
+which.min(b.sum$bic)
+## 通过一个统计图查看模型性能和子集组合之间的关系
+plot(b.sum$bic, type = "l", xlab = "# of Features", ylab = "BIC", 
+     main = "BIC score by Feature Inclusion")
+## 对实际模型做出统计图，进行更详细的检查，上图告诉我们具有最小BIC值的模型中的3个特征是:lcavol、lweight和gleason
+plot(subfit, scale = "bic", main = "Best Subset Features")
+
+## 用以上3个变量建立一个线性模型
+ols <- lm(lpsa ~ lcavol + lweight + gleason, data = train)
+## 线性拟合表现得很好，也不存在异方差性
+plot(ols$fitted.values, train$lpsa, xlab = "Predicted", ylab = "Actual", 
+     main = "Predicted vs Actual")
+## 模型在测试集上的表现
+pred.subfit = predict(ols, newdata=test)
+plot(pred.subfit, test$lpsa , xlab = "Predicted", 
+     ylab = "Actual", main = "Predicted vs Actual")
+## 计算均方误差MSE，以便在不同模型构建技术之间进行比较
+resid.subfit = test$lpsa - pred.subfit
+mean(resid.subfit^2)
+```
+
+
+
+
+## Ridge Regression
+
+岭回归(Ridge regression, Tikhonov regularization) 是一种专用于**共线性数据分析**的有偏估计回归方法，实质上是一种改良的最小二乘估计法，通过放弃最小二乘法的无偏性，以损失部分信息、降低精度为代价获得回归系数更为符合实际、更可靠的回归方法，对病态数据的拟合要强于最小二乘法。
+
+在岭回归中，规范化项是所有 系数的平方和，称为L2-norm(L2范数)。在我们的模型中就是试图最小化RSS + λ(sumβj2)。
+当λ增加时，系数会缩小，趋向于0但永远不会为0。
+岭回归的优点是可以提高预测准确度，但因为它不能使任何一个特征的系数为0，所以在模型解释性上会有些问题
+
+Hoerl and Kennard (1970) proposed that potential instability in the LS estimator
+$$
+\hat{\beta}=\left(X^{\prime} X\right)^{-1} X^{\prime} Y,
+$$
+could be improved by adding a small constant value $\lambda$ to the diagonal entries of the matrix $X^{\prime} X$ before taking its inverse.
+The result is the ridge regression estimator
+$$
+\hat{\beta}_{\text {ridge }}=\left(X^{\prime} X+\lambda I_{p}\right)^{-1} X^{\prime} Y
+$$
+Ridge regression places a particular form of constraint on the parameters $\left(\beta^{\prime} \mathrm{s}\right): \hat{\beta}_{\text {ridge }}$ is chosen to minimize the penalized sum of squares:
+$$
+\sum_{i=1}^{n}\left(y_{i}-\sum_{j=1}^{p} x_{i j} \beta_{j}\right)^{2}+\lambda \sum_{j=1}^{p} \beta_{j}^{2}
+$$
+which is equivalent to minimization of $\sum_{i=1}^{n}\left(y_{i}-\sum_{j=1}^{p} x_{i j} \beta_{j}\right)^{2}$ subject to, for some $c>0, \sum_{j=1}^{p} \beta_{j}^{2}<c$, i.e. constraining the sum of the squared coefficients.
+Therefore, ridge regression puts further constraints on the parameters, $\beta_{j}$ 's, in the linear model. In this case, what we are doing is that instead of just minimizing the residual sum values, the optimization function is penalized. We would prefer to take smaller $\beta_{j}$ 's, or $\beta_{j}$ 's that are close to zero to drive the penalty term small.
+
+
+### Modeling
+
+岭回归的命令形式为glmnet(x=输入矩阵, y=响应变量, family= 分布函数, alpha=0)。
+* alpha为0时，表示进行岭回归;
+* alpha为1时，表示进行LASSO
+
+glmnet包会在计算λ值之前首先对输入进行标准化， 然后计算非标准化系数。 需要指定响应变量的分布为gaussian，因为它是连续的;还要指定 alpha = 0，表示进行岭回归。
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+x <- as.matrix(train[, 1:8])
+y <- train[, 9]
+ridge <- glmnet(x, y, family = "gaussian", alpha = 0)
+## print()命令，它会展示非0 系数的数量，解释偏差百分比以及相应的λ值。程序包中算法默认的计算次数是100，但如果偏差 百分比在两个λ值之间的提高不是很显著的话，算法会在100次计算之前停止。也就是说，算法收 敛于最优解
+## 第100行为例。可以看出非0系数，即模型中包含的特征的数量为8。在岭回归中，这个数是不变的。还可以看出解释偏差百分比为0.6971，以及这一行的调优系数λ的值为0.08789。
+print(ridge)
+
+## Y轴是系数值，X轴是L1范数，图中显示了系数值和L1范数之间的关系
+plot(ridge, label = TRUE)
+## 看系数值 如何随着λ的变化而变化
+plot(ridge, xvar = "lambda", label = TRUE)
+## 看系数值如何随解释偏差百分比变化，将lamda换成dev
+## 当λ减小时，系数会增大，解释偏差百分比也 会增大。如果将λ值设为0，就会忽略收缩惩罚，模型将等价于OLS
+plot(ridge, xvar = "dev", label = TRUE)
+
+## 在测试集上证明
+newx <- as.matrix(test[, 1:8])
+ridge.y = predict(ridge, newx = newx, type = "response", s=0.1)
+## 画出表示预测值和实际值关系的统计图
+plot(ridge.y, test$lpsa, xlab = "Predicted", 
+     ylab = "Actual", main = "Ridge Regression")
+## 计算MSE
+ridge.resid <- ridge.y - test$lpsa 
+mean(ridge.resid^2)
+```
+
+ 
+
+## Lasso Regression
+
+区别于岭回归中的L2-norm，LASSO使用L1-norm，即所有特征权重的绝对值之和，
+也就是要最小化RSS + λ(sum|βj|)。这个收缩惩罚项确实可以使特征权重收缩到0.
+相对于岭回归，这是 L2-norm 一个明显的优势，因为可以极大地提高模型的解释性。
+但是，存在高共线性或高度两两相关 的情况下，LASSO可能会将某个预测特征强制删除，这会损失模型的预测能力.
+如果 特征A和B都应该存在于模型之中，那么LASSO可能会将其中一个的系数缩减到0。
+
+如果较少数目的预测变量有实际系数，其余预测变量的系数要么非常小，要么为0， 那么在这样的情况下，LASSO性能更好。
+当响应变量是很多预测变量的函数，而且预测变量的系数大小都差不多时，岭回归表现得更好
+两全其美的机会: 弹性网络既能做到岭回归不能做的特征提取，也能实现LASSO不能做的 特征分组。
+
+A ridge solution can be hard to interpret because it is not sparse (no $\beta$ 's are set exactly to 0 ). 
+
+* Ridge subject to: $\sum_{j=1}^{p}\left(\beta_{j}\right)^{2}<c$.
+* Lasso subject to: $\sum_{j=1}^{p}\left|\beta_{j}\right|<c$.
+
+This is a subtle, but important change. Some of the coefficients may be shrunk exactly to zero.
+The least absolute shrinkage and selection operator, or lasso, as described in Tibshirani (1996) is a technique that has received a great deal of interest.
+As with ridge regression we assume the covariates are standardized. Lasso estimates of the coefficients (Tibshirani, 1996) achieve min $(Y-X \beta)^{\prime}(Y-X \beta)+\lambda \sum_{j=1}^{p}\left|\beta_{j}\right|$, so that the L2 penalty of ridge regression $\sum_{j=1}^{p} \beta_{j}^{2}$ is replaced by an L1 penalty, $\sum_{j=1}^{p}\left|\beta_{j}\right|$.
+4 
+### Modelling
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+lasso <- glmnet(x, y, family = "gaussian", alpha = 1)
+print(lasso)
+## 模型构建过程在69步之后停止了，因为解释偏差不再随着λ值的增加而减小。还要 注意，Df列现在也随着λ变化。初看上去，当λ值为0.001572时，所有8个特征都应该包括在模型 中。然而，出于测试的目的，我们先用更少特征的模型进行测试，比如7特征模型。从下面的结 果行中可以看到，λ值大约为0.045时，模型从7个特征变为8个特征。因此，使用测试集评价模型 时要使用这个λ值
+
+
+plot(lasso, xvar = "lambda", label = TRUE)
+lasso.coef <- coef(lasso, s = 0.045)
+lasso.coef
+## LASSO算法在λ值为0.045时，将lcp的系数归零
+
+
+## LASSO模型在测试集上的表现
+lasso.y <- predict(lasso, newx = newx, 
+                   type = "response", s = 0.045)
+plot(lasso.y, test$lpsa, xlab = "Predicted", ylab = "Actual", 
+     main = "LASSO")
+lasso.resid <- lasso.y - test$lpsa
+mean(lasso.resid^2)
+```
+
+
+### glmnet cross validation
+
+
+glmnet包在使用cv.glmnet()估计 λ值时，默认使用10折交叉验证。
+在K折交叉验证中，数据被划分成k个相同的子集(折)，每次使 用k  1个子集拟合模型，然后使用剩下的那个子集做测试集，最后将k次拟合的结果综合起来(一 般取平均数)，确定最后的参数。
+
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 3折交叉验证
+set.seed(317)
+lasso.cv = cv.glmnet(x, y, nfolds = 3)
+plot(lasso.cv)
+## Interpretation
+## CV统计图和glmnet中其他统计图有很大区别，它表示λ的对数值和均方误差之间的关系，还 带有模型中特征的数量。图中两条垂直的虚线表示取得MSE最小值的logλ(左侧虚线)和距离最 小值一个标准误差的logλ。如果有过拟合问题，那么距离最小值一个标准误的位置是非常好的解决问题的起点。
+
+## 得到这两个λ的具体值
+lasso.cv$lambda.min # minimum
+lasso.cv$lambda.1se # one standard error away
+
+## 查看系数并在测试集上进行模型验证
+## 模型的误差为0.45，只有5个特征，排除了age、lcp和pgg45
+coef(lasso.cv, s = "lambda.1se")
+lasso.y.cv = predict(lasso.cv, newx=newx, type = "response", 
+                     s = "lambda.1se")
+lasso.cv.resid = lasso.y.cv - test$lpsa
+mean(lasso.cv.resid^2)
+```
+
+
+<!-- 通过对数据集的分析和研究，我们得出5个不同模型。下面是这些模型在测试集上的误差。 -->
+<!-- *  最优子集模型:0.51 -->
+<!-- *  岭回归模型:0.48 -->
+<!-- *  LASSO模型:0.44 -->
+<!-- *  弹性网络模型:0.48 -->
+<!-- *  LASSO交叉验证模型:0.45 -->
+
+<!-- 仅看误差的话，7特征LASSO模型表现最好。通过交叉验证得到λ值约为0.125的模型，它更简约，也可能更加合适，因为其解释性更好。 -->
+
+
+
+
+## ElasticNet
+
+弹性网络(ElasticNet)
+
+* 既能做到岭回归不能做的特征提取，也能实现LASSO不能做的 特征分组。
+* LASSO倾向于在一组相关的特征中选择一个，忽略其他。弹性网络包含了 一个混合参数α，它和λ同时起作用。
+α是一个0和1之间的数，λ和前面一样，用来调节惩罚项的大小。
+当α等于0时，弹性网络等价于岭回归;当α等于1时，弹性网络等价于LASSO。
+* 实质上，通过对β系数的二次项引入一个第二调优参数，将L1惩罚项和L2惩罚项混合在一起。 通过最小化(RSS + λ[(1-α)(sum|βj|2)/2 + α(sum|βj|)]/N)完成目标。
+
+
+
+### Modelling
+
+弹性网络参数α。回忆一下，α = 0表示岭回归惩罚，α = 1表示LASSO惩罚，
+弹性网络参数为0≤α≤1。同时解出两个不同的参数会非常麻烦，求助于R中的老朋友——caret包。
+
+caret包旨在解决分类问题和训练回归模型，它配有一个很棒的网站，帮助人们掌握其所有功能:http://topepo.github.io/caret/index.html
+
+* (1) 使用R基础包中的expand.grid()函数，建立一个向量存储我们要研究的α和λ的所有 组合。
+* (2) 使用caret包中的trainControl()函数确定重取样方法，像第2章一样，使用LOOCV。 
+* (3) P在caret包的train()函数中使用glmnet()训练模型来选择α和λ。
+
+规则试验:
+* α从0到1，每次增加0.2;请记住，α被绑定在0和1之间。
+* λ从0到0.20，每次增加0.02;0.2的λ值是岭回归λ值(λ = 0.1)和LASSOλ值(λ = 0.045)之间的一个中间值。
+* expand.grid()函数建立这个向量并生成一系列数值，caret包会自动使用这些数值
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+grid <- expand.grid(.alpha = seq(0,1, by=.2), 
+                    .lambda = seq(0.00, 0.2, by = 0.02))
+table(grid)
+head(grid)
+
+## 对于定量型响应变量，使用算法的默认选择均方根误差即可完美实现
+control <- trainControl(method = "LOOCV") # selectionFunction="best"
+set.seed(701)                             # our random seed
+enet.train = train(lpsa ~ ., data = train, 
+                   method = "glmnet", 
+                   trControl = control, 
+                   tuneGrid = grid)
+enet.train
+## 选择最优模型的原则是RMSE值最小，模型最后选定的最优参数组合是α = 0，λ = 0.08。
+## 实验设计得到的最优调优参数是α = 0和λ = 0.08，相当于glmnet中s = 0.08的岭回归
+
+## 在测试集上验证模型
+# enet <- glmnet(x, y,family = "gaussian", 
+#                alpha = 0, 
+#                lambda = .08)
+# enet.coef <- coef(enet, s = .08, exact = TRUE)
+# enet.coef
+# enet.y <- predict(enet, newx = newx, type = "response",  s= .08)
+# plot(enet.y, test$lpsa, xlab = "Predicted", 
+#      ylab = "Actual", main = "Elastic Net")
+# enet.resid <- enet.y - test$lpsa
+# mean(enet.resid^2)
+```
+
+
+### Classification 
+
+<!-- 正则化技术同样适用于分类问题，二值分类和多值分类. -->
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 用于逻辑斯蒂回归
+## 加载准备乳腺癌数据
+library(MASS)
+biopsy$ID = NULL
+names(biopsy) = c("thick", "u.size", "u.shape", "adhsn",
+                  "s.size", "nucl", "chrom", "n.nuc", "mit", "class")
+biopsy.v2 <- na.omit(biopsy)
+set.seed(123) #random number generator
+ind <- sample(2, nrow(biopsy.v2), replace = TRUE, prob = c(0.7, 0.3))
+train <- biopsy.v2[ind==1, ] #the training data set
+test <- biopsy.v2[ind==2, ] #the test data set
+
+x <- as.matrix(train[, 1:9])
+y <- train[, 10]
+
+
+## 函数cv.glmnet中，将family的值设定为binomial，将measure的值设定为曲线下面积 (auc)，并使用5折交叉验证
+set.seed(3)
+fitCV <- cv.glmnet(x, y, family = "binomial",
+                   type.measure = "auc",
+                   nfolds = 5)
+## 绘制fitCV，可以看出AUC和λ的关系
+plot(fitCV)
+
+## 模型系数,选择出的5个特征是thickness、u.size、u.shape, nucl, n.nuc
+fitCV$lambda.1se
+coef(fitCV, s = "lambda.1se")
+
+## 通过误差和auc，查看这个模型在测试集上的表现
+library(InformationValue)
+predCV <- predict(fitCV, newx = as.matrix(test[, 1:9]),
+                  s = "lambda.1se",
+                  type = "response")
+actuals <- ifelse(test$class == "malignant", 1, 0)
+misClassError(actuals, predCV)
+plotROC(actuals, predCV)
+```
+
+
+

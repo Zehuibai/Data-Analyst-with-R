@@ -1,0 +1,966 @@
+---
+title: 'As-a-Statistician-Advanced Linear Regression'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+# devtools::install_github("rvlenth/lsmeans", dependencies = TRUE)
+
+packages<-c("tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+## Model Selection
+
+### Selection Methods
+
+**1. Forward stepwise selection**
+
+Forward stepwise selection: Start with a zero-feature model, and then add one feature at a time until all features are added. In this process, the model created by the selected features that are added has the smallest RSS. So in theory, the first selected feature should best explain the response variable, and so on. **Adding a feature will definitely reduce the RSS** and **increase the R-square**, but it will not necessarily improve the fit and interpretability of the model
+
+> 前向逐步选择: 从一个零特征模型开始，然后每次添加一个特征，直到所有特征添加完毕。在 这个过程中，被添加的选定特征建立的模型具有最小的RSS。所以理论上，第一个选定的特征应 该能最好地解释响应变量，依此类推。添加一个特征一定会使RSS减少，使R方增加，但不一定能提高模型的拟合度和 可解释性
+
+```
+title2 ’Forward stepwise selection’;
+proc reg;
+model birthwt = headcirc length gestage momage toxemia
+/ selection=f;
+run;
+```
+
+**2. Backward stepwise regression**
+
+Backward stepwise regression starts with a model that includes all features, and deletes one feature that plays the smallest role each time
+
+
+> 后向逐步回归从一个包含所有特征的模型开始，每次删除一个起最小作用的特征。现在也有 一种混合方法，这种算法先通过前向逐步回归添加特征，然后检查是否有特征不再对提高模型拟 合度起作用，如果有则删除。每次建模之后，分析者都可以检查模型输出， 并使用各种统计量选择能提供最佳拟合的特征.
+某些逐步回归的支持者更喜欢向后方法，因为每个解释变量都有机会被包含在最终选择的模型中。
+
+> 逐步回归技术会遇到非常严重的问题。 对于一个数据集，先用前向逐步回归，然后再用后向逐步回归，可能会得到两个完全矛盾的模型。 最重要的一点是，逐步回归会使回归系数发生偏离，换句话说，会使回归系数的值过大，置信区间过窄(Tibrishani，1996)
+
+```
+proc reg;
+model birthwt = headcirc length gestage momage toxemia
+/ selection=b;
+run;
+```
+
+**3. Best subset regression**
+
+> 最优子集回归是逐步回归的一个可接受的替代方案。在最优子集回归中，算法使用所有可能的特征组合来拟合模型，所以，如果有3个特征，将生成7个模型。然后和逐步回 归一样，分析者需要应用自己的判断和统计分析来选择最优模型，模型选择就是后面工作的关键。 如果数据集有多个特征，工作量就会非常大。当特征数多于观测数时(p大 于n)，这个方法的效果就不会好。
+
+```
+title2 ’Selecting the best of all possible regression models’;
+proc reg;
+model birthwt = headcirc length gestage momage toxemia
+/ selection=cp adjrsq r best=5;
+run;
+```
+
+> / selection = cp adjrsq r选项指示SAS使用Cp准则排序最佳模型，并列出调整后和未经调整的R2统计信息。 
+best =选项指定SAS在检查所有可能的解释变量选择后将列出的最大数量的不同模型。
+
+
+```
+library(leaps) 
+library(alr3)
+data(water)
+socal.water <- water[ ,-1]
+
+
+## Full Model
+fit <- lm(BSAAM ~ ., data = socal.water)
+summary(fit)
+
+sub.fit <- regsubsets(BSAAM ~ ., data = socal.water)
+best.summary <- summary(sub.fit)
+best.summary
+
+
+## A model with a minimum and maximum value of a certain output.
+which.min()
+which.max()
+
+names(best.summary)
+which.min(best.summary$rss)
+which.min(best.summary$bic)
+which.max(best.summary$adjr2)
+
+
+## Plot model evaluation
+par(mfrow = c(1,2))
+plot(best.summary$cp, xlab = "number of features", ylab = "cp")
+plot(sub.fit, scale = "Cp")
+```
+
+
+### Selection Criteria
+
+**1. Akaike information criterion (AIC)**
+
+$$
+A I C=2 k-2 \ln (\hat{L})
+$$
+
+* $k$ =	number of estimated parameters in the model
+* $\hat{L}$ = maximum value of the likelihood function for the model
+
+**2. Bayesian information criterion (BIC)**
+
+or Schwarz information criterion (also SIC, SBC, SBIC)
+
+$${\displaystyle \mathrm {BIC} =k\ln(n)-2\ln({\widehat {L}}).\ }$$
+
+* $n$ = the number of data points in ${\displaystyle x}$, the number of observations, or equivalently, the sample size;
+
+
+**3. Adjusted $R^2$**
+
+Adjusted $R^2$ statistic takes the number of explanatory variables p into account. The definition is
+$$\text { Adjusted }\left(R^{2}\right)=1-\frac{(N-1)\left(1-R^{2}\right)}{N-p}$$
+
+p is the number of parameters in the model, and N is the sample size. **If the sample size N is much larger than the number of explanatory variables**, 
+the adjusted $R^2$ will not be very different from the usual R2.
+
+
+**4. Mallows's Cp**
+
+$$C_{p}=\frac{\text { Error SS(p parameters) }}{s^{2}(\text { for the full model })}-N+2 p,$$
+
+This statistic is used to compare the "full" model with all explanatory variables to a smaller model with p-parameters. It is best to use smaller Cp values, because they mean that the root mean square error of the model is smaller, and that there are fewer terms in the model
+
+
+**Other common metrics**
+
+* MAPE (Mean absolute percentage error) $\rightarrow$ Lower the better
+* MSE (Mean squared error) $\rightarrow$ Lower the better
+
+
+
+### k- Fold Cross validation
+
+> 美国莱特州立大学的塔皮教授对此有精彩的论述: 我们经常使用回归模型预测未来观测值。我们用数据去拟合模型是完全可以的， 
+但如果用来预测模型响应的数据和用来估计模型的数据属于同一批，那么说预测效果有多么好就有欺骗的嫌疑了。
+在评价模型对未来观测值的预测效果方面，这样做往往会得 到过于乐观的结果。如果我们留下一个观测值，用其余观测值拟合模型，
+然后再预测这个留下的观测值，那么评价模型预测效果时，得到的结论会具有更少偏差。
+
+Suppose, the model predicts satisfactorily on the 20% split (test data), is that enough to believe that your model will perform equally well all the time? It is important to rigorously test the model’s performance as much as possible. One way is to ensure that the model equation you have will perform well, when it is ‘built’ on a different subset of training data and predicted on the remaining data.
+
+Split your data into ‘k’ mutually exclusive random sample portions. Keeping each portion as test data, we build the model on the remaining (k-1 portion) data and calculate the mean squared error of the predictions. This is done for each of the ‘k’ random sample portions. Then finally, the average of these mean squared errors (for ‘k’ portions) is computed. We can use this metric to compare different linear models.
+
+```{r Cross-Validation for Linear Regression ,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## CVlm {DAAG}
+## Cross-Validation for Linear Regression 
+
+library(DAAG)
+data(cars)
+# performs the CV
+cvResults <- suppressWarnings(CVlm(data =cars, 
+                                   form.lm=dist ~ speed, 
+                                   m=5, 
+                                   dots=FALSE,
+                                   seed=29, 
+                                   legend.pos="topleft",  
+                                   printit=FALSE, 
+                                   main="Small symbols are predicted values while bigger ones are actuals."))
+                                   
+## mean squared error
+attr(cvResults, 'ms')
+
+## Check plot, Are the dashed lines parallel? Are the small and big symbols are not over dispersed for one particular color?
+```
+
+
+**predicted residual error sum of squares (PRESS)**
+
+The predicted residual error sum of squares (PRESS) statistic is a form of cross-validation used in regression analysis to provide a summary measure of the fit of a model to a sample of observations that were not themselves used to estimate the model. It is calculated as the sums of squares of the prediction residuals for those observations.
+
+A fitted model having been produced, each observation in turn is removed and the model is refitted using the remaining observations. The out-of-sample predicted value is calculated for the omitted observation in each case, and the PRESS statistic is calculated as the sum of the squares of all the resulting prediction errors
+
+$$\operatorname {PRESS}=\sum _{{i=1}}^{n}(y_{i}-{\hat  {y}}_{{i,-i}})^{2}$$
+
+> 预测的残差平方和（PRESS）统计量是一种交叉验证的一种形式，用于回归分析，以提供模型对自身不用于估计模型的观测值样本拟合的汇总度量。 它被计算为这些观测值的预测残差的平方和。已生成拟合模型，依次删除每个观察值，并使用其余观察值重新拟合模型。 在每种情况下，都会为省略的观察计算出样本外预测值，并且将PRESS统计量计算为所有产生的预测误差的平方和
+
+```
+library(MPV)
+PRESS(lm(dist ~ speed,data =cars))
+```
+
+
+
+## Practical Difficulties using OLS
+
+**1. Nonrandom Samples**
+
+数据的收集方式直接影响我们可以得出的结论。假设检验的一般理论提出了一个从中抽取样本的总体。样本就是我们的数据，我们想使用从样本数据中获得的估计值来说明未知的总体值！此外，我们要求生成数据d使用总体的简单随机样本。该样本的大小是有限的，而总体的大小是无限的，或者至少如此之大，以至于样本量在整体中所占的比例可以忽略不计。当数据根本不是随机样本时，统计推断背后的逻辑还取决于样本是随机的。这并不是说这样的研究是毫无价值的，而是应用描述性的统计技术之外的其他任何东西都是不合理的。对此类数据得出的结论的置信度肯定值得怀疑
+
+**2. Choice and Range of Predictors**
+
+如果未观察到重要的预测因素，则预测可能会很差，或者我们可能会误解预测因素与响应之间的关系。数据收集的范围和条件可能会限制有效的预测。 推断太多是不安全的。
+
+**3. Model Misspecification**
+
+我们对模型的结构部分和随机部分进行假设。 $\varepsilon \sim \mathrm{N}\left(0, \sigma^{2} I\right)$ 但这可能不正确. 线性模型 $E y=X \beta$ 的结构部分也可能不正确。
+
+**4. Practical and Statistical Significance**
+
+统计意义不等于实际意义。样本越大，您的p值将越小，因此请不要将p值与重要的预测器效果混淆。对于大型数据集，将很容易获得具有统计意义的结果，但实际效果可能并不重要。
+
+参数估计值上的CIS是评估效果大小的更好方法。即使在不拒绝零假设的情况下，它们也很有用，因为它们告诉我们，我们对真实效果或价值接近零的信心有多强。同样重要的是要记住，模型通常只是基础现实的近似，这至少使参数的确切含义值得商榷. 此外，我们知道，拥有的数据越多，测试的功能就越强大。即使是零样本，即使有很大的差异，也会被大量样本检测到。现在，如果我们不能拒绝原假设，我们可能会简单地得出结论，即我们没有足够的数据来获得重要的结果。根据这种观点，假设检验只是对样本量的检验。因此，我们更喜欢CIs
+
+
+
+## Skewness
+
+### Introduction
+
+Skewness is a measure of symmetry for a distribution. The value can be positive, negative or undefined. In a skewed distribution, the central tendency measures (mean, median, mode) will not be equal.
+
+* Positively skewed distribution (or right skewed): The most frequent values are low; tail is toward the high values (on the right-hand side). Generally, Mode < Median < Mean.
+* Negatively skewed distribution (or left skewed), the most frequent values are high; tail is toward low values (on the left-hand side). Generally, Mode > Median > Mean. 
+
+**skewness value**
+
+The direction of skewness is given by the sign of the skewness coefficient: The larger the value of skewness, the larger the distribution differs from a normal distribution
+
+* A zero means no skewness at all (normal distribution).
+* A negative value means the distribution is negatively skewed.
+* A positive value means the distribution is positively skewed.
+
+```
+library(moments)
+skewness(iris$Sepal.Length, na.rm = TRUE)
+```
+
+**Visualization**
+
+```{r Visualization of skewness,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## ggpubr for creating easily publication ready plots
+## moments for computing skewness
+library(moments)
+library(ggpubr)
+data("USJudgeRatings")
+df <- USJudgeRatings
+
+## Consider two variables:
+## CONT: Number of contacts of lawyer with judge. Positively skewed. 
+## 律师与法官的联系次数。正偏
+## PHYS: Physical ability. Negatively skewed 身体能力。负偏斜
+ 
+## Visualization
+## The “CONT” variable shows positive skewness. “PHYS” variable is negatively skewed
+## Distribution of CONT variable
+ggdensity(df, x = "CONT", fill = "lightgray", title = "CONT") +
+  scale_x_continuous(limits = c(3, 12)) +
+  stat_overlay_normal_density(color = "red", linetype = "dashed")
+```
+
+
+
+### Baisc Transformation  
+
+
+* square-root for moderate skew:
+    + sqrt(x) for positively skewed data,
+    + sqrt(max(x+1) - x) for negatively skewed data
+* log for greater skew: The logarithm transformation of any variable will pull in large values and spread apart the low values 任何变量的对数转换将拉大值并分散低值
+    + log10(x) for positively skewed data,
+    + log10(max(x+1) - x) for negatively skewed data
+* inverse for severe skew:
+    + 1/x for positively skewed data
+    + 1/(max(x+1) - x) for negatively skewed data
+
+**Attention**
+
+在不满足正态性假设的情况下，您可以考虑对已转换和未转换的数据运行统计检验（t检验或ANOVA），以查看是否存在任何有意义的差异。
+如果两个测试都得出相同的结论，则您可能不选择转换结果变量并继续对原始数据进行测试输出。
+
+注意，转换会使分析变得更加困难。例如，如果在转换数据后运行t检验以比较两组的平均值，则不能简单地说两组的均值存在差异。
+现在，您具有附加的步骤来解释差异是基于对数转换的事实。因此，通常除非要使分析有效就必须避免进行转换。
+
+
+假设响应变量y是连续的，仅假定为正值，并且其直方图似乎不是大致对称且呈钟形（即normal），而是具有较长的右尾 but rather has a long right tail （向右偏斜）。 我们讨论了对这种响应进行建模的两种可能的方法：Box-Cox变换和伽马回归。
+
+### Box-Cox Power Transformation
+
+If the density of the response variable y is shifted to the right, you can transform y to make its density look more normal.
+
+$$\tilde{y}=\left\{\begin{array}{ll}
+\frac{y^{\lambda}-1}{\lambda}, & \text { if } \lambda \neq 0 \\
+\ln y, & \text { if } \lambda=0
+\end{array}\right.$$
+
+$\lambda$的最佳值借助于最大似然估计来找到。对于一组离散的$\lambda$值, 拟合一个线性模型, 
+其中变换后的响应$y$回归到预测变量 $x_{1}, \ldots, x_{k}$ 选择与似然函数的最大值相对应的
+$\lambda$的值作为最佳值。但是, 所描述的优化是在y 正态分布的情况下进行的，而y并非正好成立,
+因此，在实践中，研究人员将$\lambda$的值“四舍五入"以产 生若干有意义的变换。下表总结了这些建议的转换
+
+$$
+\begin{array}{l|c|c|l}
+\hline \begin{array}{l}
+\text { Range for } \\
+\text { optimal } \lambda
+\end{array} & \begin{array}{c}
+\text { Recommended } \\
+\text { value of } \lambda
+\end{array} & \begin{array}{c}
+\text { Transformed } \\
+\tilde{y}
+\end{array} & \begin{array}{l}
+\text { Transformation } \\
+\text { name }
+\end{array} \\
+\hline[-2.5,-1.5) & -2 & \frac{1}{2}\left(1-\frac{1}{y^{2}}\right) & \text { inverse square } \\
+{[-1.5,-0.75)} & -1 & 1-\frac{1}{y} & \text { inverse (or reciprocal) } \\
+{[-0.75,-0.25)} & -0.5 & 2\left(1-\frac{1}{\sqrt{y}}\right) & \text { inverse square root } \\
+{[-0.25,0.25)} & 0 & \ln y & \text { natural logarithm } \\
+{[0.25,0.75)} & 0.5 & 2(\sqrt{y}-1) & \text { square root } \\
+{[0.75,1.5)} & 1 & y-1 & \text { linear } \\
+{[1.5,2.5]} & 2 & \frac{1}{2}\left(y^{2}-1\right) & \text { square } \\
+\hline
+\end{array}
+$$
+
+**Fitted Model**
+
+$$widehat{\mathbb{E}}(\tilde{y})=\widehat{\mathbb{E}}\left(\frac{y^{\lambda}-1}{\lambda}\right)=\widehat{\beta}_{0}+\widehat{\beta}_{1} x_{1}+\cdots+\widehat{\beta}_{k} x_{k}$$
+
+Interpretation of Estimated Regression Coefficients: For a continuous predictor $x_{1}$, the estimated regression coefficient $\widehat{\beta}_{1}$ represents the change in estimated mean of the transformed response $\widehat{\mathbb{E}}(\tilde{y})$ when $x_{1}$ is increased by one unit, given that the other predictors stay fixed. If $x_{1}$ is an indicator variable, then $\widehat{\beta}_{1}$ is interpreted as the difference between the estimated mean of the transformed response $\widehat{E}(\tilde{y})$ for $x_{1}=1$ and that for $x_{1}=0$,
+when the other predictors are kept unchanged.
+
+
+SAS Implementation
+
+```
+proc transreg;
+model BoxCox(response name) = identity(<list of predictors>);
+run;
+
+
+data real_estate;
+input price beds baths sqft heating$ AC$ lot;
+price10K=price/10000;
+sqftK=sqft/1000;
+central=(heating='central');
+electric=(heating='electric');
+ACyes=(AC='yes');
+lotK=lot/1000;
+cards;
+669000 3 2 1733 central no 5641
+715000 4 3.5 1812 none yes 4995
+634900 5 3 2217 none no 8019
+640000 3 2 1336 none no 7283
+966000 5 3 4000 central no 7424
+889000 3 2 2005 central no 7130
+745000 4 3.5 2276 none no 7936
+685000 2 1.5 1018 central yes 6141
+549500 2 1 920 central no 5545
+868999 5 2.5 1670 electric yes 5750
+624900 3 2 1519 electric no 8267
+549900 2 1 956 none no 4978
+589900 3 2 1601 central no 5005
+829000 5 3 2652 central yes 5601
+599900 4 2 1802 none yes 5262
+875000 6 2.5 3414 electric yes 6534
+635000 3 2 1565 central no 5619
+599999 2 1 832 none no 5601
+734997 3 2.5 1780 central yes 5400
+699999 3 2 1969 electric no 5488
+759000 4 2 1530 central yes 6446
+684900 3 2 1519 central no 8267
+888000 5 2.75 2039 central yes 5976
+599999 4 2 1513 electric no 5937
+565000 2 2 1616 central no 5227
+825000 3 2.5 1421 central yes 5871
+659900 3 2 1547 electric yes 4791
+746000 3 2 1130 central no 5301
+1089000 5 2.5 3314 central yes 7129
+1195499 5 3.5 3760 central yes 6000
+;
+
+## Goodness-of-Fit Tests for Normal Distribution
+proc univariate;
+var price10K;
+histogram /normal;
+run;
+
+## The histogram exhibits a long right tail, suggesting that the distribution is
+   right-skewed.
+proc transreg data=real_estate;
+model BoxCox(price10K) = identity(beds baths sqftK central
+electric ACyes lotK);
+run;
+
+Lambda Log Like
+-3.00 -63.2544
+-2.75 -62.7175
+-2.50 -62.2403
+-2.25 -61.8273
+-2.00 -61.4832
+-1.75 -61.2132
+-1.50 -61.0229
+-1.25 -60.9186
+-1.00 -60.9068
+-0.75 -60.9944
+-0.50 -61.1884
+-0.25 -61.4959
+ 0.00 -61.9238
+ 0.25 -62.4784
+ 0.50 -63.1654
+ 
+## the optimal value of λ that corresponds to the largest
+   value of the log-likelihood function is -1
+
+data real_estate;
+set real_estate;
+tr_price10K=1-(1/price10K);
+run;
+proc univariate;
+var tr_price10K;
+histogram /normal;
+run;
+
+
+## fit the general linear model to the transformed response
+proc genmod;
+class heating(ref='none') AC(ref='no');
+model tr_price10K=beds baths sqftK heating
+AC lotK/dist=normal link=identity;
+run;
+```
+R Implementation
+
+```
+library(MASS)
+BoxCox.fit.name <- boxcox(response.name ∼ x1.name + ...
++ xk.name, data=data.name, lambda=seq(-3,3,1/4), interp=FALSE)
+BoxCox.data.name <- data.frame(BoxCox.fit.name$x, BoxCox.fit.name$y)
+```
+
+
+## Scale
+
+单位的更改可能有助于解释, 但是不会影响参数估计。
+当所有预测变量的比例都相似时，估计的数值稳定性会增强。
+一种相当彻底的缩放方法是使用scale（）命令将所有变量转换为标准单位（均值0和方差1）。 这样的缩放比例具有将所有预测变量和响应置于可比较的比例尺上的优势，这使比较更加容易。
+它还避免了当变量的比例非常不同时可能出现的一些数字问题。 这种缩放的不利之处在于，回归系数现在表示预测变量中标准单位增加对标准单位响应的影响-
+这可能并不总是很容易解释。
+
+```
+data(savings)
+g < - 1m (sr ˜ popl5+pop75+dpi+ddpi, savings)
+summary (g)
+
+Coefficients:
+ Estimate Std. Error t value Pr(>|t|)
+(Intercept) 28.566087 7.354516 3.88 0.00033
+      pop15  0.461193 0.144642 !3.19 0.00260
+      pop75  1.691498 1.083599 !1.56 0.12553
+        dpi  0.000337 0.000931 !0.36 0.71917
+        ddpi 0.409695 0.196197 2.09 0.04247
+        
+Residual standard error: 3.8 on 45 degrees of freedom
+Multiple R-Squared: 0.338, Adjusted R-squared: 0.28
+F-statistic: 5.76 on 4 and 45 DF, p-value: 0.00079
+
+
+ g < 1m (sr ˜ pop15+pop75+I(dpi/1000)+ddpi, savings)
+ summary (g)
+ 
+Estimate Std. Error t value Pr(>|t|)
+(Intercept) 28.566 7.355 3.88 0.00033
+pop15 !0.461 0.145 !3.19 0.00260
+pop75 !1.691 1.084 !1.56 0.12553
+I(dpi/1000) !0.337 0.931 !0.36 0.71917
+ddpi 0.410 0.196 2.09 0.04247
+
+Residual standard error: 3.8 on 45 degrees of freedom
+Multiple R-Squared: 0.338, Adjusted R-squared: 0.28
+F-statistic: 5.76 on 4 and 45 DF, p-value: 0.00079
+ 
+ 
+scsav < - data.frame(scale(savings))
+g < - lm (sr , scsav) 
+summary (g) Coefficients:
+
+ Estimate Std Error t value Pr(>|t|)
+(Intercept) 4.0e–16 0.1200 3.3e–15 1.0000
+pop15 !0.9420 0.2954 !3.19 0.0026
+pop75 !0.4873 0.3122 !1.56 0.1255
+dpi !0.0745 0.2059 !0.36 0.7192
+ddpi 0.2624 0.1257 2.09 0.0425
+
+Residual standard error: 0.849 on 45 degrees of freedom
+Multiple R-Squared: 0.338, Adjusted R-squared: 0.28
+F-statistic: 5.76 on 4 and 45 DF, p-value: 0.00079
+```
+
+
+
+
+
+
+
+
+
+## Interaction
+
+### Simple slopes analysis
+
+
+> 如果交互项显著，就需要进一步做简单斜率检验。
+简单斜率是在具有交互作用的情况下进行的。当包含交互作用项时，我们获得的回归输出告诉我们，当moderator保持为零时，斜率是多少，这通常不是实际/理论上有意义的值。为了更好地理解相互作用的性质，简单的斜率分析是在两个自变量的交互作用对因变量的效应显著情况下，这个时候我们需要知道在一个自变量的不同水平下，另一个自变量对因变量的影响如何！理论上来说需要在a的不同取值水平下分别做回归分析以检验所谓的“x在a不同水平下的简单斜率”是否显著。但是，由于a是一个连续变量，不可能在所有取值下都做， 所以，研究者一般默认取a的三个特殊值来代表其不同水平：
+
+$$M_{a}-S D_{a}, M_{a}, M_{a}+S D_{a}$$
+
+For example, $y=b_{0}+b_{1} x+b_{2} a+b_{3}\left(x-M_{x}\right)\left(a-M_{a}\right)$,
+虽然我们可以直接算出来简单斜率的值，但是单凭这一点无法获得它们的各项统计指标！
+所以在具体操作时，研究者想出了一个办法：可以对原始的a减去一个数$\Delta$,
+然后生成三列新的交互项$i n t^{\prime}=\left(x-M_{x}\right) a^{\prime}=\left(x-M_{x}\right)(a-\Delta),$
+最后用x,a,和新交互项进行三次回归分析, 得到的x的回归系数就等于我们想要的简单斜率。
+
+(1) 当 $\Delta=M_{a}$ 时, 回归方程和最原始的方程一模一样, $B_{1}=b_{1}$;
+(2) 当 $\Delta=M_{a}-S D_{a}$ 时, $\quad B_{1}=b_{1}-b_{3} S D_{a}=b_{1}^{\prime}$
+(3) 当 $\Delta=M_{a}+S D_{a}$ 时, $\quad B_{1}=b_{1}+b_{3} S D_{a}=b_{1}^{\prime \prime}$ 。
+
+因此, 这三个新的回归方程里 $B_{1}$ 的各项统计指标 (显著性、置信区间、标准化系数等),
+交互作用的sim_slopes函数接受回归模型（带有交互作用项）作为输入，并自动执行简单的倾斜过程。
+
+
+```{r Simple slopes analysis,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(jtools) # for summ()
+states <- as.data.frame(state.x77)
+fiti <- lm(Income ~ Illiteracy * Murder + `HS Grad`, data = states)
+summ(fiti)
+
+library(interactions)
+sim_slopes(fiti, pred = Illiteracy, modx = Murder, johnson_neyman = FALSE)
+
+## 现在我们知道文盲的影响只有在谋杀案很高的时候才存在。
+## 可以使用modx.values =参数自己选择moderator的值。
+
+sim_slopes(fiti, pred = Illiteracy, modx = Murder, modx.values = c(0, 5, 10),
+           johnson_neyman = FALSE)
+
+
+## Visualize the coefficients
+
+ss <- sim_slopes(fiti, pred = Illiteracy, modx = Murder, 
+                 modx.values = c(0, 5, 10))
+plot(ss)
+
+
+## Tabular output
+
+
+ss <- sim_slopes(fiti, pred = Illiteracy, modx = Murder,
+                 modx.values = c(0, 5, 10))
+library(huxtable)
+as_huxtable(ss)
+
+## Johnson-Neyman intervals
+
+sim_slopes(fiti, pred = Illiteracy, modx = Murder, johnson_neyman = TRUE)
+```
+
+
+
+
+### Plotting Interactions 
+
+
+[Exploring interactions with continuous predictors in regression models](https://cran.r-project.org/web/packages/interactions/vignettes/interactions.html#plotting_interactions)
+
+**Interactions of continuous variables**
+
+交互提供了一个intern_plot作为一种相对轻松的方法，可以在后端使用ggplot2获得交互的漂亮图。
+
+interact_plot的默认行为是将不参与交互的所有连续变量平均居中，以便更容易地解释预测值。 您可以通过添加居中=“ none”来禁用它。 
+可以通过在中心变量的向量中提供特定变量的名称来选择特定变量。默认情况下，使用连续moderator，将获得三行-均值上下的1个标准差以及均值本身。 如果指定modx.values =“ plus-minus”，则不会绘制moderator的平均值，而仅绘制两条+/- SD线。 也可以选择“条件”将数据分成三个相等大小的组，分别代表主持人分布的上，中，下三分之二，并获得代表这些主持人中每个组的主持人中位数的线 。
+如果moderator是一个因素，则将绘制每个级别，并且您应保留默认值modx.values = NULL。
+
+```{r Plotting interactions of continuous variables,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(jtools) # for summ()
+states <- as.data.frame(state.x77)
+fiti <- lm(Income ~ Illiteracy * Murder + `HS Grad`, data = states)
+summ(fiti)
+
+interact_plot(fiti, pred = Illiteracy, modx = Murder)
+
+## Other options
+interact_plot(fiti, pred = Illiteracy, modx = Murder,
+              x.label = "Custom X Label", y.label = "Custom Y Label",
+              main.title = "Sample Plot",  legend.main = "Custom Legend Title",
+              colors = "seagreen")
+
+## 因素，则将绘制每个级别
+fitiris <- lm(Petal.Length ~ Petal.Width * Species, data = iris)
+interact_plot(fitiris, pred = Petal.Width, modx = Species)
+
+## Specify a subset of a factor’s levels 
+interact_plot(fitiris, pred = Petal.Width, modx = Species,
+              modx.values = c("versicolor", "virginica"))
+
+
+## Plotting observed data
+## plot.points = TRUE argument.
+
+
+## continuous 
+interact_plot(fiti, pred = Illiteracy, modx = Murder, plot.points = TRUE)
+
+## categorical 
+interact_plot(fitiris, pred = Petal.Width, modx = Species,
+              plot.points = TRUE)
+
+## random “jitter” 
+   ## 许多点稍微重叠的地方，应用随机的“抖动”将其稍微移动以停止重叠可能会很有用。 使用抖动参数执行此操作。
+## point.shape
+   ## point.shape = TRUE为每个点赋予不同的形状
+interact_plot(fitiris, pred = Petal.Width, modx = Species,
+              plot.points = TRUE, jitter = 0.1, point.shape = TRUE)
+
+## Confidence bands
+   ## robust argument to plot confidence intervals based on robust standard error calculations.
+interact_plot(fiti, pred = Illiteracy, modx = Murder, interval = TRUE,
+              int.width = 0.8)
+```
+
+
+### Check linearity assumption
+
+The basic assumption of linear regression is that the relationship between the predictor variable and the response variable is linear. When you have an interaction, you can add the assumption that the relationship between the predictor and the response is linear, regardless of the level of the moderator.
+If the relationship is non-linear, it will bend.
+
+
+```{r Check linearity assumption,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+set.seed(99)
+x <- rnorm(n = 200, mean = 3, sd = 1)
+err <- rnorm(n = 200, mean = 0, sd = 4)
+w <- rbinom(n = 200, size = 1, prob = 0.5)
+
+y_1 <- 5 - 4*x - 9*w + 3*w*x + err
+model_1 <- lm(y_1 ~ x * w)
+summ(model_1)
+
+##  the assumption is satisfied.
+interact_plot(model_1, pred = x, modx = w, linearity.check = TRUE, 
+              plot.points = TRUE)
+
+x_2 <- runif(n = 200, min = -3, max = 3)
+y_2 <- 2.5 - x_2^2 - 5*w + 2*w*(x_2^2) + err
+data_2 <- as.data.frame(cbind(x_2, y_2, w))
+
+##  the linearity assumption will be violated
+model_2 <- lm(y_2 ~ x_2 * w, data = data_2)
+summ(model_2)
+interact_plot(model_2, pred = x_2, modx = w, linearity.check = TRUE, 
+              plot.points = TRUE)
+
+
+## 使用以下polynomial多项式来拟合此真实模型
+model_3 <- lm(y_2 ~ poly(x_2, 2) * w, data = data_2)
+summ(model_3)
+interact_plot(model_3, pred = x_2, modx = w, data = data_2)
+
+##  non-linearity check:
+interact_plot(model_3, pred = x_2, modx = w, data = data_2,
+              linearity.check = TRUE, plot.points = TRUE)
+```
+
+
+
+## Collinearity
+
+When some predictors are linear combinations of others, then $X^{T} X$  is singular, and we have (exact) collinearity. There is no unique least squares estimate of $\beta$ If $X^{T} X$ is close to singular, we have collinearity (some call it multicollinearity). This causes serious problems with the estimation of $\beta$ and associated quantities, as well as the interpretation.
+
+共线性可以通过以下几种方式检测：
+
+1. 检查预测变量的相关矩阵可能会显示较大的成对共线性。
+2. 将 $x_{i}$ 对所有其他预测变量进行回归得到 $R_{i}^{2}$ 。 对所有预测变量重复上述步骤。 $R_{i}^{2}$ 接近1表示有问 题。 令人讨厌的线性组合可以通过检查这些回归系数来发现。
+3. 检查 $X^{T} X$, 的特征值，其中 $\lambda_{1}$ 是最大特征值，其他特征值递减。特征值较小表示存在问题。
+
+
+```
+data (seatpos)
+g < - lm (hipcenter ˜ . , seatpos)
+summary (g)
+round(cor(seatpos), 3)
+
+## check the eigendecomposition:
+x < - model.matrix(g)[,-1] 
+e < - eigen (t(x) %*% x)
+e$val
+
+sqrt(e$val[1]/e$val)
+1.000 13.042 20.100 110.551 156.912 212.156 261.667 707.549
+
+
+## check the variance inflation factors (VIFs). 
+   For the first variable this is:
+summary (lm (x [, 1] ~ x[,-1]))$r.squared
+[1] 0.49948
+1/(1!0.49948)
+[1] 1.9979
+
+
+## It is generally believed that a VIF value of more than 5 (some people think it is 10) 
+## indicates that there is serious collinearity
+vif (x)
+Age Weight HtShoes Ht Seated Arm Thigh  Leg
+1.9979 3.6470 307.4294 333.1378 8.9511 4.4964 2.7629 6.6943
+```
+
+
+## Problems with the Error
+
+关于误差项 $\varepsilon$ 的标准假设是，它根据情况是独立且均匀分布的
+（independent and identically distributed iid) 。即 $\varepsilon=\sigma^{2} I$ 。
+此外，我们还假定误差是正态分布的，以便执行 通常的统计推断。我们已经看到,
+这些假设经常会被违反，因此我们必须考虑其他选择。
+
+* 当误差不是i.i.d.时，我们考虑使用广义最小二乘（GLS）。 
+* 当误差是独立的，但分布不相同时，我们可以使用加权最小二乘（WLS），这是GLS的特例。 
+* 当误差不是正态分布时，我们可以使用鲁棒回归
+
+### Generalized Least Squares
+
+到现在为止，我们假设var $\varepsilon=\sigma^{2} I,$, 但有时错误具有非恒定方差或相关。假设var $\varepsilon=\sigma^{2} \Sigma$, 其中
+$\sigma^{2}$ 是未知的，而 $\Sigma$ 是已知的-换句话说，我们知道误差之间的相关性和相对方差，但我们不知道绝对比
+例。
+我们可以写 $\Sigma=S S^{T},$, 其中 $S$ 是使用Choleski分解的三角矩阵（triangular matrix) 。现在我们可以按
+如下方式转换回归模型：
+$$
+\begin{array}{c}
+y=X \beta+\varepsilon \\
+S^{-1} y=S^{-1} X \beta+S^{-1} \varepsilon \\
+y^{\prime}=X^{\prime} \beta+\varepsilon^{\prime} \\
+\operatorname{var} \varepsilon^{\prime}=\operatorname{var}\left(S^{-1} \varepsilon\right)=S^{-1}(\operatorname{var} \varepsilon) S^{-T}=S^{-1} \sigma^{2} S S^{T} S^{-T}=\sigma^{2} I
+\end{array}
+$$
+因此，我们可以将GLS 简化为OLS, 通过 $y^{\prime}=S^{-1} y$ on $S^{-1} X$,误差为 $\varepsilon^{\prime}$ 即iid. 我们只是将问题简化为 我们已经解决的问题。在此转换后的模型中，平方和为：
+$$
+\left(S^{-1} y-S^{-1} X \beta\right)^{T}\left(S^{-1} y-S^{-1} X \beta\right)=(y-X \beta)^{T} S^{-T} S^{-1}(y-X \beta)=(y-X \beta)^{T} \Sigma^{-1}(y-X \beta)
+$$
+which is minimized by:
+$$
+\hat{\boldsymbol{\beta}}=\left(X^{T} \Sigma^{-1} X\right)^{-1} X^{T} \Sigma^{-1} y
+$$
+We find that:
+$$
+\operatorname{var} \hat{\boldsymbol{\beta}}=\left(X^{T} \Sigma^{-1} X\right)^{-1} \sigma^{2}
+$$
+Since $\varepsilon^{\prime}=S^{-1} \varepsilon$, diagnostics should be applied to the residuals, $S^{-1} \hat{\varepsilon} .$ If we have the right $\Sigma$, then
+these should be approximately i.i.d.
+在Pinheiro和Bates（2000）的nlme软件包中找到更方便的方法，该软件包包含GLS拟合函数。我们可以 使用它来拟合此模型：
+
+```{r Generalized Least Squares,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library (nlme)
+fm1 <- gls(follicles ~ sin(2*pi*Time) + cos(2*pi*Time), Ovary,
+           correlation = corAR1(form = ~ 1 | Mare))
+summary(fm1)
+
+## check the confidence intervals
+intervals (fm1) 
+```
+
+### Weighted Least Squares
+
+有时误差是不相关的，但方差不相等。当 $\Sigma$ 是对角矩阵时，误差是不相关的，但不一定具有相等的方
+差。在这种情况下可以使用WLS。
+$$
+\Sigma=\operatorname{diag}(1 / \mathrm{w} 1, \ldots, 1 / \mathrm{w} n)
+$$
+其中 $w_{i}$ 是权重, $S=\operatorname{diag}(\sqrt{1 / w 1}, \ldots, \sqrt{1 / w n})$ 因此我们可以将 $\sqrt{w_{i}} y_{i}$ 上的 $\sqrt{w_{i}} x_{i}$ 回归（尽
+管需要替换 $X$ -matrix中的一列 与 )。变异性低的案例应获得较高的权重，变异性高的案例应获
+得较低的权重。
+Das Modell
+$$
+\boldsymbol{y}=\boldsymbol{X} \boldsymbol{\beta}+\boldsymbol{\varepsilon}
+$$
+
+is called a general linear regression model if the following assumptions apply:
+
+1. $\mathrm{E}(\varepsilon)=\mathbf{0}$
+2. $\operatorname{Cov}(\varepsilon)=\mathrm{E}\left(\varepsilon \varepsilon^{\prime}\right)=\sigma^{2} \boldsymbol{W}$, wobei $\boldsymbol{W}$ eine bekannte positiv definite Matrix sei.
+3. Die Designmatrix $\boldsymbol{X}$ besitzt vollen Spaltenrang, d.h. $\operatorname{rg}(\boldsymbol{X})=p$.
+4. $\varepsilon \sim \mathrm{N}\left(\mathbf{0}, \sigma^{2} \boldsymbol{W}\right)$
+$\mathrm{lm}_{\mathrm{A} \mathrm{A} 2}^{\sim} \mathrm{A}+\mathrm{B}+\mathrm{C}+\mathrm{D}+\mathrm{E}+\mathrm{F}+\mathrm{G}+\mathrm{H}+\mathrm{J}+\mathrm{K}+\mathrm{N} ! \mathrm{l}$, fpe, weights $\left.=\mathrm{l} / \mathrm{EI}\right)$
+
+**weights options**
+	
+an optional vector of weights to be used in the fitting process. Should be NULL or a numeric vector. If non-NULL, weighted least squares is used with weights weights (that is, minimizing sum(w*e^2)); otherwise ordinary least squares is used. 
+
+### Robust Regression
+
+When the error is normal, the least squares regression is obviously the best, but when the error is non-normal, other methods can be considered. Of particular interest are long-tailed error distributions. Robust regression provides an alternative. Robust regression is related to WLS. 
+
+1. 健壮的估计器可防止长尾误差，但无法克服模型选择及其方差结构方面的问题。
+2. 健壮的估算仅能为您提供 $\hat{\beta}$ 以及可能的标准错误，而没有相关的推论方法。
+3. 除最小二乘法外，还可以使用鲁棒的方法作为确认方法。如果这两个估计值相距甚远，则有理由担 心。差异的来源应进行调查。
+
+
+## Shrinkage Methods
+
+### Principal Components Analzsis
+
+### Partial Least Squares
+
+Partial Least Squares (PLS) is a method used to associate a set of input variables X1,...Xm with outputs Y1,...,Y1. PLS regression is comparable to PCR because both use a certain number of linear combinations of predictors to predict the response. The difference is that although PCR ignores Y when determining linear combinations, PLS regression explicitly selects them to predict Y as much as possible. We will only consider univariate PLS
+
+$$\hat{y}=\beta_{1} T_{1}+\cdots+\beta_{p} T_{p}$$
+
+<!-- 偏最小二乘（PLS）是一种用于关联一组输入变量X1，... Xm和输出Y1，...，Y1的方法。PLS回归可与PCR媲美，因为两者均使用一定数量的预测变量线性组合来预测响应。 区别在于，尽管PCR在确定线性组合时忽略了Y，但PLS回归显式选择了它们来尽可能地预测Y。 我们将仅考虑单变量PLS -->
+
+```{r Partial Least Squares, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: Partial Least Squares"}
+knitr::include_graphics("./02_Plots/Partial Least Squares.png")
+```
+
+ 
+### Ridge Regression
+
+$$
+\hat{\boldsymbol{\beta}}=\left(X^{T} X+\lambda I\right)^{-1} X^{T} y
+$$
+We demonstrate the method on the meat spectroscopy data; $\lambda=0$ corresponds to least
+squares while we find that as $\lambda \rightarrow \infty: \hat{\beta} \rightarrow 0$
+
+The Ridge regression estimates of coefficients are biased. Deviation is undesirable, but it is not the only consideration. The mean square error (MSE) can be decomposed in the following ways:
+
+$$E(\hat{\beta}-\beta)^{2}=(E(\hat{\beta}-\beta))^{2}+E(\hat{\beta}-E \hat{\beta})^{2}$$
+
+因此，估计的MSE可以表示为偏差的平方加方差。 有时，可以以增加偏差为代价获得方差的大幅减少。 如果结果导致MSE降低，那么我们可能愿意接受一些偏见。 这就是岭回归所要做出的权衡—以偏差增加为代价减少方差。 这是一个常见的难题。 Frank and Friedman（1993）比较了PCR，PLS和岭回归，发现岭回归的最佳结果。 当然，对于任何给定的数据集，任何一种方法都可能被证明是最好的，因此很难选择一个获胜者
+
+
+
+
+
+

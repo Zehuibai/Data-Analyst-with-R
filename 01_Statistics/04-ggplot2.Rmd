@@ -1,0 +1,1649 @@
+---
+title: 'As-a-Statistician-ggplot2'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+packages<-c("tidyverse", "knitr", "papeR")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+## Parametric Rendering
+
+### Grammar
+
+ggplot2 implements the idea of a "grammar of graphics". The grammar implemented by ggplot2 could be summarized as follows:
+
+* plot ::= coord scale+ facet? layer+
+* layer ::= data mapping stat geom position?
+
+A plot is defined by a coordinate system (coord), one or more scales (scale), an optional faceting specification (facet), and one or more layers (layer). A layer is defined as an R data frame (data), a specification mapping columns of that frame into aesthetic properties (mapping), a statistical approach to summarize the rows of that frame (stat), a geometric object to visually represent that summary (geom), and an optional position adjustment to move overlapping geometric objects out of their way (position).
+
+
+### Coordinate system
+
+* **coord**
+
+<!-- coord_cartesian（默认）笛卡尔坐标系, coord_flip 直角坐标系 -->
+
+    * coord_cartesian - (default) cartesian coordinate system (x horizontal from left to right, y vertical from bottom to top)
+    * coord_flip - flipped cartesian coordinate system (x vertical from bottom to top, y horizontal from left to right)
+    * coord_trans
+    * coord_equal
+    * coord_polar - polar coordinate system; the x (or y) scale is mapped to the angle (theta)
+    * coord_map - various map projections
+
+* **facet**
+
+
+    * facet_wrap(~cell) - univariate: create a 1-d strip of panels, based on one factor, and wrap the strip into a 2-d matrix
+    * facet_grid(row~col) - (usually) bivariate: create a 2-d matrix of panels, based on two factors
+    
+* Modify the display **range** of the axis 
+
+
+    scale_x_continuous(break, lables, ...)
+    scale_y_continuous
+    ...
+
+* Modify the label of the axis (**content, size, font, color, bold, position, angle**)
+
+
+    1. + labs(subtitle=".....", title=".....", y=".....", x=".....") 
+    2. + ggtitle(title=".....", subtitle=".....") + xlab(".....") + ylab(".....")
+    
+    Change label of x axis
+    + xlab(".....") + theme(axis.title.x = element_text(size=12, color="green", face="bold",vjust=0.5,hjust=0.5,angle=45))
+
+* Remove the axis **tick marks**
+
+
+    theme(panel.grid   = element_blank())
+    theme(axis.text    = element_blank())
+    theme(axis.ticks   = element_blank())
+    theme(axis.ticks.y = element_blank())
+
+
+### Legend
+
+* Change the legend title
+
+
+    1. p + labs(fill = "Type")
+    2. order p + guides(fill = guide_legend(title = 'Type'))
+
+* Change the legend position
+
+
+    1. “left”,“top”, “right”, “bottom”, “none”
+    p + theme(legend.position="top")
+    
+    2. order given numerical position coordinates
+    p + theme(legend.position = c(0.7, 0.1),
+          legend.direction = "horizontal")
+
+* Reverse legend order
+
+
+    1. p + guides(fill = guide_legend(reverse=TRUE))
+    2. p + scale_fill_discrete(guide = guide_legend(reverse=TRUE))
+    3. p + scale_fill_discrete(breaks = rev(levels(iris$Species)))
+
+* Change labels and order
+
+
+    1. Change the x order 
+    p + scale_x_discrete(limits=c("versicolor", "virginica", "setosa"))
+    
+    2. Change legend label name
+    p + scale_fill_discrete(name = "Species", labels = c("S", "V1", "V2"))
+    
+
+* Change legend color
+
+
+    p + scale_fill_manual(values = c("#d8b365", "#f5f5f5", "#5ab4ac"))
+
+* Remove legend
+
+
+    1. p + theme(legend.position = "none")
+    2. p + guides(fill=FALSE)
+    3. Modify multiple legends: remove two 
+    
+    data(mtcars)
+    mtcars$cyl<-as.factor(mtcars$cyl)
+    mtcars$gear <- as.factor(mtcars$gear)
+    p <- ggplot(data = mtcars, aes(x = mpg, y = wt))+
+    geom_point(aes(color = cyl, size = qsec, shape = gear)) + theme_bw()
+    p + guides(shape = FALSE, size = FALSE)
+
+* Change legend font (color, size)
+
+
+    p + theme(legend.title = element_text(color = "blue", size = 15),
+              legend.text = element_text(color = "orange", size = 12))
+
+* Change legend background
+
+
+    p + theme(
+      # Change legend background color
+      legend.background = element_rect(fill = "gray"),
+      legend.key = element_rect(fill = "yellow", color = NA),
+      # Change legend key size and key width
+      legend.key.size = unit(1.5, "cm"),
+      legend.key.width = unit(1,"cm") 
+      )
+      
+* Add legend outer border
+
+
+    p + theme(
+      legend.background = element_rect(color = "blue", linetype = "solid", size = 1)
+      )
+
+
+
+### geom
+
+| geom       | Useful stats (default in bold) | Default position adjustment | Parameters (when used with given stat)                                                                                                            |
+|------------|--------------------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| blank      | identity                       | identity                    | no parameters                                                                                                                                     |
+| abline     | abline                         | identity                    | slope, intercept, size, linetype, colour, alpha                                                                                                   |
+|            | identity                       | identity                    | slope, intercept, size, linetype, colour, alpha                                                                                                   |
+| hline      | hline                          | identity                    | yintercept, size, linetype, colour, alpha                                                                                                         |
+|            | identity                       | identity                    | y, yend, size, linetype, colour, alpha                                                                                                            |
+| vline      | vline                          | identity                    | xintercept, size, linetype, colour, alpha                                                                                                         |
+|            | identity                       | identity                    | x, xend, size, linetype, colour, alpha                                                                                                            |
+| text       | identity                       | identity                    | x, y, label, size, colour, alpha, hjust, vjust, parse                                                                                             |
+| point      | identity                       | identity                    | x, y, size, shape, colour, fill, alpha, na.rm                                                                                                     |
+| jitter     | identity                       | jitter                      | x, y, size, shape, colour, fill, alpha, na.rm                                                                                                     |
+| segment    | identity                       | identity                    | x, xend, y, yend, size, linetype, colour, alpha, arrow                                                                                            |
+| line       | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, arrow                                                                                                 |
+| bar        | identity                       | stack                       | x, y, size, linetype, colour, fill, alpha, weight(?) ???                                                                                          |
+|            | bin                            | stack                       | x, y, size, linetype, colour, fill, alpha, weight(?) ???                                                                                          |
+| histogram  | alias for geom_bar             |                             |                                                                                                                                                   |
+| area       | identity                       | stack                       | group, x, y, size, linetype, colour, fill, alpha, na.rm                                                                                           |
+| ribbon     | identity                       | identity                    | group, x, ymin, ymax, size, linetype, colour, fill, alpha, na.rm                                                                                  |
+| linerange  | identity                       | identity                    | x, ymin, ymax, size, linetype, colour, alpha                                                                                                      |
+| pointrange | identity                       | identity                    | x, y, ymin, ymax, size, shape, linetype, colour, fill, alpha                                                                                      |
+| errorbar   | identity                       | identity                    | x, ymin, ymax, size, linetype, colour, alpha, width                                                                                               |
+| errorbarh  | identity                       | identity                    | x, xmin, xmax, y, size, linetype, colour, alpha, height                                                                                           |
+| crossbar   | identity                       | identity                    | x, y, ymin, ymax, size, linetype, colour, fill, alpha, width, fatten                                                                              |
+| boxplot    | identity                       | dodge                       | x, ymin, lower, middle, upper, ymax, size, colour, fill, alpha, weight(?), width(?), outliers(?), outlier.size, outlier.shape, outlier.colour ??? |
+|            | boxplot                        | dodge                       | x, ymin, lower, middle, upper, ymax, size, colour, fill, alpha, weight(?), width(?), outliers(?), outlier.size, outlier.shape, outlier.colour ??? |
+| path       | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, na.rm, arrow, linemitre, linejoin, lineend                                                            |
+| polygon    | identity                       | identity                    | group, x, y, size, linetype, colour, fill, alpha                                                                                                  |
+| rect       | identity                       | identity                    | xmin, xmax, ymin, ymax, size, linetype, colour, fill, alpha                                                                                       |
+| rug        | identity                       | identity                    | x, y, size, linetype, colour, alpha                                                                                                               |
+| step       | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, direction                                                                                             |
+| bin2d      | identity                       | identity                    | xmin, xmax, ymin, ymax, size, linetype, colour, fill, alpha, weight(?) ???                                                                        |
+|            | bin2d                          | identity                    | xmin, xmax, ymin, ymax, size, linetype, colour, fill, alpha, weight(?) ???                                                                        |
+| tile       | identity                       | identity                    | x, y, size, linetype, colour, fill, alpha                                                                                                         |
+| hex        | identity                       | identity                    | x, y, size, colour, fill, alpha                                                                                                                   |
+|            | binhex                         | identity                    | x, y, size, colour, fill, alpha                                                                                                                   |
+| density    | identity                       | identity                    | group, x, y, size, linetype, colour, fill, alpha, weight(?) ???                                                                                   |
+|            | density                        | identity                    | group, x, y, size, linetype, colour, fill, alpha, weight(?) ???                                                                                   |
+| density2d  | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, weight(?), na.rm, arrow, linemitre, linejoin, lineend ???                                             |
+|            | density2d                      | identity                    | group, x, y, size, linetype, colour, alpha, weight(?), na.rm, arrow, linemitre, linejoin, lineend ???                                             |
+| contour    | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, weight(?), na.rm, arrow, linemitre, linejoin, lineend ???                                             |
+|            | contour                        | identity                    | group, x, y, size, linetype, colour, alpha, weight(?), na.rm, arrow, linemitre, linejoin, lineend ???                                             |
+| freqpoly   | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, weight(?) ???                                                                                         |
+|            | bin                            | identity                    | group, x, y, size, linetype, colour, alpha, weight(?) ???                                                                                         |
+| quantile   | identity                       | identity                    | group, x, y, size, linetype, colour, alpha, na.rm, arrow, linemitre, linejoin, lineend                                                            |
+|            | quantile                       | identity                    | group, x, y, size, linetype, colour, alpha, weight, quantiles, formula, xseq, method, na.rm, arrow, linemitre, linejoin, lineend                  |
+| smooth     | identity                       | identity                    | group, x, y, ymin, ymax, size, linetype, colour, fill, alpha                                                                                      |
+|            | smooth                         | identity                    | group, x, y, size, linetype, colour, fill, alpha, weight                                                                                          |
+
+
+### position
+
+* position_identity - default of most geoms
+* position_jitter - default of geom_jitter
+* position_dodge - default of geom_boxplot
+* position_stack - default of geom_bar==geom_histogram and geom_area
+* position_fill - useful for geom_bar==geom_histogram and geom_area
+
+### scale
+
+* size - size of a geom
+* shape - shape of a geom
+* linetype - type of a geom's outline (e.g., dashed, dotted)
+* colour - color of a geom's outline
+* fill - color of a geom's fill
+* alpha - transparency of a geom (0=transparent ... 1=opaque)
+
+Functions that ggplot2 provides to define each of the above kinds of scales. 
+
+* x (or y) position
+    + scale_x_continuous
+    + scale_x_date
+    + scale_x_datetime
+    + scale_x_discrete
+* size
+    + scale_size_continuous
+    + scale_area
+    + scale_size_discrete
+    + scale_size_identity
+    + scale_size_manual
+* shape
+    + scale_shape_discrete
+    + scale_shape_identity
+    + scale_shape_manual
+* linetype
+    + scale_linetype_discrete
+    + scale_linetype_identity
+    + scale_linetype_manual
+* colour (or fill)
+    + scale_colour_gradient
+    + scale_colour_gradient2
+    + scale_colour_gradientn
+    + scale_colour_hue
+    + scale_colour_brewer
+    + scale_colour_grey
+    + scale_colour_identity
+    + scale_colour_manual
+* alpha
+    + scale_alpha_continuous
+
+### stat
+
+* stat_abline - used by geom_abline
+* stat_bin - used by geom_bar == geom_histogram, and geom_freqpoly
+* stat_bin2d - used by geom_bin2d
+* stat_binhex - used by geom_hex
+* stat_boxplot - used by geom_boxplot
+* stat_contour - used by geom_contour
+* stat_density - used by geom_density
+* stat_density2d - used by geom_density2d
+* stat_ecdf
+* stat_function
+* stat_hline - used by geom_hline
+* stat_identity - used by a large number of geoms
+* stat_qq
+* stat_quantile - used by geom_quantile
+* stat_smooth - used by geom_smooth
+* stat_spoke
+* stat_sum
+* stat_summary
+* stat_unique
+* stat_vline - used by geom_vline
+
+### Color
+
++ [ColorBrewer scales](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
++ Hexadecimal color code chart
+    
+```{r Hexadecimal, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: Hexadecimal color code chart"}
+knitr::include_graphics("./02_Plots/ggplot2_Hexadecimal_Color_Code.png")
+```
+
+### Thema
+
+* theme_grey() - the default theme, with a grey background
+* theme_bw() - a theme with a white background
+
+ggplot2 includes eight themes by default, as shown in Figure. Many more are included in add-on packages like [ggthemes](https://github.com/jrnold/ggthemes), by Jeffrey Arnold.
+
+```{r Thema, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: ggplot2 Thema"}
+knitr::include_graphics("./02_Plots/ggplot2_ggthemes.png")
+```
+
+### Saving plots
+
+```
+# Save the plot
+ggsave(p, filename = "chartFromRPractical.png")
+```
+
+
+
+
+ 
+
+
+
+
+
+
+## Scatter plot
+
+### Grouping Aesthetic
+
+* Color Aesthetic
+* Size Aesthetic
+* Alpha Aesthetic
+* Shape Aesthetic
+
+
+```{r the aesthetic, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(ggplot2)
+## Color Aesthetic
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+
+## Set the aesthetic properties of your geom manually
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
+
+## Size Aesthetic
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
+
+## Alpha aesthetic, which controls the transparency of the points
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, alpha = class))
+
+## shape aesthetic
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+
+data(iris)
+theme_set(theme_bw())
+ggplot(data = iris, mapping = aes(x = Petal.Length, y = Petal.Width, shape = Species)) +
+  geom_point(aes(color = Species), size = 3) +
+  scale_colour_manual(values=c("#3399CC","#33FF33","#FFCC33"))+
+  scale_shape_manual(values = c(1,2,3)) +
+  xlab("Petal Length") +  ylab("Petal Width") +
+  ylim(0, 3)+
+  ggtitle("Petal Width and Length") +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold"),
+        legend.title = element_blank(),
+        legend.position = c(0.1, 0.85))
+```
+
+### facet
+
+facet_wrap(), "winding facet", only one standard can be applied to data classification, and the small shapes obtained from different sets of data are arranged in the order of "winding" from left to right and from top to bottom
+
+facet_grid(), facet the drawing of the combination of two variables
+
+```{r facet_wrap and facet_grid, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(.~ class, nrow = 2)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(.~ class)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) +
+  facet_grid(drv ~ .)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_grid(drv ~ cyl)
+```
+
+**Replacing facet strips with text boxes using ggtext::**
+
+```{r Replacing facet strips, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("cowplot")
+
+ggplot(mpg, aes(cty, hwy)) + 
+  geom_point() +
+  facet_wrap(~class) +
+  theme_half_open(12) +
+  background_grid() 
+
+library("ggtext")
+ggplot(mpg, aes(cty, hwy)) + 
+  geom_point() +
+  facet_wrap(~class) +
+  theme_half_open(12) +
+  background_grid() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_textbox(
+      size = 12,
+      color = "white", fill = "#5D729D", box.color = "#4A618C",
+      halign = 0.5, linetype = 1, r = unit(5, "pt"), width = unit(1, "npc"),
+      padding = margin(2, 0, 1, 0), margin = margin(3, 3, 3, 3)
+    )
+  )
+```
+
+
+### geom_smooth
+
+```{r Grouping Aesthetic, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## display different aesthetics in different layers
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + 
+  geom_point(mapping = aes(color = class)) + 
+  geom_smooth()
+
+## no aesthetic just grouping
+ggplot(data = mpg) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, group = drv)) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+
+## linetype aesthetic set the shape of a point
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+
+## color aesthetic
+ggplot(data = mpg) +
+  geom_smooth(
+    mapping = aes(x = displ, y = hwy, color = drv),
+    show.legend = FALSE
+  )
+
+## Linear line
+ggplot(mpg, aes(cty, hwy))+
+  geom_point() + 
+  geom_smooth(method="lm", se=F) +
+  theme_bw()+
+  labs(subtitle="mpg: city vs highway mileage", 
+       y="hwy", 
+       x="cty", 
+       title="Scatterplot with overlapping points", 
+       caption="Source: midwest")
+
+## The raw dataset has 234 observations, but shown in figure fewer, because some points lay together, the jitter plot could be used in this case by applying jitter_geom
+ggplot(mpg, aes(cty, hwy))+
+  geom_point() + 
+  theme_bw()+
+  geom_jitter(width = .5, size=1) +
+  labs(subtitle="mpg: city vs highway mileage", 
+       y="hwy", 
+       x="cty", 
+       title="Jittered Points")
+```
+
+
+
+### Dot Plot
+
+**Diverging Dot Plot **
+
+```{r Diverging Dot Plot , echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# Data Prep
+data("mtcars")  # load data
+mtcars$`car name` <- rownames(mtcars)  # create new column for car names
+mtcars$mpg_z <- round((mtcars$mpg - mean(mtcars$mpg))/sd(mtcars$mpg), 2)  # compute normalized mpg
+mtcars$mpg_type <- ifelse(mtcars$mpg_z < 0, "below", "above")  # above / below avg flag
+mtcars <- mtcars[order(mtcars$mpg_z), ]  # sort
+mtcars$`car name` <- factor(mtcars$`car name`, levels = mtcars$`car name`)  # convert to factor to retain sorted order in plot.
+
+
+ggplot(mtcars, aes(x=`car name`, y=mpg_z, label=mpg_z)) + 
+  geom_point(stat='identity', aes(col=mpg_type), size=6)  +
+  scale_color_manual(name="Mileage", 
+                     labels = c("Above Average", "Below Average"), 
+                     values = c("above"="#00ba38", "below"="#f8766d")) + 
+  geom_text(color="white", size=2) +
+  labs(title="Diverging Dot Plot", 
+       subtitle="Normalized mileage from 'mtcars': Dotplot") + 
+  ylim(-2.5, 2.5) +
+  coord_flip()
+
+ 
+### Diverging Lollipop Chart
+ggplot(mtcars, aes(x=`car name`, y=mpg_z, label=mpg_z)) + 
+  geom_point(stat='identity', fill="black", size=6)  +
+  geom_segment(aes(y = 0, 
+                   x = `car name`, 
+                   yend = mpg_z, 
+                   xend = `car name`), 
+               color = "black") +
+  geom_text(color="white", size=2) +
+  labs(title="Diverging Lollipop Chart", 
+       subtitle="Normalized mileage from 'mtcars': Lollipop") + 
+  ylim(-2.5, 2.5) +
+  coord_flip()
+
+
+
+# Diverging Barcharts
+ggplot(mtcars, aes(x=`car name`, y=mpg_z, label=mpg_z)) + 
+  geom_bar(stat='identity', aes(fill=mpg_type), width=.5)  +
+  scale_fill_manual(name="Mileage", 
+                    labels = c("Above Average", "Below Average"), 
+                    values = c("above"="#00ba38", "below"="#f8766d")) + 
+  labs(subtitle="Normalised mileage from 'mtcars'", 
+       title= "Diverging Bars") + 
+  coord_flip() +
+  theme_bw()
+```
+
+
+
+### Label and Title
+
+`+ ggtitle("Area Vs Population", subtitle="From midwest dataset") + xlab("Area") + ylab("Population")`
+
+```{r ggtitle, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(midwest, aes(x=area, y=poptotal)) + 
+  geom_point() + 
+  geom_smooth(method="lm") + 
+  coord_cartesian(xlim=c(0,0.1), ylim=c(0, 1000000)) + 
+  labs(title="Area Vs Population", subtitle="From midwest dataset", y="Population", x="Area", caption="Midwest Demographics")
+
+## Or
+ggplot(midwest, aes(x=area, y=poptotal)) + 
+  geom_point() + 
+  geom_smooth(method="lm") + 
+  coord_cartesian(xlim=c(0,0.1), ylim=c(0, 1000000)) + 
+  ggtitle("Area Vs Population", subtitle="From midwest dataset") + xlab("Area") + ylab("Population")
+```
+
+
+**Change the Title rendering using ggtext::element_textbox()**
+
+```{r element_textbox, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(mtcars, aes(disp, mpg)) + 
+  geom_point() +
+  labs(
+    title = "<b>Fuel economy vs. engine displacement</b><br>
+    <span style = 'font-size:10pt'>Lorem ipsum *dolor sit amet,*
+    consectetur adipiscing elit, **sed do eiusmod tempor incididunt** ut
+    labore et dolore magna aliqua. <span style = 'color:red;'>Ut enim
+    ad minim veniam,</span> quis nostrud exercitation ullamco laboris nisi
+    ut aliquip ex ea commodo consequat.</span>",
+    x = "displacement (in<sup>3</sup>)",
+    y = "Miles per gallon (mpg)<br><span style = 'font-size:8pt'>A measure of
+    the car's fuel efficiency.</span>"
+  ) +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_textbox_simple(
+      size = 13,
+      lineheight = 1,
+      padding = margin(5.5, 5.5, 5.5, 5.5),
+      margin = margin(0, 0, 5.5, 0),
+      fill = "cornsilk"
+    ),
+    axis.title.x = element_textbox_simple(
+      width = NULL,
+      padding = margin(4, 4, 4, 4),
+      margin = margin(4, 0, 0, 0),
+      linetype = 1,
+      r = grid::unit(8, "pt"),
+      fill = "azure1"
+    ),
+    axis.title.y = element_textbox_simple(
+      hjust = 0,
+      orientation = "left-rotated",
+      minwidth = unit(1, "in"),
+      maxwidth = unit(2, "in"),
+      padding = margin(4, 4, 2, 4),
+      margin = margin(0, 0, 2, 0),
+      fill = "lightsteelblue1"
+    )
+  )
+```
+
+
+### Residuals
+
+
+```
+modf2 <- fortify(lm(formular, data = rf10_comp))
+ggplot(modf2, aes(x = modf$bmi, y = .resid)) + geom_point()+
+  geom_hline(aes(yintercept=0), colour="#990000") +
+  labs(title="Residuals plot for BMI using MICE RF with 10 trees",
+       x = "BMI",
+       y = "Residuals")+
+  theme_classic()
+  
+## Standardized Residuals
+modf <- fortify(lm(formular, data = data))
+ggplot(modf, aes(x = modf$bmi, y = .stdresid)) + geom_point()+
+  geom_hline(aes(yintercept=0), colour="#990000") +
+  labs(title="Standardised residuals plot for BMI using Full data",
+       x = "BMI",
+       y = "Residuals")+
+  theme_classic()
+```
+
+
+### Encircling
+
+In geom_encircle(), set the data to a new data frame containing only points (rows) or points of interest. In addition, you can expand the curve so that it passes outside the point. The color and size (thickness) of the curve can also be modified.
+
+<!-- 在图表中加上某些特殊的点或区域组，以便引起人们对这些特殊情况的注意。 可以使用ggalt包中的geom_encircle（）方便地完成此操作。 -->
+
+```{r Encircling for emphasizen, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# install 'ggalt' pkg
+# devtools::install_github("hrbrmstr/ggalt")
+options(scipen = 999)
+library(ggalt)
+midwest_select <- midwest[midwest$poptotal > 350000 & 
+                            midwest$poptotal <= 500000 & 
+                            midwest$area > 0.01 & 
+                            midwest$area < 0.1, ]
+
+# Plot
+ggplot(midwest, aes(x=area, y=poptotal)) + 
+  geom_point(aes(col=state, size=popdensity)) +   # draw points
+  geom_smooth(method="loess", se=F) + 
+  xlim(c(0, 0.1)) + 
+  ylim(c(0, 500000)) +   # draw smoothing line
+  geom_encircle(aes(x=area, y=poptotal), 
+                data=midwest_select, 
+                color="red", 
+                size=2, 
+                expand=0.08) +   # encircle
+  labs(subtitle="Area Vs Population", 
+       y="Population", 
+       x="Area", 
+       title="Scatterplot + Encircle", 
+       caption="Source: midwest")
+```
+
+### Dumbbell Plot 
+
+Dumbbell plot is used to visualize the relative position of two time points (increase or decrease), it could also be used to compare the distance between 2 categories. In order to get right orders of dumbbell, the variable $Y$ should be treated as factor with conresponding orders shown in figure. 
+ 
+
+```{r Dumbbell Plot , echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# library(ggalt) 
+# 
+# health <- read.csv("https://raw.githubusercontent.com/selva86/datasets/master/health.csv")
+# health$Area <- factor(health$Area, levels=as.character(health$Area))  # for right ordering of the dumbells
+# 
+# # health$Area <- factor(health$Area)
+# ggplot(health, aes(x=pct_2013, xend=pct_2014, y=Area, group=Area)) + 
+#   geom_dumbbell(color="#a3c4dc", 
+#                 size=0.75, 
+#                 point.colour.l="#0e668b") + 
+#   labs(x=NULL, 
+#        y=NULL, 
+#        title="Dumbbell Chart", 
+#        subtitle="Pct Change: 2013 vs 2014", 
+#        caption="Source: https://github.com/hrbrmstr/ggalt") +
+#   theme_classic()+
+#   theme(plot.title = element_text(hjust=0.5, face="bold"),
+#         plot.background=element_rect(fill="#f7f7f7"),
+#         panel.background=element_rect(fill="#f7f7f7"),
+#         panel.grid.minor=element_blank(),
+#         panel.grid.major.y=element_blank(),
+#         panel.grid.major.x=element_line(),
+#         axis.ticks=element_blank(),
+#         legend.position="top",
+#         panel.border=element_blank())
+```
+
+
+
+
+## Histogram 
+
+### General appearance
+
+```{r Appearance, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("tidyverse")
+smaller <- diamonds %>% 
+  filter(carat < 3)
+ggplot(data = smaller, mapping = aes(x = carat, fill=color))+
+  geom_histogram(binwidth = 0.1, col="black", size=.1) +
+  labs(title="Histogram with Auto Binning", 
+       subtitle="Engine Displacement across Vehicle Classes")  
+## geom_histogram(bins=5, col="black", size=.1) 
+
+## Change the color according the number of legend
+## scale_color_manual(values = c("#00AFBB", "#E7B800")) 
+## scale_fill_manual(values = c("#00AFBB", "#E7B800"))
+```
+
+### Themes
+
+ggplot2 offers a set of pre-built themes. Try the followings to see which one you like the most:
+
+* theme_bw()
+* theme_dark()
+* theme_minimal()
+* theme_classic()
+
+The hrbrthemes package provides my favourite style.
+
+```{r hrbrthemes, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# Load dataset from github
+# data <- read.table("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/1_OneNum.csv", header=TRUE)
+# # Make the histogram
+# library(hrbrthemes)
+# data %>%
+#   filter( price<300 ) %>%
+#   ggplot( aes(x=price)) +
+#     stat_bin(breaks=seq(0,300,10), fill="#69b3a2", color="#e9ecef", alpha=0.9) +
+#     ggtitle("Night price distribution of Airbnb appartements") +
+#     theme_ipsum()
+```
+
+### geom_freqpoly()
+
+
+```{r freqpoly, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("tidyverse")
+smaller <- diamonds %>% 
+  filter(carat < 3)
+ggplot(data = smaller, mapping = aes(x = carat, colour = cut)) +
+  geom_freqpoly(binwidth = 0.1)
+
+
+## display density instead of count
+ggplot(data = diamonds, mapping = aes(x = price, y = ..density..)) + 
+  geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)
+
+## geom_density
+ggplot(mpg, aes(cty)) +
+  geom_density(aes(fill=factor(cyl)), alpha=0.5) + 
+    labs(title="Density plot", 
+         subtitle="City Mileage Grouped by Number of cylinders",
+         caption="Source: mpg",
+         x="City Mileage",
+         fill="# Cylinders")
+```
+
+
+
+### Marginal Histogram / Boxplot
+
+This can be achieved using the ggMarginal() function in the "ggExtra" package. In addition to histograms, you can choose to draw marginal box plots or density plots by setting the corresponding type options.
+
+```{r Marginal Plot, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("ggExtra")
+
+mpg_select <- mpg[mpg$hwy >= 35 & mpg$cty > 27, ]
+g <- ggplot(mpg, aes(cty, hwy)) + 
+  geom_count() + 
+  geom_smooth(method="lm", se=F) +
+  theme_bw()
+
+ggMarginal(g, type = "histogram", fill="transparent")
+ggMarginal(g, type = "boxplot",   fill="transparent")
+ggMarginal(g, type = "density",   fill="transparent")
+```
+
+
+
+### Scales
+
+Scales control the details of how data values are translated to visual properties. Many [different scales](https://ggplot2.tidyverse.org/reference/index.html#section-scales) are offered by ggplot2. The most widely one is probably the log scale.
+
+
+```{r Change Scales, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# 
+# # Load dataset from github
+# data <- read.table("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/1_OneNum.csv", header=TRUE)
+# 
+# # Make the histogram
+# data %>%
+#   ggplot( aes(x=price)) +
+#     geom_histogram(color="white", fill="steelblue4") +
+#     ggtitle("Night price distribution of Airbnb appartements") +
+#     xlab("Night price") +
+#     ylab("Number of apartments")
+# 
+# data %>%
+#   ggplot( aes(x=price)) +
+#     geom_histogram(color="white", fill="steelblue4") +
+#     ggtitle("Night price distribution of Airbnb appartements") +
+#     xlab("Night price") +
+#     ylab("Number of apartments") +
+#     scale_x_log10()
+```
+
+
+
+## Bar plot
+
+### Aesthetic
+
+```{r Aesthetic, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Color Aesthetic
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = cut ))
+
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = color ))
+
+
+## Position aesthetic
+## position adjustment options: "identity", "dodge" or "fill".
+## position =“fill” is like overlay, but each bar has same height. 
+## position =“dodge” put objects together
+
+ggplot(data = diamonds, mapping = aes(x = cut, fill = clarity)) + 
+  geom_bar(alpha = 1/5, position = "identity")
+
+ggplot(data = diamonds, mapping = aes(x = cut, colour = clarity)) + 
+  geom_bar(fill = NA, position = "identity")+
+  facet_wrap(~color) +
+  theme(legend.position = "top")
+
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill", width = 0.5) + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  labs(title="Histogram on Categorical Variable", 
+       subtitle="Manufacturer across Vehicle Classes") 
+ 
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+```
+
+**Change outline colors**
+
+It is also possible to change manually barplot line colors using the functions :
+
+* scale_color_manual() : to use custom color palettes
+    + `p+scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9"))`
+* scale_color_brewer() : to use color palettes from RColorBrewer package
+    + `p+scale_color_brewer(palette="Dark2")`
+* scale_color_grey() : to use grey color palettes
+    + `p + scale_color_grey() + theme_classic()`
+
+**Change fill colors**
+
+* scale_fill_manual() : to use custom colors
+    + `p+scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))`
+* scale_fill_brewer() : to use color palettes from RColorBrewer package
+    + `p+scale_fill_brewer(palette="Dark2")`
+* scale_fill_grey() : to use grey color palettes
+    + `p + scale_fill_grey()`
+
+**Change the legend position**
+
+* Change bar fill colors to blues
+    + `p <- p+scale_fill_brewer(palette="Blues")`
+* Change the legend position
+    + `p + theme(legend.position="top")`
+    + `p + theme(legend.position="bottom")`
+* Remove legend
+    + `p + theme(legend.position="none")`
+* Change the order of items in the legend
+    + `p + scale_x_discrete(limits=c("D2", "D0.5", "D1"))`
+
+  
+
+
+
+
+### Proportion
+
+```{r proportion, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = color ))
+ 
+## proportion, rather than count:
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))+
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Name")+
+  theme_classic()
+```
+### coord
+
+```{r coordinary system, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## coord_polar() uses polar coordinates
+bar <- ggplot(data = diamonds) + 
+  geom_bar(
+    mapping = aes(x = cut, fill = cut), 
+    show.legend = FALSE,
+    width = 1
+  ) + 
+  theme(aspect.ratio = 1) +
+  labs(x = NULL, y = NULL)
+bar + coord_flip()
+bar + coord_polar()
+```
+
+### stat="identity"
+
+```{r identity, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+Rotation_5 <- readRDS(file = "./01_Datasets/Rotation_5.rds")
+
+ggplot(data = Rotation_5, aes(x = Visit, y= Percentage, fill=Treatment)) +
+  geom_bar(stat="identity", width =0.5,
+           position=position_dodge()) +
+  geom_text(aes(label=N), vjust=1.6, color="white",
+            position = position_dodge(0.5), size=3.5)+
+  geom_text(aes(label=P, x=Visit, y=0.97),hjust=0.4, size=3.5)+
+  scale_fill_brewer(palette="Paired")+
+  scale_y_continuous(labels = scales::percent, breaks=seq(0, 1, 0.1)) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Responder rate",
+       title = "Rotational stability within 5° from Visit H0 (sitting)")
+
+```
+
+
+### Ranking
+
+```{r Ranking the bar, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+### Ordered Bar Chart 
+cty_mpg <- aggregate(mpg$cty, by=list(mpg$manufacturer), FUN=mean)  # aggregate
+colnames(cty_mpg) <- c("make", "mileage")  # change column names
+cty_mpg <- cty_mpg[order(cty_mpg$mileage), ]  # sort
+cty_mpg$make <- factor(cty_mpg$make, levels = cty_mpg$make)  # to retain the order in plot.
+
+# Draw plot
+ggplot(cty_mpg, aes(x=make, y=mileage)) + 
+  geom_bar(stat="identity", width=.5, fill="tomato3") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="Make Vs Avg. Mileage", 
+       caption="source: mpg") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) +
+  theme_bw()
+
+ 
+
+### Lollipop Chart
+### Lollipop charts conveys the same information as in bar charts. By reducing the thick bars into thin lines, it reduces the clutter and lays more emphasis on the value. It looks nice and modern.
+ggplot(cty_mpg, aes(x=make, y=mileage)) + 
+  geom_point(size=3) + 
+  geom_segment(aes(x=make, 
+                   xend=make, 
+                   y=0, 
+                   yend=mileage)) + 
+  labs(title="Lollipop Chart", 
+       subtitle="Make Vs Avg. Mileage", 
+       caption="source: mpg") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+```
+
+
+
+
+### Means and error bars
+
+```{r geom_errorbar, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+PrimEnd <- data.frame('Primary Endpoint'=c("Primary Analysis", 
+                                           "Sensitivity Analysis 1",
+                                           "Sensitivity Analysis 2",
+                                           "Primary Analysis after imputation"),
+                      mean=c(-0.2945, -0.08334, -0.2926, -0.2395),
+                      LL=c(-0.9612, -0.2861, -0.9344, -0.7521),
+                      UL=c(0.3722, 0.1194, 0.3491, 0.2730),
+                      pvalue=c("P = 0.313", "P = 0.347", "P = 0.304","P = 0.359"))
+level <- PrimEnd$Primary.Endpoint
+
+PrimEnd$Primary.Endpoint <- factor(PrimEnd$Primary.Endpoint, levels=level)
+library(ggplot2)
+ggplot(PrimEnd, aes(x=Primary.Endpoint, y=mean)) + 
+  geom_line() +
+  geom_point()+
+  geom_text(aes(label=pvalue),hjust=-0.2, vjust=0) +
+  geom_hline(aes(yintercept=0, color="black", linetype="dot")) + 
+  geom_errorbar(aes(ymin=LL, ymax=UL), width = 0.5, size = 0.5)+
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(x = "",
+       y = "Difference between the IOLs",
+       title = "Superiority analysis in mean absolute rotation between Visit H0 (sitting) and H1")
+
+ 
+
+tg <- ToothGrowth
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   data: a data frame.
+##   measurevar: the name of a column that contains the variable to be summariezed
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   na.rm: a boolean that indicates whether to ignore NA's
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    # Rename the "mean" column    
+    datac <- rename(datac, c("mean" = measurevar))
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+
+    return(datac)
+}
+tgc <- summarySE(tg, measurevar="len", groupvars=c("supp","dose"))
+# The errorbars overlapped, so use position_dodge to move them horizontally
+pd <- position_dodge(0.1) 
+ggplot(tgc, aes(x=dose, y=len, colour=supp, group=supp)) + 
+    geom_errorbar(aes(ymin=len-se, ymax=len+se), colour="black", width=.1, position=pd) +
+    geom_line(position=pd) +
+    geom_point(position=pd, size=3, shape=21, fill="white") + # 21 is filled circle
+    xlab("Dose (mg)") +
+    ylab("Tooth length") +
+    scale_colour_hue(name="Supplement type",    # Legend label, use darker colors
+                     breaks=c("OJ", "VC"),
+                     labels=c("Orange juice", "Ascorbic acid"),
+                     l=40) +                    # Use darker colors, lightness=40
+    ggtitle("The Effect of Vitamin C on\nTooth Growth in Guinea Pigs") +
+    expand_limits(y=0) +                        # Expand y range
+    scale_y_continuous(breaks=0:20*4) +         # Set tick every 4
+    theme_bw() +
+    theme(legend.justification=c(1,0),
+          legend.position=c(1,0))               # Position legend in bottom right
+
+
+
+tgc2 <- tgc
+tgc2$dose <- factor(tgc2$dose)
+ggplot(tgc2, aes(x=dose, y=len, fill=supp)) + 
+    geom_bar(position=position_dodge(), stat="identity",
+             colour="black", # Use black outlines,
+             size=.3) +      # Thinner lines
+    geom_errorbar(aes(ymin=len-se, ymax=len+se),
+                  size=.3,    # Thinner lines
+                  width=.2,
+                  position=position_dodge(.9)) +
+    xlab("Dose (mg)") +
+    ylab("Tooth length") +
+    scale_fill_hue(name="Supplement type", # Legend label, use darker colors
+                   breaks=c("OJ", "VC"),
+                   labels=c("Orange juice", "Ascorbic acid")) +
+    ggtitle("The Effect of Vitamin C on\nTooth Growth in Guinea Pigs") +
+    scale_y_continuous(breaks=0:20*4) +
+    theme_bw()
+```
+
+
+
+
+### Waffle Chart
+
+Show a good way to make a total classification. Although there is no direct function, it can be clarified by using the geom_tile () function.
+
+```{r geom_tile, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+var <- mpg$class  # the categorical data 
+
+## Prep data (nothing to change here)
+nrows <- 10
+df <- expand.grid(y = 1:nrows, x = 1:nrows)
+categ_table <- round(table(var) * ((nrows*nrows)/(length(var))))
+categ_table
+
+df$category <- factor(rep(names(categ_table), categ_table)) 
+
+## Plot
+ggplot(df, aes(x = x, y = y, fill = category)) + 
+        geom_tile(color = "black", size = 0.5) +
+        scale_x_continuous(expand = c(0, 0)) +
+        scale_y_continuous(expand = c(0, 0), trans = 'reverse') +
+        scale_fill_brewer(palette = "Set3") +
+        labs(title="Waffle Chart", subtitle="'Class' of vehicles",
+             caption="Source: mpg") + 
+        theme(panel.border = element_rect(size = 2),
+              plot.title = element_text(size = rel(1.2)),
+              axis.text = element_blank(),
+              axis.title = element_blank(),
+              axis.ticks = element_blank(),
+              legend.title = element_blank(),
+              legend.position = "right")
+```
+
+
+## Box plot
+
+### varwidth
+
+```{r Boxplot using identity, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+theme_set(theme_classic())
+
+ggplot(mpg, aes(class, cty))+
+  geom_boxplot(varwidth=T, fill="plum") + 
+    labs(title="Box plot", 
+         subtitle="City Mileage grouped by Class of vehicle",
+         caption="Source: mpg",
+         x="Class of Vehicle",
+         y="City Mileage")
+```
+### Reorder
+
+Reorder: To make the trend easier to see, we can reorder class based on the median value of hwy:
+
+```{r Reorder according to median, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy))+
+  coord_flip()
+```
+ 
+ 
+ 
+### Fill
+
+```{r grouping using fill, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(mpg, aes(class, cty))+
+  geom_boxplot(aes(fill=factor(cyl))) + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  labs(title="Box plot", 
+       subtitle="City Mileage grouped by Class of vehicle",
+       caption="Source: mpg",
+       x="Class of Vehicle",
+       y="City Mileage")
+```
+
+### stat="identity"
+
+```{r Identity, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+Cylinder3 <- readRDS(file = "./01_Datasets/Cylinder_Baseline.rds")
+library(ggplot2)
+ggplot(Cylinder3,aes(x=Subgroup,fill=Treatment))+
+  geom_boxplot(aes(lower=`  Mean`-`  SD`,
+                   upper=`  Mean`+`  SD`,
+                   middle=`  Mean`,
+                   ymin=`  Min`,
+                   ymax=`  Max`),
+               stat="identity")+
+  geom_text(aes(label=`P-Value`, x=Subgroup, y=5.5),hjust=0.4)+
+  coord_flip() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(x = "Subgroups",
+       y = "Cylinder [D]",
+       title = "Subjective refraction Cylinder at Baseline")
+
+
+MeanRotation <- readRDS(file = "./01_Datasets/MeanRotation.rds" )
+ggplot(MeanRotation, aes(x=Visit,fill=Treatment))+
+  geom_boxplot(aes(lower=mean-SD,
+                   upper=mean+SD,
+                   middle=mean,
+                   ymin=min,
+                   ymax=max),
+               stat="identity")+
+  geom_text(aes(label=n, x=Visit, y=mean+1.5), vjust=1.3, color="white",
+            position = position_dodge(0.8), size=3.5)+
+  geom_text(aes(label=P,colour=label_color, x=Visit, y=25),hjust=0.4, size=3.5,show.legend = FALSE)+
+  scale_fill_brewer(palette="Paired")+
+  facet_wrap(.~ Subgroup, nrow = 2)+
+  coord_flip() +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  labs(x = "",
+       y = "Mean absolute rotation",
+       title = "Mean absolute rotation by visit")
+```
+
+### Dot + Box Plot 
+
+In addition to the information provided by the box plot, you can provide clearer information in the form of summary statistics for each group. These points are interlaced to make each point represent an observation value.
+
+```{r Dot Box Plot, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# plot
+g <- ggplot(mpg, aes(reorder(manufacturer, cty, FUN = median) , cty))
+g + geom_boxplot() + 
+  geom_dotplot(binaxis='y', 
+               stackdir='center', 
+               dotsize = .5, 
+               fill="red") +
+  theme(axis.text.x = element_text(angle=65, vjust=0.6)) + 
+  theme_bw() +
+  labs(title="Box plot + Dot plot", 
+       subtitle="City Mileage vs Class: Each dot represents 1 row in source data",
+       caption="Source: mpg",
+       x="Class of Vehicle",
+       y="City Mileage")
+```
+### Violin Plot 
+
+The violigogram is similar to the box pattern, but the density of the group is displayed. There is no too much information like a box line map.
+
+```{r geom_violin, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+ggplot(mpg, aes(class, cty)) +
+  geom_violin() + 
+  labs(title="Violin plot", 
+       subtitle="City Mileage vs Class of vehicle",
+       caption="Source: mpg",
+       x="Class of Vehicle",
+       y="City Mileage") +
+  theme_bw()
+```
+
+
+
+
+## Other rendering 
+
+### Annotation
+
+Annotation for Text, Shape
+
+```{r Text and Shape, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# Load dataset from github
+# data <- read.table("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/3_TwoNumOrdered.csv", header=T)
+# data$date <- as.Date(data$date)
+# data %>%
+#   ggplot( aes(x=date, y=value)) +
+#     geom_line(color="#69b3a2")+
+#     annotate(geom="text", x=as.Date("2017-01-01"), y=19000, 
+#              label="Bitcoin price reached 20k $\nat the end of 2017")+
+#     annotate(geom="point", x=as.Date("2017-12-17"), y=20089, size=10, shape=21, fill="transparent")+
+#     geom_hline(yintercept=5000, color="orange", size=.5)
+```
+
+
+### Text: ggtext
+
+**Markdown in theme elements**
+
+The ggtext package defines two new theme elements, element_markdown() and element_textbox(). Both behave similarly to element_text() but render the provided text as markdown/html. element_markdown() is meant as a direct replacement for element_text(), and it renders text without word wrapping. To start a new line, use the <br> tag or add two spaces before the end of a line.
+
+```{r ggtext, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## remotes::install_github("wilkelab/ggtext")
+## install.packages("ggtext")
+library("ggtext")
+library("tidyverse")
+library("glue")
+
+data <- tibble(
+  bactname = c("Staphylococcaceae", "Moraxella", "Streptococcus", "Acinetobacter"),
+  OTUname = c("OTU 1", "OTU 2", "OTU 3", "OTU 4"),
+  value = c(-0.5, 0.5, 2, 3)
+)
+
+data %>% mutate(
+  color = c("#009E73", "#D55E00", "#0072B2", "#000000"),
+  name = glue("<i style='color:{color}'>{bactname}</i> ({OTUname})"),
+  name = fct_reorder(name, value)
+)  %>%
+  ggplot(aes(value, name, fill = color)) + 
+  geom_col(alpha = 0.5) + 
+  scale_fill_identity() +
+  labs(caption = "Example posted on **stackoverflow.com**<br>(using made-up data)") +
+  theme(
+    axis.text.y = element_markdown(),
+    plot.caption = element_markdown(lineheight = 1.2)
+  )
+
+```
+  
+  
+### Text: ggrepel
+
+There are two important functions in ggrepel R packages:
+
+* geom_label_repel()
+* geom_text_repel()
+
+
+```{r ggrepel, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("ggrepel")
+## Take a subset of 15 random points
+set.seed(1234)
+ss <- sample(1:32, 15)
+df <- mtcars[ss, ]
+
+## Create a scatter plot:
+p <- ggplot(df, aes(wt, mpg)) +
+  geom_point(color = 'red') +
+  theme_classic(base_size = 10)
+
+## Add text labels:
+## Add text annotations using ggplot2::geom_text
+p + geom_text(aes(label = rownames(df)),
+              size = 3.5)
+
+## Use ggrepel::geom_text_repel
+require("ggrepel")
+set.seed(42)
+p + geom_text_repel(aes(label = rownames(df)),
+                    size = 3.5) 
+
+## Change color by groups
+p + geom_label_repel(aes(label = rownames(df),
+                    fill = factor(cyl)), color = 'white',
+                    size = 3.5) +
+   theme(legend.position = "bottom")
+
+## With selection
+# Data are available in the gapminder package
+library(gapminder)
+data <- gapminder %>% filter(year=="2007") %>% select(-year)
+# prepare data
+tmp <- data %>%
+  mutate( annotation = ifelse(gdpPercap > 5000 & lifeExp < 60, "yes", "no"))
+# plot
+tmp %>%
+  ggplot( aes(x=gdpPercap, y=lifeExp, size = pop, color = continent)) +
+    geom_point(alpha=0.7) +
+    theme(legend.position="none") +
+    geom_text_repel(data=tmp %>% filter(annotation=="yes"), aes(label=country), size=4 )
+```
+
+
+
+
+
+### Arrage: gridExtra
+
+```{r lay, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## assemble multiple plots on a page is to use the grid.arrange() function
+library(gridExtra)
+p1 <- qplot(mpg, wt, data = mtcars, colour = cyl)
+p2 <- qplot(mpg, data = mtcars) + ggtitle("title")
+
+grid.arrange(p1, p2, nrow = 1)
+
+## Tables and other grobs
+grid.arrange(
+  tableGrob(mtcars[1:4, 1:4]),
+  p2,
+  ncol = 2,
+  widths = c(1.5, 1),
+  clip = FALSE
+)
+```
+
+### Interactive charts: plotly
+
+```{r interactive, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# load data
+library(gapminder)
+data <- gapminder %>% filter(year=="2007") %>% select(-year)
+
+# Interactive version
+library(plotly)
+p <- data %>%
+  mutate(myText=paste("This country is: " , country )) %>%
+  ggplot( aes(x=gdpPercap, y=lifeExp, size = pop, color = continent, text=myText)) +
+    geom_point(alpha=0.7) 
+
+ggplotly(p, tooltip="text")
+```
+
+
+
+## DiagrammeR
+
+### Basic flowchart using `grViz`
+
+```{r DiagrammeR,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("DiagrammeR")
+
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+
+      # edge definitions with the node IDs
+      tab1 -> tab2 -> tab3 -> tab4 -> tab5;
+      }
+
+      [1]: 'Questionnaire sent to n=1000 participants'
+      [2]: 'Participants responded to questionnaire n=850'
+      [3]: 'Participants came to clinic for evaluation n=700'
+      [4]: 'Participants eligible for the study n=600'
+      [5]: 'Study sample n=600'
+      ")
+
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+
+      # edge definitions with the node IDs
+      tab1 -> tab2;
+      tab2 -> tab3;
+      tab2 -> tab4 -> tab5
+      }
+
+      [1]: 'Questionnaire sent to n=1000 participants'
+      [2]: 'Participants came to clinic for evaluation n=700'
+      [3]: 'Participants non-eligible for the study n=100'
+      [4]: 'Participants eligible for the study n=600'
+      [5]: 'Study sample n=600'
+      ")
+```
+
+### Graphviz Attributes
+ 
+* Node Attributes
+* Edge Attributes
+* Colors
+* Node Shapes
+* Arrow Shapes
+
+See more under `Graphviz and mermaid in DiagrammeR`
+
+
+
+```{r Graphviz-Attributes,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+grViz(diagram = "digraph flowchart {
+      # define node aesthetics
+      node [fontname = Arial, shape = oval, color = Lavender, style = filled]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+# set up node layout
+      tab1 -> tab2;
+      tab2 -> tab3;
+      tab2 -> tab4
+      }
+[1]: 'Learning Data Science'
+      [2]: 'Industry vs Technical Knowledge'
+      [3]: 'Python/R'
+      [4]: 'Domain Experience'
+      ")
+
+
+grViz("digraph {
+graph [layout = dot, rankdir = LR]
+# define the global styles of the nodes. We can override these in box if we wish
+node [shape = rectangle, style = filled, fillcolor = Linen]
+
+data1 [label = 'Dataset 1', shape = folder, fillcolor = Beige]
+data2 [label = 'Dataset 2', shape = folder, fillcolor = Beige]
+process [label =  'Process \n Data']
+statistical [label = 'Statistical \n Analysis']
+results [label= 'Results']
+
+# edge definitions with the node IDs
+{data1 data2}  -> process -> statistical -> results
+}")
+```
+
+
+
+### Gantt chart
+
+```{r Gantt-chart,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# Define the Gantt chart and plot the result (not shown)
+mermaid("gantt
+        Section Initiation
+        Planning           :a1, 2016-01-01, 10d
+        Data processing    :after a1, 30d
+        Data analysis      :b1, 2016-03-01, 15d")
+```
+
+
+
+
+
+## ggstatsplot
+
+ggstatsplot is an extension of ggplot2 package for creating graphics with details from statistical tests included in the plots themselves and targeted primarily at behavioral sciences community to provide a one-line code to produce information-rich plots.
+
+* https://indrajeetpatil.github.io/ggstatsplot/articles/
+* Patil, I. (2021). Visualizations with statistical details: The 'ggstatsplot' approach. Journal of Open Source Software, 6(61), 3167, doi:10.21105/joss.03167
+  
+
+### ggbetweenstats
+
+* to check if a continuous variable differs across multiple groups/conditions
+* to compare distributions visually and check for outliers
+
+```{r test, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+
+library(gapminder)
+dplyr::glimpse(x = gapminder::gapminder)
+
+## since the confidence intervals for the effect sizes are computed using
+## bootstrapping, important to set a seed for reproducibility
+## for reproducibility
+set.seed(123)
+library(ggstatsplot)
+
+## plot
+ggbetweenstats(
+  data  = iris,
+  x     = Species,
+  y     = Sepal.Length,
+  title = "Distribution of sepal length across Iris species"
+)
+```
+
+
+
+

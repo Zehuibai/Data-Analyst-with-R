@@ -1,0 +1,1447 @@
+---
+title: 'As-a-Statistician-Logistic Regression '
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+# devtools::install_github("rvlenth/lsmeans", dependencies = TRUE)
+
+packages<-c("tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+
+## Introduction
+
+Use probability-based linear models to predict qualitative response variables, three methods:
+
+1. Logistic regression
+2. Linear discriminant analysis  
+3. Multivariate adaptive regression spline 
+
+
+### Violation of assumptions of Ordinary least squares (OLS) 
+
+The basic assumptions of OLS regression
+
+1. $y_{i}=\alpha+\beta x_{i}+\varepsilon_{i} \mid$
+2. $\mathrm{E}\left(\varepsilon_{i}\right)=0$
+3. $\operatorname{var}\left(\varepsilon_{i}\right)=\sigma^{2}$
+4. $\operatorname{cov}\left(\varepsilon_{i}, \varepsilon_{j}\right)=0$
+5. $\varepsilon_{i} \sim$ Normal
+
+**Normal residuals assumption**
+
+Assuming y is a dichotomy, the possible values are 1 or 0. Assume yi = 1. Then hypothesis 1 means εi = 1–α–βxi. On the other hand, if yi = 0, we have εi = –α–βxi. Since εi can only take two values, it is impossible to have a normal distribution
+
+
+**Consistant variance assumption**
+
+$$E\left(y_{i}\right)=1 \times \operatorname{Pr}\left(y_{i}=1\right)+0 \times \operatorname{Pr}\left(y_{i}=0\right)$$
+
+If we define $p i=\operatorname{Pr}(y i=1)$,Then
+$$E\left(y_{i}\right)=p_{i}$$
+
+$$
+\begin{array}{c}
+E\left(y_{i}\right)=E\left(\alpha+\beta x_{i}+\varepsilon_{i}\right) 
+=E(\alpha)+E\left(\beta x_{i}\right)+E\left(\varepsilon_{i}\right) 
+=\alpha+\beta x_{i}
+\end{array}
+$$
+Putting these two results together, we get
+$$
+\begin{array}{c}
+p_{i}=\alpha+\beta x_{i} \\
+\operatorname{var}\left(\varepsilon_{i}\right)=p_{i}\left(1-p_{i}\right)=\left(\alpha+\beta x_{i}\right)\left(1-\alpha-\beta x_{i}\right)
+\end{array}
+$$
+For different observations, the variance of $ε_i$ must be different, especially as it changes with changes in x. When pi = 0.5, the disturbance variance is the largest, and when pi is close to 1 or 0, the disturbance variance becomes smaller.
+
+**Problems**
+
+If the sample is quite large, the normality assumption is not required. The **central limit theorem** assures us that even if ε is not normally distributed, the coefficient estimates will have an approximately normal distribution. This means that we can still use ordinary tables to calculate p-values and confidence intervals. However, if the sample is small, these approximations may be poor.
+
+<!-- 如果样本相当大，则不需要正态假设。中心极限定理向我们保证，即使ε不呈正态分布，系数估计也将具有近似正态的分布。这意味着我们仍然可以使用普通表来计算p值和置信区间。但是，如果样本较小，则这些近似值可能会很差。 -->
+
+**Violation of the homoscedasticity assumption has two undesirable consequences.**
+
+1. First, the coefficient estimates are no longer **effective**. In statistical terms, this means that there are other selection methods with smaller standard errors.
+2. the standard error estimates are no longer consistent estimates of the true standard errors. That means that the estimated standard errors could be biased (either upward or downward) to unknown degrees. And because the standard errors are used in calculating test statistics, the test statistics could also be problematic.
+
+<!-- 首先，系数估计不再有效。用统计术语来说，这意味着存在其他选择方法，它们的标准误差较小。 -->
+<!-- 其次，更严重的是，标准误差估计不再是真实标准误差的一致估计。这意味着估计的标准误差可能会偏向（向上或向下）到未知程度。并且由于标准误差用于计算测试统计信息，因此测试统计信息也可能会出现问题。幸运的是，可以轻松解决标准错误和测试统计信息的潜在问题。 -->
+
+**Heteroscedasticity consistent covariance estimator “sandwich”**
+
+Even if the homogeneity assumption is violated, this method will produce a consistent estimate of the standard error. To implement this method in PROC REG, just put the option HCC on the MODEL statement
+
+```
+PROC REG DATA=penalty;
+  MODEL death=blackd whitvic serious / HCC; 
+RUN;
+```
+
+<!-- 尽管HCC标准误差很容易解决，但是请注意，它们固有地具有比常规标准误差更大的采样变异性（Kauermann和Carroll 2001），并且在小样本中可能尤其不可靠。但是，对于大样本，它们应该是令人满意的. -->
+
+
+### More fundamental problem outside [0,1]
+
+For Linear probability model $p_{i}=\alpha+\beta x_{i}$, If x has no upper or lower limit, then for any value of β, there is a value of x whose pi is greater than 1 or less than 0.
+
+### Logistic Regression Model 
+
+Probability is bounded by 0 and 1, while linear functions are inherently unbounded. The solution is to convert the probability so that it is no longer restricted. Converting probabilities to odds eliminates the upper limit. For k explanatory variables
+$$\log \left[\frac{p_{i}}{1-p_{i}}\right]=\alpha+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}$$
+$$p_{i}=\frac{\exp \left(\alpha+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}\right)}{1+\exp \left(\alpha+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}\right)}$$
+$$p_{i}=\frac{1}{1+\exp \left(-\alpha-\beta_{1} x_{i 1}-\beta_{2} x_{i 2}-\ldots-\beta_{k} x_{i k}\right)}$$
+
+<!-- 逻辑模型的方程式中没有随机扰动项。这并不意味着该模型是确定性的，因为pi和yi之间的概率关系仍然存在随机变化的空间。-->
+
+There is **no random disturbance term** in the equation of the logic model. This does not mean that the model is deterministic, because there is still room for random variation in the probability relationship between pi and yi.
+
+
+
+### Estimation of the Logistic Model
+
+* ordinary least squares, 
+* weighted least squares, 
+* maximum likelihood.
+
+> 假设分析单位是商业公司，并且因变量是员工是全职员工的概率。设Pi为在i公司中全职工作的可观察员工比例。
+要通过OLS估计逻辑模型，我们可以简单地采用P的logit变换，即log [P/（1-P）]，然后将结果回归到公司特征和员工平均特征上。
+加权最小二乘（WLS）分析将类似，不同之处在于将对数据进行加权以针对异方差进行调整。
+最大似然（ML）是为分组数据估算逻辑模型的第三种方法，也是一般用于单个级别数据的唯一方法。
+利用个人数据，我们只需观察每个人的二分因变量以及该人的测量特征即可。
+
+
+**ML**
+
+
+> 最大似然受欢迎程度有两个原因。
+1. ML估计量是一致的，渐近有效的并且渐近正态的。
+2. 在没有其他明显候选者的情况下，通常很容易得出ML估计量. 为此，有两个步骤：
+（1）写下数据概率作为未知参数的函数的表达式，以及（2）找到使该表达式的值尽可能大的未知参数值。
+
+
+1. **Consistency** means that as the sample size gets larger the probability that the estimate is within some small distance of the true value also gets larger. No matter how small the distance or how high the specified probability, there is always a sample size that yields an even higher probability that the estimator is within that distance of the true value. One implication of consistency is that the ML estimator is approximately unbiased in large samples.
+2. **Asymptotic efficiency** means that, in large samples, the estimates will have standard errors that are, approximately, at least as small as those for any other estimation method. And, finally, the sampling distribution of the estimates will be approximately normal in large samples, which means that you can use the normal and chi-square distributions to compute confidence intervals and p-values. All these approximations get better as the sample size gets larger. The fact that these desirable properties have only been proven for large samples does not mean that ML has bad properties for small samples. It simply means that we usually don’t know exactly what the small-sample properties are. And in the absence of attractive alternatives, researchers routinely use ML estimation for both large and small samples.
+
+<!-- 一致性意味着，随着样本数量的增加，估计值在真实值的一小段距离内的可能性也会随之增加。无论距离有多小或指定概率有多高，总有一个样本大小会产生更高的概率，即估计量在真实值的该距离内。一致性的一个暗示是，在大样本中ML估计量几乎是无偏的。 -->
+
+<!-- 渐近效率意味着，在大样本中，估计将具有大约至少与任何其他估计方法一样小的标准误差。最后，在大样本中，估计值的采样分布将近似于正态，这意味着您可以使用正态分布和卡方分布来计算置信区间和p值。随着样本数量的增加，所有这些近似值都会变得更好。这些合意的特性仅在大样本中得到证明的事实并不意味着ML对于小样本具有不良的特性。这仅表示我们通常不确切知道小样本属性是什么。而且，在没有有吸引力的替代方案的情况下，研究人员通常对大型和小型样本都使用ML估计。 -->
+
+
+**Maximum Likelihood Estimation **
+
+We have data for n individuals (i = 1, ..., n), and these individuals are considered statistically independent. For each i, the data consists of yi and xi, where yi is a random variable with possible values 0 and 1, and xi = [1 xi1...xik]' is a vector of explanatory variables (1 is the intercept).) Let pi The probability of yi = 1
+$$p_{i}=\frac{1}{1+e^{-\boldsymbol{\beta} \mathbf{x}_{i}}}$$
+
+The likelihood of observing the values of $y$ for all the observations can be written as
+$$L=\operatorname{Pr}\left(y_{1}, y_{2,} \ldots, y_{n}\right)$$
+
+Because we are assuming that observations are independent, the overall probability of observing all the $y_{i}, \mathrm{~s}$ can be factored into the product of the individual probabilities:
+$$
+L=\operatorname{Pr}\left(y_{1}\right) \operatorname{Pr}\left(y_{2}\right) \ldots \operatorname{Pr}\left(y_{n}\right)=\prod_{i=1}^{n} \operatorname{Pr}\left(y_{i}\right)
+$$
+By definition, $\operatorname{Pr}\left(y_{i}=1\right)=p_{i}$ and $\operatorname{Pr}\left(y_{i}=0\right)=1-p_{i} .$ That implies that we can write
+$$
+\begin{array}{c}
+\operatorname{Pr}\left(y_{i}\right)=p_{i}^{y_{i}}\left(1-p_{i}\right)^{1-y_{i}} \\
+L=\prod_{i=1}^{n} p_{i}^{y_{i}}\left(1-p_{i}\right)^{1-y_{i}}=\prod_{i=1}^{n}\left(\frac{p_{i}}{1-p_{i}}\right)^{y_{i}}\left(1-p_{i}\right) .
+\end{array}
+$$
+At this point we take the logarithm of both sides of the equation to get
+$$
+\log L=\sum_{i} y_{i} \log \left(\frac{p_{i}}{1-p_{i}}\right)+\sum_{i} \log \left(1-p_{i}\right)
+$$
+And for equation
+$$
+\log L=\sum_{i} \boldsymbol{\beta} \mathbf{x}_{i} y_{i}-\sum_{i} \log \left(1+e^{\boldsymbol{\beta} \mathbf{x}_{i}}\right)
+$$
+Taking the derivative of equation and setting it equal to 0 gives us:
+$$
+\begin{aligned}
+\frac{\partial \log L}{\partial \boldsymbol{\beta}} &=\sum_{i} \mathbf{x}_{i} y_{i}-\sum_{i} \mathbf{x}_{i}\left(1+e^{-\boldsymbol{\beta} \mathbf{x}_{i}}\right)^{-1} \\
+&=\sum_{i} \mathbf{x}_{i} y_{i}-\sum_{i} \mathbf{x}_{i} \hat{y}_{i}=0
+\end{aligned}
+$$
+$$\hat{y}_{i}=\frac{1}{1+e^{-\beta \mathbf{x}_{i}}}$$
+**Newton-Raphson iterative methods**
+
+There is no clear solution to the equation. Instead, we must rely on iterative methods, which are equivalent to successive approximations to the solution until the approximation "converges" to the solution. Until the approximation "converges" to the correct value. Again, there are many different ways to do this. All methods produce the same solution, but they differ in factors such as convergence speed, sensitivity to initial values, and computational difficulty of each iteration. The Newton-Raphson algorithm is one of the most widely used iterative methods.
+$$
+\begin{array}{l}
+\mathbf{U}(\boldsymbol{\beta})=\frac{\partial \log L}{\partial \boldsymbol{\beta}}=\sum_{i} \mathbf{x}_{i} y_{i}-\sum_{i} \mathbf{x}_{i} \hat{y}_{i} \\
+\mathbf{I}(\boldsymbol{\beta})=\frac{\partial^{2} \log L}{\partial \boldsymbol{\beta} \partial \boldsymbol{\beta}^{\prime}}=-\sum_{i} \mathbf{x}_{i} \mathbf{x}_{i}^{\prime} \hat{y}_{i}\left(1-\hat{y}_{i}\right)
+\end{array}
+$$
+
+<!-- 方程没有明确的解决方案。 取而代之的是，我们必须依靠迭代方法，这些方法等于对解的逐次逼近，直到逼近“收敛”到解。直到逼近“收敛”到正确的值为止。同样，有许多不同的方法可以执行此操作。所有方法都产生相同的解决方案，但是它们在诸如收敛速度，对初始值的敏感性以及每次迭代的计算难度等因素方面有所不同。 牛顿-拉夫森（Newton-Raphson）算法是最广泛使用的迭代方法之一 -->
+
+
+The Newton-Raphson algorithm is then $$\boldsymbol{\beta}_{j+1}=\boldsymbol{\beta}_{j}-\mathbf{I}^{-1}\left(\boldsymbol{\beta}_{j}\right) \mathbf{U}\left(\boldsymbol{\beta}_{j}\right)$$
+
+We need a set of initial values $\beta_0$. PROC LOGISTIC starts by setting all slope coefficients to 0. Set the intercept to be equal to log [p /(1-p)], where p is the total proportion of events. These initial values are substituted into the right side of the equation, resulting in the result of the first iteration $\beta_1$. Then substitute these values into the right side, recalculate the first and second derivatives, and the result is $\beta_2$ Repeat this process until you get "convergence".
+
+This means that what is inserted on the right is obtained on the left. In fact, you will never get exactly the same thing, so it is necessary to adopt a convergence criterion to judge whether the proximity is close enough. But since every successful run of PROC LOGISTIC reports “Convergence criterion (GCONV=1E-8) satisfied,” 
+$$\frac{\mathbf{U}\left(\boldsymbol{\beta}_{j}\right)^{\prime} \mathbf{I}^{-1}\left(\boldsymbol{\beta}_{j}\right) \mathbf{U}\left(\boldsymbol{\beta}_{j}\right)}{\left|\log L\left(\boldsymbol{\beta}_{j}\right)\right|+.000001}$$
+
+If the number is less than .00000001, convergence is declared and the algorithm stops.
+
+
+### Convergence Problems
+
+> 逻辑模型的最大似然估计是逐次逼近的迭代过程。通常，该过程会顺利进行，无需特别注意。很少需要超过10次迭代才能达到收敛。但是，有时迭代过程会中断，因此无法实现收敛。处理收敛失败可能是逻辑回归用户遇到的更令人沮丧的问题之一。 LOGISTIC的默认限制为25次迭代。如果算法尚未达到此限制，则LOGISTIC会发出警告消息，并在最后一次迭代时打印出结果。尽管可以提高迭代限制（使用MODEL语句中的MAXITER =选项），但这很少能解决问题。未进行25次迭代收敛的模型通常永远不会收敛。在大多数收敛失败的情况下，最大似然估计根本不存在。
+
+**Quasi-complete separation of data points detected.**
+
+> 准完全分离的最常见原因是虚拟预测变量具有以下属性：在虚拟变量的一个级别上，每种情况下因变量都为1或每种情况下都为0。查看任何分类自变量与因变量的交叉分类也非常有帮助。如果您在这些表中的任何一个中发现单元频率为0，则说明了造成准完全分离的原因。找到问题变量后，如何处理
+
+* Recode the problem variables 
+* Collapse categories
+* Exclude cases from the model
+
+**Retain the model with quasi-complete separation but use likelihood-ratio tests.**
+
+The reported standard error and Wald's chi-square of this variable are also of no avail. Nevertheless, it is still possible to obtain a valid likelihood ratio test, *Profile Likelihood confidence interval.*
+
+```
+PROC LOGISTIC DATA=penalty;
+ WHERE blackd=0;
+ CLASS culp /PARAM=REF;
+ MODEL death(EVENT='1') = culp serious / CLPARM=PL ALPHA=.01;
+RUN;
+
+##########################################
+Parameter Estimate   99% Confidence Limits
+culp 1    -15.5467          . -3.2344
+```
+
+### Use exact methods. 
+
+> 尽管最大似然具有许多吸引人的属性，但请务必记住，最大似然产生的标准误差和p值是大样本近似值。 在小样本或分离的情况下，准确性可能不如我们想要的那样好。 具有良好的小样本属性的另一种估算方法是“精确逻辑回归”。 这种方法可以看作是费雪（Fisher）对双向列联表的精确检验的概括。 在这种方法中，p值是通过在原假设下枚举所有可能的样本结果来计算的。 即使在完全分离或准完全分离的情况下，精确方法也会产生有效的p值。
+
+```
+PROC LOGISTIC DATA=penalty;
+ WHERE blackd=0;
+ CLASS culp /PARAM=REF;
+ MODEL death(EVENT='1') = culp serious;
+ EXACT culp serious / ESTIMATE=BOTH;
+RUN; 
+```
+
+
+These tests are conditional in the sense that they are based on the conditional distribution of the sufficient statistic for each parameter, conditioning on the sufficient statistics for all the other parameters. (The sufficient statistics are the sums of cross products for each x and the binary dependent variable y.) The tests are exact in the same sense that t-statistics are exact in normal-theory linear regression. That is, they are not large sample approximations, and they give the correct probability of getting a result that is at least as extreme as the one observed in the sample, under the null hypothesis that a variable has no effect.
+
+### Use penalized likelihood
+
+处理拟完全分离的最简单，最有效的方法之一是一种被称为惩罚似然估计的方法，该方法由Firth（1993）引入，因此通常被称为Firth方法。 众所周知，传统的最大似然估计可能会在小样本中产生偏差。 惩罚似然法旨在减少这种偏差，适用于最大似然的广泛应用。 Heinze和Schemper（2002）表明，这种方法在处理准完全分离的情况下特别有效。 运作方式如下。 在牛顿-拉夫森算法（方程3.7）中，一阶导数U（β）
+
+$$\mathbf{U}(\boldsymbol{\beta})=\frac{\partial \log L}{\partial \boldsymbol{\beta}}=\sum_{i} \mathbf{x}_{i} y_{i}-\sum_{i} \mathbf{x}_{i} \hat{y}_{i}-\sum_{i} h_{i} \mathbf{x}_{i}\left(.5-\hat{y}_{i}\right)$$
+In PROC LOGISTIC, the method is implemented with the FIRTH option on the MODEL statement
+
+```
+PROC LOGISTIC DATA=penalty;
+ WHERE blackd=0;
+ CLASS culp /PARAM=REF;
+ MODEL death(EVENT='1') = culp serious / FIRTH
+ CLPARM=PL;
+RUN;
+```
+
+## Logit Modell
+
+### Introduction
+
+The probability $\pi{i}=\mathrm{P}\left(y{i}=1 \mid x{i 1}, \ldots, x{i k}\right)$ and the linear predictor $\eta_{i}=\beta_{0}+\beta_{1} x_{i 1}+\ldots+\beta_{k} x_{i k}=\boldsymbol{x}_{i}^{\prime} \boldsymbol{\beta}$ are linked by a response function $\pi_{i}=h\left(\eta_{i}\right) $:
+
+For Logit-Modell:
+$$\pi=\frac{\exp (\eta)}{1+\exp (\eta)} \Longleftrightarrow \log \frac{\pi}{1-\pi}=\eta$$
+For Complementary log-log model:
+$$\pi=1-\exp (-\exp (\eta)) \quad \Longleftrightarrow \quad \log (-\log (1-\pi))=\eta$$
+
+
+
+**Interpretation**
+
+$$\frac{\mathrm{P}\left(y_{i}=1 \mid \boldsymbol{x}_{i}\right)}{\mathrm{P}\left(y_{i}=0 \mid \boldsymbol{x}_{i}\right)}=\exp \left(\beta_{0}\right) \cdot \exp \left(x_{i 1} \beta_{1}\right) \cdot \ldots \cdot \exp \left(x_{i k} \beta_{k}\right)$$
+
+$$\frac{\mathrm{P}\left(y_{i}=1 \mid x_{i 1}, \ldots\right)}{\mathrm{P}\left(y_{i}=0 \mid x_{i 1}, \ldots\right)} / \frac{\mathrm{P}\left(y_{i}=1 \mid x_{i 1}+1, \ldots\right)}{\mathrm{P}\left(y_{i}=0 \mid x_{i 1}+1, \ldots\right)}=\exp \left(\beta_{1}\right)$$
+
+$$
+\begin{array}{l}
+\beta_{1}>0: \text {Chance} $\mathrm{P}\left(y_{i}=1\right) / \mathrm{P}\left(y_{i}=0\right) \text {wird größer},\\
+\beta_{1}<0: \text { Chance } \mathrm{P}\left(y_{i}=1\right) / \mathrm{P}\left(y_{i}=0\right) \text { wird kleiner, } \\
+\beta_{1}=0: \text { Chance } \mathrm{P}\left(y_{i}=1\right) / \mathrm{P}\left(y_{i}=0\right) \text { bleibt gleich. }
+\end{array}
+$$
+
+### R Implementation
+
+* Compare models `anova(fit.model1, fit.model2, test = "Chisq")`
+* Change Referenz  `relevel(factor(school2$RANK),ref=4)`
+* Interpret coefficients Odds `exp(coef(fit.reduced))`
+* Predict using new datasets `predict(fit.model, newdata = testdata, type = "response")`
+* CIs using profiled log-likelihood `confint(fit.model)`
+* CIs using standard errors `confint.default(fit.model)`
+* VIF statistics `library(car), vif(fit.model)`
+* Wald Test `library(aod) ,wald.test()`
+* Log likelihood ratio test `logLik()`
+* Marginal effects `library(mfx), logitmfx`
+
+```{r logit model, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## get summary statistics 
+data(Affairs, package = "AER")
+summary(Affairs)
+table(Affairs$affairs)
+
+## 感兴趣的是二值型结果(有过一次婚 外情/没有过婚外情),将affairs转化为二值型因子ynaffair。
+## create binary outcome variable
+Affairs$ynaffair[Affairs$affairs > 0] <- 1
+Affairs$ynaffair[Affairs$affairs == 0] <- 0
+Affairs$ynaffair <- factor(Affairs$ynaffair, levels = c(0, 
+    1), labels = c("No", "Yes"))
+table(Affairs$ynaffair)
+
+# fit full model
+fit.full <- glm(ynaffair ~ gender + age + yearsmarried + 
+    children + religiousness + education + occupation + rating, 
+    data = Affairs, family = "binomial")
+summary(fit.full)
+
+# 从回归系数的p值(最后一栏)可以看到，性别、是否有孩子、学历和职业对方程的贡献都不显著(你无法拒绝参数为0的假设)。去除这些变量重新拟合模型，检验新模型是否拟合得好
+# fit reduced model
+fit.reduced <- glm(ynaffair ~ age + yearsmarried + 
+    religiousness + rating, data = Affairs, family = binomial())
+summary(fit.reduced)
+
+# compare models
+anova(fit.reduced, fit.full, test = "Chisq")
+# 结果的卡方值不显著(p=0.21)，表明四个预测变量的新模型与九个完整预测变量的模型拟合程度一样好。这使得你更加坚信添加性别、孩子、学历和职业变量不会显著提高方程的预测精 度，因此可以依据更简单的模型进行解释。
+
+# 解释模型参数
+# interpret coefficients
+coef(fit.reduced)
+exp(coef(fit.reduced))
+
+## CIs using profiled log-likelihood
+confint(fit.reduced)
+## CIs using standard errors
+confint.default(fit.reduced)
+
+## 测试等级的总体效果。 在系数表中给出系数的顺序与模型中项的顺序相同
+## Globale Test
+library(aod)
+wald.test(b = coef(fit.reduced), Sigma = vcov(fit.reduced), Terms = 1:4)
+
+## the three terms for the levels of rank.
+wald.test(b = coef(fit.reduced), Sigma = vcov(fit.reduced), Terms = 1:3)
+
+## likelihood ratio test
+## An indicator to measure the degree of model fit. The test statistic is the residual deviation between the model with predictor variables and the zero model.
+## The degree of freedom of the chi-square distribution of the test statistic is equal to the degree of freedom difference between the current model and the zero model (that is, the number of predictors in the model)
+with(fit.reduced, null.deviance - deviance)            # 卡方值为41.46
+with(fit.reduced, df.null - df.residual)               # degrees of freedom 
+with(fit.reduced, pchisq(null.deviance - deviance, 
+     df.null - df.residual, lower.tail = FALSE))       # the p-value
+## called a likelihood ratio test (the deviance residual is -2*log likelihood).
+logLik(fit.reduced)
+
+
+
+
+
+# 探究每一个预测变量对结果概率的影响
+# 创建一个虚拟数据集，设定 年龄、婚龄和宗教信仰为它们的均值，婚姻评分的范围为1~5。
+# calculate probability of extramariatal affair by marital ratings
+testdata <- data.frame(rating = c(1, 2, 3, 4, 5), 
+    age = mean(Affairs$age), yearsmarried = mean(Affairs$yearsmarried), 
+    religiousness = mean(Affairs$religiousness))
+testdata$prob <- predict(fit.reduced, newdata = testdata, 
+    type = "response")
+testdata
+
+# calculate probabilites of extramariatal affair by age
+testdata <- data.frame(rating = mean(Affairs$rating), 
+    age = seq(17, 57, 10), yearsmarried = mean(Affairs$yearsmarried), 
+    religiousness = mean(Affairs$religiousness))
+testdata$prob <- predict(fit.reduced, newdata = testdata, 
+    type = "response")
+testdata
+```
+
+
+
+### SAS Implementation
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1')=blackd whitvic serious;
+RUN; 
+```
+
+> 在MODEL语句中指定的一个选项是因变量之后的EVENT ='1'。 LOGISTIC中的默认值是估计一个预测因变量最低值的模型。因此，如果我省略了EVENT ='1'，则结果将是一个逻辑模型，预测因变量DEATH等于0的概率。EVENT='1'选项将其反转，以便模型预测因变量等于1。
+
+> 一种等效的（流行的）方法是使用选项DEATH （DESCENDING），它告诉LOGISTIC对DEATH的“较高”值进行建模，而不是对较低值进行建模。但是，较高而不是较低的值取决于所选的其他选项，因此明确建模哪个因变量值较为安全。如果您忘记了EVENT ='1'选项，则唯一的结果就是更改系数的符号。
+
+```
+*** For Multiplicative Terms in the MODEL Statement;
+
+MODEL y = x|x|x;
+MODEL y = x x*x x*x*x;
+```
+
+**class**
+
+> 当CLASS变量作为解释变量包含在MODEL语句中时，LOGISTIC自动创建一组“设计变量”来表示CLASS变量的级别。当预测变量是指示变量（虚拟变量）时，例如仅具有0或1的值，则无需将其声明为CLASS变量。实际上，将指示符变量放在CLASS语句上可能会产生误导性的结果。这是因为CLASS语句可能会以意想不到的方式重新编码变量，正如我们将看到的那样。因此，CLASS语句应保留给具有两个以上类别的分类变量，或保留具有字符值（例如“是”和“否”）的二分变量。
+
+```
+PROC LOGISTIC DATA=penalty;
+ CLASS culp /PARAM=REF;
+ MODEL death(EVENT='1') = blackd whitvic culp ;
+RUN;
+```
+
+Change the default reference category (5 in this example) and hope it is the minimum value of CULP instead of the maximum value
+
+`CLASS culp / PARAM=REF DESCENDING;`
+
+Particular value, say 3
+
+`CLASS culp(REF='3') / PARAM=REF;`
+
+
+**Confidence Intervals**
+
+* Wald CI: `CLPARM = WALD`
+* Profile likelihood CI: Can produce better approximations, especially in smaller samples using `CLPARM = PL`
+* Two confidence intervals: 
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1') = blackd whitvic culp / CLPARM=BOTH;
+RUN;
+```
+
+**Marginal effect**
+
+For each variable, we obtain the predicted change in the probability of death penalty for each additional unit of the variable according to the predicted probability of the person.
+Get them easily with PROC QLIM
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1')=blackd whitvic serious;
+RUN; 
+
+PROC QLIM DATA=penalty;
+ ENDOGENOUS death~DISCRETE(DIST=LOGISTIC);
+ MODEL death = blackd whitvic serious;
+ OUTPUT OUT=a MARGINAL;
+PROC PRINT DATA=a(OBS=10);
+ VAR meff_p2_blackd meff_p2_whitvic meff_p2_serious;
+RUN; 
+```
+
+
+
+### Multicollinearity
+
+
+当解释变量之间有很强的线性相关性时，就会发生多重共线性。基本要点是，如果两个或多个变量彼此高度相关，则很难很好地估计它们对某些因变量的不同影响。尽管多重共线性不会使系数产生偏差，但确实会使系数更加不稳定。标准误差可能会变得很大，并且看起来似乎单独具有较弱影响的变量实际上可能整体上具有相当强的影响。幸运的是，多重共线性的结果仅适用于共线性的那些变量。
+
+当单个变量都不是重要变量，而整个变量集都很重要时，多重共线性很可能是罪魁祸首 When none of the individual variables is significant but the entire set is significant, multicollinearity is a likely culprit.
+
+**How to diagnose multicollinearity**
+
+* 检查PROC CORR产生的相关矩阵可能会有所帮助，但还不够。没有一对变量之间具有高度相关性的数据是很有可能的，但是几个变量在一起可能是高度相互依存的。 
+* PROC REG使用TOL，VIF和COLLINOINT选项可以产生更好的诊断结果。但是PROC LOGISTIC没有这些选项，
+多重共线性是解释变量的属性，而不是因变量。因此，每当您怀疑logit模型中的多重共线性时，只需在PROC REG中估计等效模型并请求共线性选项即可
+
+```
+PROC REG DATA=penalty;
+ MODEL death = blackd whitvic serious serious2 / TOL VIF;
+RUN; 
+```
+$$
+\begin{array}{|l|r|r|r|r|r|r|r|}
+\hline \text { Variable } & \text { DF } & \text {Parameter} & \text { Standard } & \text { t Value } & \text { Pr }>\mid \text { |t| }& \text { Tolerance }& \text { Variance } \\
+& \text {   } & \text {Estimate  } & \text {Error  } &  & & & \text { Inflation } \\
+\hline \text { Intercept } & 1 & -0.14164 & 0.18229 & -0.78 & 0.4384 & & 0 \\
+\hline \text { blackd } & 1 & 0.12093 & 0.08242 & 1.47 & 0.1445 & 0.85428 & 1.17058 \\
+\hline \text { whitvic } & 1 & 0.05739 & 0.08451 & 0.68 & 0.4982 & 0.84548 & 1.18276 \\
+\hline \text { serious } & 1 & 0.01924 & 0.03165 & 0.61 & 0.5442 & 0.14290 & 6.99788 \\
+\hline \text { serious2 } & 1 & 0.07044 & 0.10759 & 0.65 & 0.5137 & 0.14387 & 6.95081 \\
+\hline
+\end{array}
+$$
+在绝大多数情况下，这种诊断方法应该完全令人满意，但有时可能会漏掉严重的多重共线性（Davis等人，1986）。这是因为理想情况下，应通过最大似然算法中使用的权重矩阵来调整线性组合
+
+**Weight matrix**
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1') = blackd whitvic serious serious2;
+ OUTPUT OUT=a PRED=phat;
+DATA b;
+ SET a;
+ w = phat*(1-phat);
+PROC REG DATA=b;
+ WEIGHT w;
+ MODEL death = blackd whitvic serious1 serious2 / TOL VIF;
+RUN; 
+```
+
+
+OUTPUT语句创建一个新的数据集，该数据集包含MODEL语句中的所有变量以及变量PHAT，该变量PHAT包含因变量的预测概率。然后，将这些预测值用于DATA步骤以构建权重变量W。最后，使用W作为权重变量执行加权最小二乘回归。对于这些数据，共线性诊断仅与显示的略有不同
+
+可用于逻辑回归的解决方案范围与线性回归的解决方案范围几乎相同，例如删除变量，将变量组合到索引中以及测试关于变量集的假设。通常，没有一个潜在的解决办法是非常令人满意的。
+
+
+### Goodness-of-Fit Statistics Pearson deviance
+
+三种不同的“模型拟合统计量”：AIC，SC和-2 LogL。2 Log L的值越高，表示数据拟合越差。但是请记住，此统计信息的总体大小在很大程度上取决于观察值的数量。此外，对于适合的条件还没有绝对的标准，因此人们只能使用此统计信息来比较适合同一数据集的不同模型。-2 Log L的问题在于，协变量更多的模型仅靠偶然就趋于更好地拟合。其他两个拟合统计量通过惩罚具有更多协变量的模型来避免此问题。
+
+* Akaike’s Information Criterion (AIC) $A I C=-2 \log L+2 k$
+* Schwarz Criterion (SC), also known as the Bayesian Information Criterion (BIC) $S C=-2 \log L+k \log n$
+
+**deviance**
+
+deviance is a goodness-of-fit statistic for a statistical model; it is often used for statistical hypothesis testing. It is a generalization of the idea of using the sum of squares of residuals (RSS) in ordinary least squares to cases where model-fitting is achieved by maximum likelihood. 
+
+$${\displaystyle D(y,{\hat {\mu }})=2{\Big (}\log {\big (}p(y\mid {\hat {\theta }}_{s}){\big )}-\log {\big (}p(y\mid {\hat {\theta }}_{0}){\big )}{\Big )}.\,}$$
+
+LOGISTIC中的AGGREGATE和SCALE选项获得具有卡方分布的偏差, AGGREGATE选项告诉LOGISTIC汇总各个预测变量级别上的数据。 SCALE选项要求拟合优度统计信息，但是指定SCALE = NONE会告诉LOGISTIC不要针对过度分散调整拟合优度统计信息
+
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1') = blackd whitvic culp / AGGREGATE
+SCALE=NONE;
+RUN;
+```
+
+**Saturated mode**
+
+偏差将拟合模型与饱和模型进行了隐式对比。 我们可以使用以下程序拟合饱和模型：
+
+```
+PROC LOGISTIC DATA=penalty;
+    CLASS culp;
+    MODEL death(EVENT='1') = blackd whitvic culp blackd*whitvic
+    blackd*culp whitvic*culp blackd*whitvic*culp ;
+RUN; 
+
+*** The MODEL statement could also be abbreviated;
+MODEL death(EVENT='1') = blackd|whitvic|culp;
+```
+
+
+### Hosmer and Lemeshow Goodness-of-Fit Test
+
+与偏差不同，皮尔逊（Pearson）的卡方在应用于个人级数据时没有卡方分布。 尽管SCALE和AGGREGATE选项通常很有用，但如果有很多解释变量，或者如果其中一些变量是按连续统来衡量的，那么它们就无济于事。 在这些情况下，轮廓将几乎与原始观测值一样多，并且通过汇总无法实现任何目的。 偏差和皮尔逊卡方均不会具有真实的卡方分布。 为了弥补这一缺陷，Hosmer和Lemeshow（2000）提出了一种已迅速得到广泛使用的测试。 可以使用MODEL语句中的LACKFIT选项在LOGISTIC中实现。 让我们将其应用于我们刚刚评估的模型。
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1') = blackd whitvic culp / LACKFIT;
+RUN; 
+```
+
+Hosmer-Lemeshow（HL）统计信息的计算方法如下。基于估计的模型，将为所有观测值生成预测的概率。这些文件按大小排序，然后分成大约10个间隔。在每个时间间隔内，通过将预测的概率相加来获得预期的事件数。通过从间隔中的案例数中减去预期的事件数，可以得到预期的非事件数。通过常规的Pearson卡方统计，将这些预期频率与观察到的频率进行比较。自由度是间隔数减去2。高p值（如本例所示）表明拟合模型不能被拒绝，并得出结论：该模型拟合良好。也就是说，无法通过添加非线性和/或交互来显着改善它
+
+
+### Statistics Measuring Predictive Power $R^2$
+
+#### Generalized $R^{2}$
+
+which is the statistic reported by LOGISTIC under the heading "Testihg Global Null Hypothesis: BETA=0." If we denote that statistic by $L^{2}$ and let $n$ be the sample size, the generalized $R^{2}$ is
+$$
+R^{2}=1-\exp \left\{-\frac{L^{2}}{n}\right\}
+$$
+将RSQ选项放在MODEL语句上, $\mathrm{LOGISTIC}$ 会为您完成。这是广义R2的原理。此公式可用于通过最大似然估 计的任何回归模型, 包括概率模型, 泊松回归模型和Cox回归模型。除了作为常规R2的泛化的吸引力之
+外, 广义R2还具有以下几方面的作用:
+- It's based on the quantity being maximized, namely the log-likelihood. 基于最大化的数量, 即对数似然
+- It's invariant to grouping. You get the same $\mathrm{R} 2$ whether you're working with grouped or individual-level data (as long as cases are only grouped together if they're identical on all the independent variables). 分组不变。无论您使用分组数据还是个人数据, 您都将获得相同的R2
+- It's readily obtained with virtually all computer programs because the loglikelihood is nearly always
+reported by default.
+几乎所有计算机程序都可以轻松获得它, 因为默认情况下几乎总是报告对数可能性
+- It never diminishes when you add variables to a model. 当您向模型添加变量时, 它永远不会减少。
+- The calculated values are usually quite similar to the $\mathrm{R} 2$ obtained from fitting a linear probability model to dichotomous data by ordinary least squares. 计算得出的值通常与通过普通最小二乘法将线性概率模型拟合为二分数据所获得的R2十分相似。
+
+尽管广义R2的行为可能与线性模型R2非常相似，但不能将其解释为自变量“解释"的方差比例。广义R2的一 个可能的缺点是它的上限小于1，因为因变量是离散的。为了解决这个问题, LOGISTIC还报告了一个标有“ Max-rescaled Rsquare"的字样, 它将原始R2除以上限 (Nagelkerke 1991) 。
+
+#### McFadden $R^{2}$
+
+McFadden的 $R^{2}$ 也是基于对数似然法, 但公式有些不同。 $L^{2}$ 为检验所有系数均为0的零假设的似然比卡
+方, $\ell_{0}$ 为无协变量模型的对数似然。
+$$
+R_{M c F}^{2}=\frac{L^{2}}{-2 \log \ell_{0}}
+$$
+与广义R2不同, McFadden的 $R^{2}$ 的上限不小于1。McFadden $R^{2}$ 和广义 $R^{2}$ 均基于最大化的数量, 即对 数似然。因此，可以将ML视为一种选择系数以使R2最大化的方法, 至少如这些措施所定义的那样。可以将 其视为一件好事，但是如果您想比较逻辑回归模型和其他不基于似然函数的方法 (例如神经网络模型) 的 预测能力，则不是一件好事。
+
+#### Tjur's $R^{2}$
+
+一种方法是使用Tjur (2009) 提出的“model free" $R^{2}$ 。这很容易计算, 并具有一些吸引人的特性。通过计 算 $\mathrm{y}=1$ 的观测值的预测值的平均值和 $\mathrm{y}=$ 0的观测值的预测值的平均值来找到Tjur的 $R^{2}$ 。 $R^{2}$ 只是这两个平 均值之间的差。Tjur的 $R^{2}$ 上限为1.
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1')=culp whitvic blackd;
+ OUTPUT OUT=a PRED=yhat;
+PROC MEANS;
+ CLASS death;
+ VAR yhat;
+RUN; 
+```
+
+**Whenever you run binary (or ordinal) logistic regression, PROC LOGISTIC reports four such metrics by default.**
+
+$$
+\begin{array}{|l|c|l|l|}
+\hline \text { Percent Concordant } & 88.3 & \text { Somers' } \mathbf{D} & 0.800 \\
+\hline \text { Percent Discordant } & 8.4 & \text { Gamma } & 0.827 \\
+\hline \text { Percent Tied } & 3.3 & \text { Tau-a } & 0.361 \\
+\hline \text { Pairs } & 4850 & \mathrm{C} & 0.900 \\
+\hline
+\end{array}
+$$
+
+对于样本中的147个观察值，有147（146）/ 2 = 10731种不同的方式将它们配对（不将观察值与自身配对）。 其中，5881对在因变量中要么都为1，要么都为0。 我们忽略了这些，留下了4850对，其中一个案例的值为1，另一案例的值为0。对于每个对，我们提出一个问题：“具有1的案例是否具有比模型更高的预测值（基于模型）？ 是0的情况？” 如果答案是肯定的，我们称该对为一致。 如果否，则该对不和谐。 如果两个案例的预测值相同，我们将其称为平局。 令C为一致对的数量，D为不一致对的数量，T为关系的数量，N为对的总数（在消除任何对之前）。 然后定义了四个关联度量：
+
+> If the answer is yes, we call that pair concordant. If no, the pair is discordant. If the two cases have the same predicted value, we call it a tie. Let C be the number of concordant pairs, D the number of discordant pairs, T the number of ties, and N the total number of pairs (before eliminating any).
+
+$$
+\begin{array}{c}
+\text { Tau }-a=\frac{C-D}{N} \\
+G a m m a=\frac{C-D}{C+D} \\
+\text { Somer }^{\prime} s D=\frac{C-D}{C+D+T} \\
+c=.5(1+\text { Somer's } D)
+\end{array}
+$$
+
+所有这四个量度在0和1之间变化，较大的值对应于预测值和观察值之间的较强关联。 在这四个统计量中，Tau-a倾向于最接近广义R2。 另一方面，c统计量非常流行，因为它对应于ROC曲线下的面积，
+
+
+### ROC Curves 
+
+Another way to evaluate the predictive ability of a model for binary outcomes is the ROC curve. ROC is the abbreviation of Receiver Operating Characteristic. Let pi be the predicted probability of yi = 1 for individual i. If you want to use the predicted probability to generate an actual forecast for y = 1, you need some pointcut values. The natural choice is .5. If i pˆ≥.5, we predict yi =1. If i pˆ <.5, we predict yi = 0. Then we can build the following classification table:
+
+$$
+\begin{array}{l|c|c|c} 
+& \hat{p}_{i} \geq .5 & \hat{p}_{i}<.5 & \text { Total } \\
+y_{i}=1 & 35 & 15 & 50 \\
+y_{i}=0 & 10 & 87 & 97 \\
+\hline
+\end{array}
+$$
+> 敏感度是正确预测的事件的比例，在这种情况下为35/50 = .70。特异性是正确预测的非事件所占的比例，即87/97 = .90。理想的情况是这两个比例都很高。ROC曲线仅是一条图，在垂直轴上具有灵敏度，在水平轴上具有1减去特异性，两者都随着切点从1减小到0而增加。
+
+```
+PROC LOGISTIC DATA=penalty PLOTS(ONLY)=ROC;
+ MODEL death(EVENT='1')=blackd whitvic culp ;
+RUN;
+```
+
+The 45-degree line represents the expected ROC curve of a model with only intercept (ie, no predictive power). The farther the curve is from the 45-degree line, the greater the predictive power. The standard statistic for summarizing deviations is the area under the curve
+
+> 45度线代表仅具有截距（即没有预测能力）的模型的预期ROC曲线。曲线与45度线的距离越远，预测能力就越大。汇总偏离的标准统计量是曲线下的面积
+
+ROC曲线有很多选择，一个方便的选项使您可以将切点放置在曲线上。 可以通过将PLOTS选项更改为PLOTS（ONLY）= ROC（ID = CUTPOINT）来实现，
+
+```{r ROC logistic, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: ROC PLOTS（ONLY）= ROC（ID = CUTPOINT）"}
+knitr::include_graphics("./02_Plots/ROC_Logistic.png")
+```
+
+
+Compare the ROC curve and c statistics of different models. In the following code, I request the ROC curve and c statistics of the basic model and three different sub-models
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1')=blackd whitvic culp;
+ ROC 'omit culp' blackd whitvic;
+ ROC 'omit blackd' whitvic culp;
+ ROC 'omit whitvic' blackd culp;
+ ROCCONTRAST / ESTIMATE=ALLPAIRS;
+RUN; 
+```
+
+### Predicted Values, Residuals, and Influence Statistics
+
+PROC LOGISTIC can use the OUTPUT statement to generate a large number of case statistics, which writes the selected diagnostic statistics into the SAS data set. Here are some statistics that can be selected:
+
+- Linear predictor- Predicted log-odds for each case. In matrix notation, this is $\mathbf{x} \boldsymbol{\beta}$, so it's commonly
+referred to as XBETA.
+- Standard error of linear predictor-Used in generating confidence intervals.
+- Predicted values-Predicted probability of the event, based on the estimated model and values of the explanatory variables. For grouped data, this is the expected number of events.
+- Confidence intervals for predicted values -Confidence intervals are first calculated for the linear predictor by adding and subtracting an appropriate multiple of the standard error. Then, to get confidence intervals around the predicted values, the upper and lower bounds on the linear predictor
+are substituted into $1 /\left(1+e^{-x}\right)$, where $x$ is either an upper or a lower bound.
+- Deviance residuals - Contribution of each observation to the deviance chi-square.
+- Pearson residuals - Contribution of each observation to the Pearson chi-square.
+
+
+> OUTPUT语句还可以产生多个统计数据, 这些统计数据旨在测量每个观察结果的影响。基本上，影响力统计 信息会告诉您, 当从数据集中删除特定观察值时，模型的某些功能会发生多少变化。对于用PROC REG估计 的线性模型，影响统计是准确的。但是，逻辑模型中的精确计算将非常耗时, 因此仅使用近似值。 LOGISTIC中可用的影响力统计数据为
+
+- DFBETAS-删除特定观察值时每个回归系数有多少变化,实际变化除以系数的标准误差。
+- DIFDEV-实际变化除以系数的标准误差。
+- DIFCHISQ一删除观察值后皮尔逊卡方的变化
+- $\mathrm{C}$ and $\mathrm{CBAR}$ 度量回归系数的总体变化, 类似于线性回归中的库克距离
+- LEVERAGE-测量在解释变量空间中观察值的极端程度。杜杆作用是"帽子"矩阵的对角线。
+
+> 可以通过在OUTPUT语句上指定适当的选项来获取任何这些统计信息。但是您可能会发现，使用PROC语句 上的PLOTS选项来请求ODS图形更有用。此选项产生的许多图具有三个变体, 根据水平轴上绘制的变量而 有所不同。对于INFLUENCE和DFBETAS图, 水平轴仅是案例编号。对于PHAT和DPC图, 水平轴是预测的 概率。 对于LEVERAGE, 水平轴是杜杆。
+
+Here is the [example](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.3/statug/statug_logistic_examples06.htm)
+
+```
+PROC LOGISTIC DATA=penalty PLOTS(UNPACK LABEL)=
+ (INFLUENCE DFBETAS PHAT DPC LEVERAGE);
+ MODEL death(EVENT='1')=blackd whitvic culp ;
+RUN; 
+```
+
+
+### Unobserved Heterogeneity
+
+σ is the coefficient disturbance term ε. The random disturbance term can be regarded as representing all omitted explanatory variables that have nothing to do with the measured x variable, usually referred to as unobserved heterogeneity
+
+$$\log \left[\frac{\operatorname{Pr}(y=1 \mid \varepsilon)}{\operatorname{Pr}(y=0 \mid \varepsilon)}\right]=\beta_{0}+\beta_{1} x_{1}+\beta_{2} x_{2}+\ldots+\beta_{k} x_{k}+\sigma \varepsilon$$
+We assume that ε has nothing to do with x and has a standard logarithmic distribution, (Allison 1987) the result is approximately
+
+$$\log \left[\frac{\operatorname{Pr}(y=1)}{\operatorname{Pr}(y=0)}\right]=\beta_{0}^{*}+\beta_{1}^{*} x_{1}+\beta_{2}^{*} x_{2}+\ldots+\beta_{k}^{*} x_{k}$$
+$$\beta_{i}^{*}=\frac{\beta_{j}}{\sqrt{1+\sigma^{2}}}$$
+
+> 显然，我们永远无法测量并包含影响因变量的所有变量，因此总会有一些异质性缩小。有什么实际意义
+首先，在解释逻辑回归的结果时，我们应记住，系数的大小和相应的优势比可能在某种程度上是保守的。
+其次，为了使收缩最小化，总是希望在模型中包括重要的解释变量，即使我们认为这些变量与模型中已经存在的变量不相关。该建议尤其适用于随机实验，在随机实验中，有忽略协变量的趋势，而仅关注治疗对反应的影响。对于线性模型可能没关系，但是当包括所有相关的协变量时，logit模型可得出对治疗效果的出色估计。
+第三，差分异质性可能会混淆不同组之间的logit系数比较。例如，如果要比较分别针对男性和女性估算的对数系数，则必须隐含地假设两组中未观察到的异质性程度相同。
+
+1. First, in interpreting the results of a logistic regression, we should keep in mind that the magnitudes of the coefficients and the corresponding odds ratios are likely to be conservative to some degree. 
+2. Second, to keep such shrinkage to a minimum, it’s always desirable to include important explanatory variables in the model—even if we think those variables are not correlated with the variables already in the model. This advice is especially relevant to randomized experiments where there is a tendency to ignore covariates and look only at the effect of the treatment on the response. That may be okay for linear models, but logit models yield superior estimates of the treatment effect when all relevant covariates are included. 
+3. A third problem is that differential heterogeneity can confound comparisons of logit coefficients across different groups. If, for example, you want to compare logit coefficients estimated separately for men and women, you must implicitly assume that the degree of unobserved heterogeneity is the same in both groups.
+
+
+**Adjusting for differential heterogeneity using HETERO in Proc QLIM**
+
+```
+PROC QLIM DATA=promo;
+ ENDOGENOUS promo~DISCRETE(DIST=LOGISTIC);
+ MODEL promo = female dur dur*dur select arts prestige
+arts*female;
+ HETERO promo~female / NOCONST;
+run; 
+
+####################################################
+Parameter DF   Estimate   StandardError    t Value   Approx Pr > |t|
+_H.FEMALE 1    0.354838   0.325341         1.09      0.2754
+
+我们也没有太多证据显示性别差异异质性：FEMALE对σ的影响的p值为.28。
+尽管与0没有显着差异，但可以通过计算exp（.354838）= 1.43来解释该影响的大小。 
+因此，我们说女性的差异估计比男性的差异高43％。
+```
+
+
+## Illustration in SAS
+
+`PLOTS <(global-plot-options)> =(plot-request <(options)> <…plot-request <(options)>>)`
+controls the plots produced through ODS Graphics. When you specify only one plot-request, you can omit the parentheses from around the plot-request. For example:
+
+    PLOTS = ALL
+    PLOTS = (ROC EFFECT INFLUENCE(UNPACK))
+    PLOTS(ONLY) = EFFECT(CLBAR SHOWOBS)
+
+
+* If the INFLUENCE or IPLOTS option is specified in the MODEL statement, then the INFLUENCE plots are produced unless the MAXPOINTS= cutoff is exceeded.
+* If you specify ROC statements, then an overlaid plot of the ROC curves for the model (or the selected model if a SELECTION= method is specified) and for all the ROC statement models is displayed.
+* If you specify the CLODDS= option in the MODEL statement or if you specify the ODDSRATIO statement, then a plot of the odds ratios and their confidence limits is displayed.
+
+### Effects of Predictor Variables
+
+> 由于逻辑回归模型具有固有的非线性，因此通常很难直观地看到预测变量对事件概率的影响。 EFFECTPLOT语句为该问题提供了一种优雅的解决方案。 在检查交互作用和多项式函数时特别有用。
+
+> EFFECTPLOT语句要求根据ARTS（已发表文章的数量）绘制促销的预测概率图，同时将所有其他变量设置为其平均值。 如果模型中有任何CLASS变量，则将它们设置为参考级别。水平轴包括ARTS观测值的整个范围。 如果将选项/ LINK放在EFFECTPLOT语句上，则会得到在垂直轴上带有线性预测变量（几率的对数）的图形，在这种情况下，该线性预测变量将是一条直线。 水平轴上0和1处的小圆圈代表因变量在预测变量的不同值处的实际值。 在这种情况下，一个圆圈可以代表许多数据点
+
+```
+*** 从不包含相互作用或多项式函数的模型开始
+PROC LOGISTIC DATA=promo;
+ MODEL promo(EVENT='1') = female dur select arts;
+ EFFECTPLOT FIT(X=arts);
+run; 
+
+PROC LOGISTIC DATA=promo;
+ MODEL promo(EVENT='1') = female dur select arts arts*arts;
+ EFFECTPLOT FIT(X=arts);
+run;
+
+## SLICEFIT option to produce curves for men and women: 
+PROC LOGISTIC DATA=promo;
+ MODEL promo(EVENT='1') = female dur select arts prestige
+arts*female ;
+ EFFECTPLOT SLICEFIT(X=arts SLICEBY=female=0 1);
+run;
+```
+
+### Odds ratio plot
+
+```
+ods graphics on;
+proc logistic data=prostate
+  plots(only)=(effect oddsratio (type=horizontalstat));
+  model capsule (event="1") = psa /clodds=both;
+  unit psa = 10;
+run;
+ods graphics off;
+```
+ 
+
+
+
+## Probit Modell
+
+### Introduction
+
+The latent variable model we examined in the last section should help to motivate these models. The equation for the continuous latent variable z was
+$$z=\alpha_{0}+\alpha_{1} x_{1}+\alpha_{2} x_{2}+\ldots+\alpha_{k} x_{k}+\sigma \varepsilon$$
+* 如果ε具有标准的logistic分布，则y对x的依赖性由logit模型给出。
+* 现在假设ε具有标准正态分布。这意味着y通过概率模型依赖于x。
+* 如果ε具有标准的极值分布（也称为Gumbel或双指数分布），我们将获得互补的log-log模型。
+
+
+The probability $\pi{i}=\mathrm{P}\left(y{i}=1 \mid x{i 1}, \ldots, x{i k}\right)$ and the linear predictor $\eta_{i}=\beta_{0}+\beta_{1} x_{i 1}+\ldots+\beta_{k} x_{i k}=\boldsymbol{x}_{i}^{\prime} \boldsymbol{\beta}$ are linked by a response function $\pi_{i}=h\left(\eta_{i}\right) $:
+
+For Logit-Modell:
+$$\pi=\frac{\exp (\eta)}{1+\exp (\eta)} \Longleftrightarrow \log \frac{\pi}{1-\pi}=\eta$$
+For Probit-Modell:
+$$\pi=\Phi(\eta) \Longleftrightarrow \Phi^{-1}(\pi)=\eta$$
+$$\pi=\Phi(\eta)=\Phi\left(\boldsymbol{x}^{\prime} \boldsymbol{\beta}\right)$$
+So the probit model is often written as
+$$\Phi^{-1}\left(p_{i}\right)=\beta_{0}+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}$$
+
+### R Implemetation
+
+```{r prbit model, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+mydata <- read.csv("./01_Datasets/binary.csv")
+mydata$rank <- factor(mydata$rank)
+xtabs(~rank + admit, data = mydata)
+
+myprobit <- glm(admit ~ gre + gpa + rank, family = binomial(link = "probit"), 
+    data = mydata)
+summary(myprobit)
+
+confint(myprobit)
+
+## Wald test
+l <- cbind(0, 0, 0, 1, -1, 0)
+wald.test(b = coef(myprobit), Sigma = vcov(myprobit), L = l)
+wald.test(b = coef(myprobit), Sigma = vcov(myprobit), Terms = 4:6)
+```
+
+### SAS Implementation
+
+```
+PROC LOGISTIC DATA=penalty;
+ MODEL death(EVENT='1') = culp blackd whitvic / LINK=PROBIT
+ STB;
+RUN; 
+```
+
+For logit and probit models, the chi-square, p-value, and standardized coefficient are usually very close, although they will never be exactly the same. On the other hand, compared with the logit model, the **parameter estimates and standard errors** of the probit model are much lower.
+
+ 
+
+## Complementary log-log-Modell
+
+The complementary log-log model has important applications in the field of **survival analysis**.
+
+The probability $\pi{i}=\mathrm{P}\left(y{i}=1 \mid x{i 1}, \ldots, x{i k}\right)$ and the linear predictor $\eta_{i}=\beta_{0}+\beta_{1} x_{i 1}+\ldots+\beta_{k} x_{i k}=\boldsymbol{x}_{i}^{\prime} \boldsymbol{\beta}$ are linked by a response function $\pi_{i}=h\left(\eta_{i}\right) $:
+
+For Logit-Modell:
+$$\pi=\frac{\exp (\eta)}{1+\exp (\eta)} \Longleftrightarrow \log \frac{\pi}{1-\pi}=\eta$$
+For Complementary log-log model:
+$$\pi=1-\exp (-\exp (\eta)) \quad \Longleftrightarrow \quad \log (-\log (1-\pi))=\eta$$
+$$\log \left[-\log \left(1-p_{i}\right)\right]=\beta_{0}+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}$$
+$$p_{i}=1-\exp \left\{-\exp \left[\beta_{0}+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}\right]\right\}$$
+
+* 互补对数对数模型与logit和probit模型有一个主要区别。logit和probit变换在p = .50附近是对称的，但互补的log-log变换是不对称的。它是一条S形曲线，但逼近1的速度比逼近0的速度快得多。
+* 生存分析中最流行的方法是Cox回归方法，该方法基于一种称为比例风险模型的模型（Cox 1972）。 该模型的特殊情况包括Weibull回归模型和指数回归模型。 比例风险模型可以写成
+$$\log h(t)=\alpha(t)+\beta_{1} x_{i 1}+\beta_{2} x_{i 2}+\ldots+\beta_{k} x_{i k}$$
+where $h(t)$ is something called the hazard of an event at time $t$ and $\alpha(t)$ is an unspecified function of time.
+
+### R Implemetation
+
+```{r , echo = T,message = FALSE, error = FALSE, warning = FALSE}
+
+```
+
+
+
+
+## Multicategory Logit Models 
+
+### Multinomialverteilung
+
+$$
+f(\boldsymbol{y} \mid \boldsymbol{\pi})=\pi_{1}^{y_{1}} \cdot \ldots \cdot \pi_{q}^{y_{q}}\left(1-\pi_{1}-\ldots-\pi_{q}\right)^{1-y_{1}-\ldots-y_{q}}
+$$
+given in generalization of the Bernoulli distribution. For m independent repetitions, in generalization to the binomial distribution,$y r, r=1, \ldots, c$ now the number of repetitions in which the category r occurred. Then $\boldsymbol{y}=\left(y 1, \ldots, y_{q}\right)^{\prime}$ has the probability function
+$$
+\begin{aligned}
+f(\boldsymbol{y} \mid \boldsymbol{\pi}) &=\frac{m !}{y_{1} ! \cdot \ldots \cdot y_{q} !\left(m-y_{1}-\ldots-y_{q}\right) !} \pi_{1}^{y_{1}} \cdot \ldots \cdot \pi_{q}^{y_{q}}\left(1-\pi_{1}-\ldots-\pi_{q}\right)^{1-y_{1}-\ldots-y_{q}} \\
+&=\frac{m !}{y_{1} ! \cdot \ldots \cdot y_{c} !} \pi_{1}^{y_{1}} \cdot \ldots \cdot \pi_{c}^{y_{c}}
+\end{aligned}
+$$
+a multinomial distribution, in short
+$$
+\boldsymbol{y} \sim M(m, \boldsymbol{\pi})
+$$
+mit den Parametern $\mathrm{m}$ und $\boldsymbol{\pi}=(\pi 1, \ldots, \pi q)^{\prime}$. Für die ersten beiden Momente ergibt sich
+$$
+\mathrm{E}(\boldsymbol{y})=m \boldsymbol{\pi}=\left(\begin{array}{c}
+m \pi_{1} \\
+\vdots \\
+m \pi_{q}
+\end{array}\right), \quad \operatorname{Cov}(\boldsymbol{y})=\left(\begin{array}{ccc}
+m \pi_{1}\left(1-\pi_{1}\right) & \cdots & -\pi_{1} \pi_{q} \\
+\vdots & \ddots & \vdots \\
+-\pi_{q} \pi_{1} & \cdots & m \pi_{q}\left(1-\pi_{q}\right)
+\end{array}\right)
+$$
+### Nominal Response
+
+
+In a similar way in which a multicategory predictor in a GLM uses dummy variables for comparing the effect of the first $J-1$ categories on the odds for success with the effect of the last category, the reference category, multicategory logit models pair a baseline category with all remaining categories. Only that now it is of interest to find out how the set of predictors affects the odds for falling into a certain category versus the baseline category.
+Assume the last category $(J)$ is the baseline category, then the baseline logits are
+$$
+\log \left(\pi_{i} / \pi_{J}\right), \quad i=1,2, \ldots, J-1
+$$
+The baseline category logit model with one predictor $x$ is given by $J-1$ equations:
+$$
+\log \left(\pi_{i} / \pi_{J}\right)=\alpha_{i}+\beta_{i} x, \quad i=1,2, \ldots, J-1
+$$
+(For $J=2$ (two categories) this becomes the binary logistic regression model.)
+Observe that for each category $i$ compared with the baseline category, a new set of parameters is introduced.
+The baseline category logit model permits the comparison of any two categories since, for categories $a$ and $b$
+$$
+\log \left(\pi_{a} / \pi_{b}\right)=\log \left(\frac{\pi_{a} / \pi_{J}}{\pi_{b} / \pi_{J}}\right)=\log \left(\pi_{a} / \pi_{J}\right)-\log \left(\pi_{b} / \pi_{J}\right)=\left(\alpha_{a}-\alpha_{b}\right)+\left(\beta_{a}-\beta_{b}\right) x
+$$
+The choice of baseline category has no effect on the parameter estimates for comparing two categories $a$ and $b$.
+
+
+#### R Implementation
+
+```{r mehrkategorical, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library(foreign)
+ml <- read.dta("./01_Datasets/hsbdemo.dta")
+with(ml, table(ses, prog))
+with(ml, do.call(rbind, tapply(write, prog, function(x) c(M = mean(x), SD = sd(x)))))
+
+
+## Multinomial logistic regression
+library(nnet)
+ml$prog2 <- relevel(ml$prog, ref = "academic")
+test <- multinom(prog2 ~ ses + write, data = ml)
+summary(test)
+
+## extract the coefficients from the model and exponentiate
+exp(coef(test))
+
+## does not include the calculation of the p-value of the regression coefficient, so the Wald test (here z-test) is used to calculate the p-value
+## 2-tailed z test
+z <- summary(test)$coefficients/summary(test)$standard.errors
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+# Use a fitting function to calculate the probability of each result level
+head(fitted(test))
+```
+
+**Interpretation**
+
+$$\begin{aligned} ln\left(\frac{P(prog=general)}{P(prog=academic)}\right) = b_{10} + b_{11}(ses=2) + b_{12}(ses=3) + b_{13}write\\ ln\left(\frac{P(prog=vocation)}{P(prog=academic)}\right) = b_{20} + b_{21}(ses=2) + b_{22}(ses=3) + b_{23}write \end{aligned}$$
+#### SAS Implementation
+
+The unordered multinomial model is invoked by the LINK=GLOGIT option. If this option is omitted, LOGISTIC estimates the cumulative logit, which assumes that the response levels are ordered.
+
+```
+PROC LOGISTIC DATA=wallet;
+ MODEL wallet = male business punish explain / LINK=GLOGIT;
+RUN; 
+```
+
+There are three types of wallet, (1) keep the wallet and the money, (2) keep the money and return the wallet, or (3) return both the wallet and the money. The default setting category 3 is the reference category. You can specify category 2 as the reference category
+
+`MODEL wallet(REF='2') = male business punish explain / LINK=GLOGIT;`
+
+**Test the null hypothesis using TEST**
+
+```
+PROC LOGISTIC DATA=wallet;
+ MODEL wallet = male business punish explain / LINK=GLOGIT;
+ TEST male_1=male_2, business_1=business_2,
+ punish_1=punish_2, explain_1=explain_2;
+RUN; 
+```
+**Goodness-of-fit statistics using the AGGREGATE and SCALE=NONE options**
+
+```
+PROC LOGISTIC DATA=wallet;
+ MODEL wallet = male business punish explain / LINK=GLOGIT
+ AGGREGATE SCALE=NONE;
+ OUTPUT OUT=predicted PREDPROBS=I;
+RUN; 
+```
+出现OUTPUT语句。它生成一个数据集（名为PREDICTED），其中包含在因变量的每个类别中的预测概率。 该数据集针对195个案例中的每个案例都有一个记录。 PREDPROBS = I选项要求生成三个新变量：IP_1是属于类别1的预测概率，IP_2是属于类别2的预测概率，IP_3是属于类别3的预测概率。 在每个配置文件中这些预测的概率，我们可以获得预期的频率。 我们可以使用PROC TABULATE完成
+
+```
+PROC TABULATE DATA=predicted;
+ CLASS male business punish explain;
+ var IP_1 IP_2 IP_3;
+ TABLE male*business*punish*explain, IP_1 IP_2 IP_3;
+RUN; 
+```
+
+```{r Logistic AGGREGATE, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: Goodness-of-fit statistics"}
+knitr::include_graphics("./02_Plots/Logistic_AGGREGATE.png")
+```
+
+**Visualizing the effect of a variable**
+
+NOLIMITS option suppresses the 95% confidence bands around the plots
+
+```
+PROC LOGISTIC DATA=wallet;
+ MODEL wallet = male business punish explain / LINK=GLOGIT;
+ EFFECTPLOT FIT(X=punish) / NOOBS NOLIMITS GRIDSIZE=3;
+RUN; 
+```
+
+
+
+
+
+### Ordinal Response: Cumulative Logit Model
+
+If the multicategory response is ordinal a model should be used which reflects the order of the categories. A model taking the ordinal nature of the response variable into account should be easier to interpret and tests have greater power.
+
+**Definition:**
+Assume that $Y$ is an ordinal variable with categories $1,2, \ldots, J$, then the cumulative probability for category $j$ is the probability to fall at most into category $j$
+$$
+P(Y \leq j)=\pi_{1}+\cdots+\pi_{j}, \quad j=1,2, \ldots, J
+$$
+It is
+$$
+P(Y \leq 1) \leq P(Y \leq 2) \leq \cdots \leq P(Y \leq J)=1
+$$
+To model an ordinal response variable one models the cumulative response probabilities or cumulative odds. In the model cumulative odds for the last category do not have to be modeled since the cumulative probability for the highest category is always one (no category falls above).
+
+**Definition:**
+The cumulative logits are the logits for the cumulative probabilities
+$$
+\operatorname{logit}(P(Y \leq j))=\log \left(\frac{P(Y \leq j)}{1-P(Y \leq j)}\right)=\log \left(\frac{\pi_{1}+\cdots+\pi_{j}}{\pi_{j+1}+\cdots+\pi_{J}}\right)
+$$
+
+
+A model for cumulative logit $j$ is equivalent to a binary logistic regression model for combined categories 1 to $j$ (I) versus the combined category $j+1$ to $J$ (II)
+categories: $\underbrace{12 \quad \ldots \quad j}_{I} \underbrace{j+1 \quad \ldots \quad J}_{I I}$
+For one predictor variable $x$ the proportional odds model becomes for $j=1,2 \ldots, J-1$ :
+$$
+\operatorname{logit}(P(Y \leq j))=\alpha_{j}+\beta x
+$$
+The slope $\beta$ is the same for all cumulative logits, and therefore this model has a single slope parameter instead of $J-1$ in the multicategory logistic regression model.
+The parameter $\beta$ describes the effect of $x$ on the odds for falling into categories 1 to $j$. The effect is assumed to be the same for all cumulative odds.
+
+Given the cumulative probabilities in dependency on predictor variable $x$ if $\beta>0$, We can obtain the probabilities to fall within category $j$ in dependency on $x$ sing that 
+$$P(Y=j)=P(Y \leq j)-P(Y \leq j-1)$$
+
+
+The cumulative logit link is the following:
+$$\operatorname{logit}[P(Y \leq j)]=\log \left[\frac{P(Y \leq j)}{1-P(Y \leq j)}\right]=\log \left[\frac{\pi_{0}+\ldots \pi_{j}}{\pi_{j+1}+\ldots \pi_{j}}\right]$$ where $\mathrm{j}=0$ to J $-1$
+
+Note that the highest category is not in the model, as the cumulative probability of the highest category is always 1 .
+
+**Proportional odds assumption**
+
+The proportional odds assumption is that the number added to each of these logarithms to get the next is the same in every case. In other words, these logarithms form an arithmetic sequence.[2] The model states that the number in the last column of the table—the number of times that that logarithm must be added—is some linear combination of the other observed variables.
+
+Ordinal logistic regression assumes that the coefficients that describe the relationship between the lowest versus all higher categories of the response variable
+
+#### R Implementation
+
+```{r  Cumulative Logit Model, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+require(foreign)
+require(ggplot2)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+
+dat <- read.dta("./01_Datasets/ologit.dta")
+## three way cross tabs (xtabs) and flatten the table
+ftable(xtabs(~ public + apply + pared, data = dat))
+## 检查每个申请级别的gpa分布
+ggplot(dat, aes(x = apply, y = gpa)) +
+  geom_boxplot(size = .75) +
+  geom_jitter(alpha = .5) +
+  facet_grid(pared ~ public, margins = TRUE) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
+  theme_bw()
+
+
+## fit ordered logit model and store results 'm'
+## proportional odds logistic regression,
+m <- polr(apply ~ pared + public + gpa, data = dat, 
+          Hess=TRUE)
+          ## Hess = TRUE，以使模型从优化中返回观察到的信息矩阵（称为Hessian）
+          ## 该矩阵用于获取标准误差
+summary(m)
+
+## calculate and store p values
+ctable <- coef(summary(m))
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+ctable <- cbind(ctable, "p value" = p)    ## combined table
+ctable
+
+## KI und odds ratios
+ci <- confint(m)                          ## default method gives profiled CIs
+confint.default(m)                        ## CIs assuming normality
+exp(coef(m))                              
+exp(cbind(OR = coef(m), ci))  
+
+## Predict and marginal effects
+## predicted probabilities
+## Use "probs" for predicted probabilities
+m1.pred <- predict(m, type="probs") 
+summary(m1.pred)
+
+## marginal effects
+library(erer)
+m.marginal <- ocME(m, rev.dum	=TRUE)
+m.marginal
+## want t and p-values
+m.marginal$out
+```
+
+
+#### SAS Implementation
+
+cumulative logit model—also known as the ordered logit or ordinal logit model. It is the most widely used method and the easiest model to use in SAS (default). In PROC LOGISTIC, specifying LINK=CLOGIT produces a model which utilizes a cumulative logit link. 
+
+Using the default settings, the procedure conducts a Score Test for the Proportional Odds Assumption. If it rejects the null hypothesis that proportional odds may be assumed, the user has two additional modeling techniques utilizing the cumulative logit link.
+A general cumulative logit model **generates separate parameter estimates (effects) for each predictor across all $J-1$ response levels (see Agresti, 2007)**. This model replaces $\beta$ in the proportional odds model with $\beta_{j}$ and uses the same cumulative logit link:
+$$
+\operatorname{logit}[P(Y \leq j)]=\alpha_{j}+\beta_{j} x, \text { where } \mathrm{j}=0 \text { to J - } 1
+$$
+The model allows for probability distribution curves that climb or fall at different rates for different response levels. This raises the possibility of these curves crossing each other at certain predictor values. This is inappropriate, because this violates the order that cumulative probabilities must have:
+$P(Y \leq X) \leq P(Y \leq X+1)$ for all values of the predictors
+This result could lead to negative predicted probabilities at individual response levels. Therefore, such a model can only fit adequately over a narrow range of predictor values. Using the proportional odds form of model ensures that the cumulative probabilities have the proper order for all predictor values. If a model of this form is desirable, PROC LOGISTIC will generate a general cumulative logit model if the option UNEQUALSLOPES is specified in the options for the MODEL statement.
+
+<!-- 使用比例优势形式的模型可确保累积概率对于所有预测变量值具有正确的顺序。如果需要这种形式的模型，如果在 MODEL 语句的选项中指定了选项 UNEQUALSLOPES，则 PROC LOGISTIC 将生成一般累积 logit 模型。 -->
+
+```
+PROC LOGISTIC DATA=wallet;
+ MODEL wallet = male business punish explain;
+RUN;
+```
+
+**“Score Test for the Proportional Odds Assumption”**
+
+This is the Chi-Square Score Test for the Proportional Odds Assumption. Since the ordered logit model estimates one equation over all levels of the dependent variable (as compared to the multinomial logit model, which models, assuming low ses is our referent level, an equation for medium ses versus low ses, and an equation for high ses versus low ses), the test for proportional odds tests whether our one-equation model is valid. If we were to reject the null hypothesis, we would conclude that ordered logit coefficients are not equal across the levels of the outcome and we would fit a less restrictive model (i.e., multinomial logit model). If we fail to reject the null hypothesis, we conclude that the assumption holds. For our model, the Proportional Odds Assumption appears to have held.
+
+
+
+## Adjacent Categories Model
+
+排序类别数据的另一个通用模型是相邻类别模型。如前所述，我们将 $p_{i j}$ 设为个体 $i$ 进入因变量类别 $j$ 的 概率，并假设类别按序列 $j=1, \ldots, J$ 排序。现在取相邻的任何类别对，例如 $j$ 和 $j+1$ 。我们可 以根据解释变量来针对这两个类别之间的对比编写一个logit模型:
+$$
+\begin{array}{c}
+\log \left(\frac{p_{i, j+1}}{p_{i j}}\right)=\alpha_{j}+\boldsymbol{\beta}_{j} \mathbf{x}_{i} \quad j=1, \ldots, J-1 \\
+\boldsymbol{\beta}_{j} \mathbf{x}_{i}=\beta_{j 1} x_{i 1}+\ldots+\beta_{j k} x_{i k}
+\end{array}
+$$
+为了获得有序数据的相邻类别模型，我们在这组方程上施加了约束。具体而言，我们假设所有的 $\beta_{j}=\beta$ for all $j$ 。换句话说, 不是每个相邻对都有一组不同的系数，而是只有一组。
+
+尽管相邻类别模型是多项式logit模型的特例，但PROC LOGISTIC不允许施加适当的约束。如果可以将数 据分组到列联表中，则可以使用PROC CATMOD估计模型。但是，CATMOD使用加权最小二乘法而不是 最大似然法。
+
+CATMOD没有FREQ语句，但是WEIGHT语句执行相同的功能。带有ALOGIT选项的RESPONSE语句为因变 量调用相邻类别的函数。将RESPONSE放在MODEL语句将通知CATMOD估计一组系数，而不是为每对类 别估计一组系数。默认情况下, CATMOD将所有预测变量视为CLASS变量。但是像LOGISTIC一样, CATMOD也使用"效果参数化"对这些变量进行编码。PARAM = REF选项将覆盖默认值以产生指示符变量编 码. 与LOGISTIC不同, CATMOD对模型进行参数化以预测响应变量的较高值而不是较低值。但是, 因为 MARRIED被视为CLASS变量，所以引用类别为1而不是0.
+
+
+尽管累积对数模型和相邻类别模型在公式和解释上存在明显差异，但在实践中，这两种模型往往会得出非常相似的结论。我通常更喜欢累积模型，因为它具有吸引人的潜在变量解释能力，并且易于在软件中使用。但是相邻类别模型至少在原则上具有一个优势：容易制定对系数有选择性约束的模型
+
+```
+PROC CATMOD DATA=happy;
+ WEIGHT count;
+ RESPONSE ALOGIT;
+ MODEL happy = _RESPONSE_ married year / PARAM=REF;
+RUN;
+```
+
+
+## Continuation Ratio Model
+
+when the ordered categories represent a progression through stages, so that individuals must pass through each lower stage before they go on to higher stages.
+
+> 当排序的类别代表各个阶段的进展时，这是最合适的，这样个人就必须先经过每个较低的阶段，然后才能进入较高的阶段。 在那些情况下，延续比率模型比其他两个模型更具吸引力。
+
+Formalize the model for J categories on the dependent variable
+将 $A_{i j}$ 定义为个人进入 $j+1$ 阶段的概率
+$$
+\begin{array}{c}
+A_{i j}=\operatorname{Pr}\left(y_{i}>j \mid y_{i} \geq j\right) \\
+\log \left(\frac{A_{i j}}{1-A_{i j}}\right)=\alpha_{j}+\boldsymbol{\beta} \mathbf{x}_{i} \quad j=1, \ldots, J-1
+\end{array}
+$$
+where $\boldsymbol{\beta} \mathbf{x}_{i}=\beta_{1} x_{i 1}+\ldots+\beta_{k} x_{i k}$.
+$$
+\log \left(\frac{A_{i j}}{1-A_{i j}}\right)=\log \left[\frac{\sum_{m=j+1}^{J} p_{i m}}{p_{i j}}\right]
+$$
+
+我们可以使用普通的二进制logit过程来估算这个模型。 诀窍在于构建数据集。对于每个阶段，您都将构建一个数据集，该数据集将所有未进入该阶段的个人排除在外，并使用一个虚拟因变量来指示该个人是否进入下一阶段。 现在，我们将这些数据集合并为一个单独的集合，而不是进行单独的分析，其中包括一个指示数据来自哪个阶段的变量。 最后，我们估计组合数据上的单个二进制logit模型。
+
+$$
+\begin{array}{lcc|ccc}
+\hline & & \text { Father's } & \text { Grammar } & \text { Some High } & \text { High School } \\
+\text { Race } & \text { Age } & \text { Education* } & \text { School } & \text { School } & \text { Graduate } \\
+\hline \text { White } & <22 & 1 & 39 & 29 & 8 \\
+& & 2 & 4 & 8 & 1 \\
+& & 3 & 11 & 9 & 6 \\
+& & 4 & 48 & 17 & 8 \\
+& \geq 22 & 1 & 231 & 115 & 51 \\
+& & 2 & 17 & 21 & 13 \\
+& & 3 & 18 & 28 & 45 \\
+& & 4 & 197 & 111 & 35 \\
+\text { Black } & <22 & 1 & 19 & 40 & 19 \\
+& & 2 & 5 & 17 & 7 \\
+& & 3 & 2 & 14 & 3 \\
+& \geq 22 & 4 & 49 & 79 & 24 \\
+& & 1 & 110 & 133 & 103 \\
+& & 2 & 18 & 38 & 25 \\
+& & 3 & 11 & 25 & 18 \\
+& & 4 & 178 & 206 & 81 \\
+\hline
+\end{array}
+$$
+
+```
+DATA afqt;
+ INPUT white old faed ed count @@;
+ DATALINES;
+1 0 1 1 39
+1 0 1 2 29
+1 0 1 3 8
+1 0 2 1 4
+1 0 2 2 8
+1 0 2 3 1
+1 0 3 1 11
+1 0 3 2 9
+1 0 3 3 6
+1 0 4 1 48
+1 0 4 2 17
+1 0 4 3 8
+1 1 1 1 231
+1 1 1 2 115
+1 1 1 3 51
+1 1 2 1 17
+1 1 2 2 21
+1 1 2 3 13
+1 1 3 1 18
+1 1 3 2 28
+1 1 3 3 45
+1 1 4 1 197
+1 1 4 2 111
+1 1 4 3 35
+0 0 1 1 19
+0 0 1 2 40
+0 0 1 3 19
+0 0 2 1 5
+0 0 2 2 17
+0 0 2 3 7
+0 0 3 1 2
+0 0 3 2 14
+0 0 3 3 3
+0 0 4 1 49
+0 0 4 2 79
+0 0 4 3 24
+0 1 1 1 110
+0 1 1 2 133
+0 1 1 3 103
+0 1 2 1 18
+0 1 2 2 38
+0 1 2 3 25
+0 1 3 1 11
+0 1 3 2 25
+0 1 3 3 18
+0 1 4 1 178
+0 1 4 2 206
+0 1 4 3 81
+;
+
+##  first stage
+DATA first;
+ SET afqt;
+ stage=1;
+ advance = ed GE 2;
+RUN; 
+
+## second stage
+DATA second;
+ SET afqt;
+ stage=2;
+ IF ed=1 THEN DELETE;
+ advance = ed EQ 3;
+RUN; 
+
+## concatenated into a single set
+DATA concat;
+ SET first second;
+RUN; 
+
+## Alternatively
+DATA combined;
+ SET afqt;
+ stage=1;
+ advance = ed GE 2;
+ OUTPUT;
+ stage=2;
+ IF ed=1 THEN DELETE;
+ advance = ed EQ 3;
+ OUTPUT;
+RUN; 
+
+## estimate the model with PROC LOGISTIC:
+PROC LOGISTIC DATA=combined;
+ FREQ count;
+ CLASS faed / PARAM=REF;
+ MODEL advance(EVENT='1')=stage white old faed / AGGREGATE
+ SCALE=NONE;
+RUN;
+```
+
+关于延续比率方法，还有其他几点值得注意。
+
+* 首先，在合并的数据集中，同一个人可能会出现多次。对于教育示例，每个拥有高中的人都对合并后的数据集做出了两个观察。通常，由于多个观测值之间可能存在依赖关系，因此会产生危险信号。但是绝对没有依赖性的问题。对于每个人，将特定结果的概率计入一组条件概率，这些条件概率的结构与独立观察的结构相同。
+* 其次，延续比率法与离散时间法用于生存分析密切相关。在这种情况下，目标是建模直到发生某个事件为止的时间长度，并以离散单位（例如年）为单位来测量时间。
+* 第三，正如存在累积概率和累积互补对数-对数模型一样，人们可以使用概率或互补对数-对数函数轻松估计延续比率模型(probit or complementary log-log functions)。互补对数对数模型对于事件历史记录应用特别有吸引力，因为它是Cox回归中使用的比例风险模型的离散时间等效项
+

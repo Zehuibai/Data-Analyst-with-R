@@ -1,0 +1,1195 @@
+---
+title: 'As-a-Statistician-Adaptive designs'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+# devtools::install_github("rvlenth/lsmeans", dependencies = TRUE)
+
+packages<-c("tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+## Introduction
+
+An adaptive design is a design that allows adaptations or modifications to some aspects of a trial after its initiation without undermining the validity and integrity of the trial. The adaptations may include, but are not limited to, sample-size reestimation, early stopping for efficacy or futility, response-adaptive randomization, and dropping inferior treatment groups. Adaptive designs usually require unblinding data and invoke a dependent sampling procedure. Therefore, theory behind adaptive design is much more complicated than that behind classical design.
+
+In general, adaptive designs allow various adaptations of the study design based on data
+gained during an interim analysis. Possible adaptions could be:
+
+* Early termination of the trial due to futility
+* Early termination of the trial due to efficacy
+* Sample size recalculation
+* Selection of the primary endpoint
+* Dropping of treatment arm(s)
+* Switching from non-inferiority to superiority
+* Patient allocation to the treatment arms
+* Selection of the patient population (enrichment designs)
+* Further change in the study design
+
+However, only with proper implementation of these designs, the validity and the integrity of
+the clinical trial are not undermined. Each of the adaptions might have an influence on the
+interpretation of the study results. Special attention should be paid for the comparability of
+the different stages of the study.
+
+### Early termination due to futility
+
+The study can be stopped earlier due to futility using non-binding or binding futility rules. Non-binding futility bounds (i.e., the final decision is not only based on the suggestion made by the futility bounds) does not further increase the type I error. On the other hand, binding futility bounds can provide advantage in the efficacy analysis but may inflate the type I error if the stopping rule is not followed. 
+
+> 由于使用无约束力的或无约束力的无效性规则会导致无效性，因此可以更早地停止研究。 无约束力的无效边界（即最终决定不仅基于无效边界提出的建议）不会进一步增加I型错误。 另一方面，无用的约束范围可以在功效分析中提供优势，但是如果不遵循停止规则，则可能会夸大I型错误。
+
+### Early termination due to efficacy
+
+The trial could also be stopped earlier if the efficacy of the primary endpoint is already shown by the results of the interim analysis. Efficacy bounds can be implemented by using groups sequential design methods. If efficacy bounds are used, it should be ensured that the sample size at the interim analysis is sufficient to show further objectives of the study (e.g., safety profile and secondary endpoints), which is typically not the case in phase III or premarket trials. If groups sequential design methods are used, the treatment effect tend to be biased towards greater values (especially the mean). Consequently, the confidence intervals will not have the desired coverage probability. Therefore, methods for reducing or removing the introduced bias and increasing the coverage probability should be applied if they exist. If no methods for these issues exist, the extent of bias should be discussed, and the resulting estimates should be used with caution.
+
+> 如果主要终点的疗效已经通过中期分析的结果表明，则该试验也可以更早停止。 功效范围可以通过使用组顺序设计方法来实现。 如果使用疗效界限，则应确保中期分析中的样本量足以显示研究的进一步目标（例如安全性和次要终点），通常在III期或上市前试验中并非如此。 如果使用分组顺序设计方法，则治疗效果倾向于偏向更大的值（尤其是平均值）。 因此，置信区间将不会具有所需的覆盖概率。 因此，如果存在减少或消除引入的偏差并增加覆盖概率的方法，则应采用。 如果没有解决这些问题的方法，则应讨论偏差的程度，并谨慎使用得出的估计值。
+
+
+### Sample size reassessment
+
+Adaptations like sample size reassessment are not a substitute for careful planning. Sample size reassessment which is based on results of an ongoing trial is only a valid option if it can be shown that the uncertainty about the required sample size is not the result of an inadequate research in earlier stages of the study. If possible, the sample size should be recalculated in a blinded fashion. For a study with the objective to show superiority regarding a continuous primary endpoint, the type I error is generally not inflated if the method of Gould and Shih is applied (Gould and Shih, 1992). 
+
+For non-inferiority and equivalence hypotheses, the type I error could be inflated to a limited extend (Friede and Kieser, 2003). If a blinded sample size calculation is not appropriate or possible, the procedure of Chen and his colleagues (Chen et al., 2004) offers a sample size adaption without inflating the type I error. Details are described in the paper. The procedure of the reassessment should be planned a priori, must not question the validity of the study results, and has to maintain the type I error. But if more than one sample size reassessment is required, this can be a sign for varying experimental conditions and a sign that they are not fully understood.
+
+> 诸如样本量重新评估之类的调整并不能代替精心计划。如果可以证明对所需样本量的不确定性不是研究早期阶段研究不足的结果，则基于正在进行的试验结果进行的样本量重新评估只是一个有效的选择。如果可能，应以盲法重新计算样本量。对于旨在显示出连续主要终点指标优越性的研究，如果采用Gould and Shih的方法，通常不会夸大I型错误（Gould and Shih，1992）。
+
+> 对于非自卑和对等假说，I型错误可能会扩大到有限的范围（Friede和Kieser，2003年）。如果盲目的样本量计算不合适或不可行，Chen和他的同事（Chen等，2004）的程序可以对样本量进行调整，而不会增加I型错误。详细信息在本文中进行了描述。重新评估的程序应事先进行计划，不得质疑研究结果的有效性，并且必须保持I型错误。但是，如果需要进行多个样本大小的重新评估，则可能是变化的实验条件的信号，也可能是对它们没有完全了解的信号。
+
+### Change or modification of the primary endpoint 
+
+There are several therapeutic areas where guidelines for the change or modification of the primary endpoint have not been developed. Adaptive designs are recommended if the assumptions and expectations of the primary endpoint seem to be not correct. Such information may be obtained through external knowledge in form of other studies or through interim results. In these situations, an adaptive design can be used for changes of the definition of a primary endpoint, for changes of the primary endpoint and for changes in the components of a composed primary endpoint. However, it should be noted that a change in a primary endpoint is generally difficult to justify and thus should be avoided.
+
+> 在一些治疗领域，尚未制定出主要终点改变或修改的指南。 如果主要终点的假设和期望似乎不正确，则建议采用自适应设计。 此类信息可以通过其他研究形式的外部知识或中期结果获得。 在这些情况下，可以将自适应设计用于主要端点定义的更改，主要端点的更改以及组成的主要端点的组件的更改。 但是，应注意的是，主要终点的变化通常难以证明是正确的，因此应避免。
+
+### Discontinuing treatment arms 
+
+Discontinuation of treatment arms is worth consideration in case of multiple treatment arms – especially if one of them is a placebo arm. If data depending on discontinuation of treatment arms is favoured, the study should be planned with an appropriate adaptive design in combination with a multiple testing procedure to offer the chance to stop recruitment to the placebo group if an interim analysis has demonstrated superiority of the treatment over placebo. An application for an early phase study would be a drop-the-loser design (Sampson and Sill, 2005), where at the interim analysis of a two-stage design, one winner arm will be selected to enter the second stage of the trial (beside the control arm). Further details could be obtained from the original publication. This approach is more general described in the multiarm multi-stage approach (MAMS) by Magirr and his colleagues (Magirr et al.,2012).
+
+> 如果有多个治疗臂，则应考虑停用治疗臂-尤其是其中一个是安慰剂臂时。 如果偏爱根据治疗组停用的数据，则应采用适当的适应性设计并结合多种测试程序来计划研究，如果中期分析表明治疗优于治疗组，则有机会停止募集安慰剂组。 安慰剂。 早期研究的应用程序将是失败者设计（Sampson和Sill，2005年），其中在两阶段设计的中期分析中，将选择一个获胜者的手臂进入试验的第二阶段。 （在控制臂旁边）。 可以从原始出版物中获得更多详细信息。 Magirr及其同事在多臂多阶段方法（MAMS）中对这种方法进行了更一般的描述（Magirr等，2012）。
+
+
+### Switching between superiority and non-inferiority
+ 
+If both, superiority and/or non-inferiority of an experimental treatment to an active comparator are acceptable outcomes, the study should be planned as a non-inferiority trial with the possibility to switch to superiority based on the trial results. A change from superiority to non-inferiority is not acceptable in the adaptive design after interim results are available
+
+> 如果对积极比较者的实验治疗的优越性和/或非劣效性均可以接受，则应将该研究计划为一项非劣效性试验，并有可能根据试验结果转向优势性。 在获得中期结果后，在自适应设计中从优劣变为非劣势是不可接受的
+
+
+### Selection of the patient population 
+
+If the objective of a trial is not only to show efficacy, but efficacy in a certain population, so called enrichment designs could be applied. In such a design, for example, a general population is enrolled in the first stage. Based on the results of the interim analysis of the prespecified subgroups, only the most promising study population could be further investigated in the second part of the trial. The results from the first and the second stage could be combined using combination test describe in section below. A more detailed overview about enrichment can be found in article of Wang and his colleagues (Wang et al., 2009). 
+
+> 如果试验的目的不仅是显示功效，而且是在一定人群中的功效，那么可以应用所谓的富集设计。例如，在这样的设计中，第一阶段是一般人群。根据预先确定的亚组的中期分析结果，只有最有前途的研究人群可以在试验的第二部分中进行进一步研究。第一阶段和第二阶段的结果可以使用以下部分所述的组合测试进行组合。可以在Wang和他的同事的文章中找到有关浓缩的更详细的概述（Wang等，2009）。
+
+
+
+
+##  General Theory
+
+### Stopping Boundary
+
+$$
+H_{0}: H_{01} \cap \ldots \cap H_{0 K}
+$$
+where $H_{0 k}(k=1, \ldots, K)$ is the null hypothesis at the $k$ th interim analysis.
+
+The stopping rules are given by
+$$
+\left\{\begin{array}{ll}
+\text { Stop for efficacy } & \text { if } T_{k} \leq \alpha_{k} \\
+\text { Stop for futility } & \text { if } T_{k}>\beta_{k}, \\
+\text { Continue with adaptations}& \text { if }  \alpha_{k}<T_{k} \leq \beta_{k}
+\end{array}\right.
+$$
+where $\alpha_{k}<\beta_{k}(k=1, \ldots, K-1)$, and $\alpha_{K}=\beta_{K}$. For convenience, $\alpha_{k}$ and $\beta_{k}$ are called the efficacy and futility boundaries, respectively.
+
+To reach the $k$ th stage, a trial has to pass the 1 th to $(k-1)$ th stages. Therefore, the probability of rejecting the null hypothesis $H_{0}$ or simply, the rejection probability at the $k$ th stage is given by $\psi_{k}\left(\alpha_{k}\right)$, where
+$$
+\begin{aligned}
+\psi_{k}(t) &=\operatorname{Pr}\left(\alpha_{1}<T_{1}<\beta_{1}, \ldots, \alpha_{k-1}<T_{k-1}<\beta_{k-1}, T_{k}<t\right) \\
+&=\int_{\alpha_{1}}^{\beta_{1}} \cdots \int_{\alpha_{k-1}}^{\beta_{k-1}} \int_{-\infty}^{t} f_{T_{1} \ldots T_{k}} d t_{k} d t_{k-1} \ldots d t_{1}
+\end{aligned}
+$$
+where $f_{T_{1} \ldots T_{k}}$ is the joint pdf of $T_{1}, \ldots$, and $T_{k}$.
+
+
+
+### Power and Adjusted p-value
+
+Definition 3.1: The $p$ -value associated with a test is the smallest significance level $\alpha$ for which the null hypothesis is rejected. Let
+$$
+p_{c}(t ; k)=\psi_{k}\left(t \mid H_{0}\right)
+$$
+The error rate $(\alpha$ spent) at the $k$ th stage is given by
+$$
+\pi_{k}=\psi_{k}\left(\alpha_{k} \mid H_{0}\right) .
+$$
+It is the key to determining the stopping boundaries’ adaptive designs. When $\sum_{i=1}^{k} \pi_{i}$ is reviewed as a function of information time or stage $k$, it is the so-called error-spending function. 
+
+The power of rejecting $H_{0}$ at the $k$ th stage is given by
+$$
+\varpi_{k}=\psi_{k}\left(\alpha_{k} \mid H_{a}\right) .
+$$
+When efficacy is claimed at a certain stage, the trial is stopped. Therefore, the type-I errors at different stages are mutually exclusive. Hence, the experiment-wise type-I error rate can be written as
+$$
+\alpha=\sum_{k=1}^{K} \pi_{k} .
+$$
+Similarly, the power is given by
+$$
+\text { power }=\sum_{k=1}^{K} \varpi_{k} .
+$$
+
+It is interesting to define an adjusted $p$ -value by
+$$
+p_{a}(t ; k)=\min \left\{1, \sum_{i=1}^{k-1} \pi_{i}+p_{c}(t ; k)\right\}
+$$
+An important characteristic of this adjusted $p$ -value is that when the test statistic $t$ is on stopping boundary $a_{k}, p_{k}$ must be equal to alpha spent so far.
+
+Note that the adjusted $p$ -value is a measure of overall statistical strength against $H_{0}$. The later the $H_{0}$ is rejected, the larger the adjusted $p$ -value is, and the weaker the statistical evidence (against $H_{0}$ ) is. A late rejection leading to a larger $p$ -value is reasonable because the alpha at earlier stages has been spent.
+
+> 调整后的 $p$ 值是对 $H_{0}$ 的整体统计强度的衡量。 $H_{0}$被拒绝的越晚，调整后的$p$值越大，统计证据（针对$H_{0}$）就越弱。 延迟拒绝导致更大的 $p$ 值是合理的，因为早期阶段的 alpha 已经用完。
+
+
+### Stopping Probabilities (Design Evaluation)
+
+> 每个阶段的停止概率是自适应设计的一个重要属性，因为它提供了上市时间和相关的成功概率。 它还提供有关试验成本（样本量）和相关概率的信息。
+
+n fact, the stopping probabilities are used to calculate the expected samples that present the average cost or efficiency of the trial design and the duration of the trial. There are two types of stopping probabilities: 
+
+1. unconditional probability of stopping to claim efficacy (reject H0) and 
+2. unconditional probability of futility (accept H0). 
+
+The former refers to the efficacy stopping probability (ESP), and the latter refers to the futility stopping probability (FSP).
+
+From
+$$
+\begin{aligned}
+\psi_{k}(t) &=\operatorname{Pr}\left(\alpha_{1}<T_{1}<\beta_{1}, \ldots, \alpha_{k-1}<T_{k-1}<\beta_{k-1}, T_{k}<t\right) \\
+&=\int_{\alpha_{1}}^{\beta_{1}} \ldots \int_{\alpha_{k-1}}^{\beta_{k-1}} \int_{-\infty}^{t} f_{T_{1} \ldots T_{k}} d t_{k} d t_{k-1} \ldots d t_{1}
+\end{aligned}
+$$
+the ESP at the kth stage is given by
+$$
+E S P_{k}=\psi_{k}\left(\alpha_{k}\right)
+$$
+and the FSP at the $k$ th stage is given by
+$$
+F S P_{k}=\psi_{k-1}\left(\beta_{k-1}\right)-\psi_{k-1}\left(\alpha_{k-1}\right)-\psi_{k}\left(\beta_{k}\right)
+$$
+
+
+
+
+### Expected Duration of an Adaptive Trial (Design Evaluation)
+
+The stopping probabilities can be used to calculate the expected trial duration, which is definitely an important feature of an adaptive design. The conditionally (on the efficacy claim) expected trial duration is given by
+$$
+\bar{t}_{e}=\sum_{k=1}^{K} E S P_{k} t_{k}
+$$
+where $t_{k}$ is the time from the first-patient-in to the $k$ th interim analysis.
+
+The conditionally (on the futility claim) expected trial duration is given by
+$$
+\bar{t}_{f}=\sum_{k=1}^{K} F S P_{k} t_{k} .
+$$
+The unconditionally expected trial duration is given by
+$$
+\bar{t}=\sum_{k=1}^{K}\left(E S P_{k}+F S P_{k}\right) t_{k} .
+$$
+
+
+### Expected Sample Sizes (Design Evaluation)
+
+The expected sample size is a commonly used measure of the **efficiency**
+(cost and timing of the trial) of the design. The expected sample size is a
+function of the treatment difference and its variability, which are unknowns.
+Therefore, expected sample size is really **based on hypothetical values of
+the parameters**. For this reason, it is beneficial and important to calculate
+the expected sample size **under various critical or possible values** of the
+parameters. The total expected sample size per group can be expressed as
+$$
+N_{\exp }=\sum_{k=1}^{K} N_{k}\left(E S P_{k}+F S P_{k}\right)
+$$
+It can also be written as
+$$
+N_{\exp }=\sum_{k=1}^{K} N_{k}\left(\psi_{k}\left(\alpha_{k}\right)+\psi_{k-1}\left(\beta_{k-1}\right)-\psi_{k}\left(\beta_{k}\right)-\psi_{k-1}\left(\alpha_{k-1}\right)\right)
+$$
+where $N_{k}=\sum_{i=1}^{k} n_{i}$ is the cumulative sample size per group.
+
+
+### Conditional Power and futility index
+
+The conditional power is the **conditional probability of rejecting the null hypothesis during the rest of the trial based on the observed interim data**. The conditional power is commonly used for monitoring an ongoing trial. Similar to the ESP and FSP, conditional power is dependent on the population parameters or treatment effect and its variability. The conditional power at the $k$ th stage is the sum of the probability of rejecting the null hypothesis at stage $k+1$ to $K(K$ does not have to be predetermined), given the observed data from stages 1 through $k$.
+$$
+c P_{k}=\sum_{j=k+1}^{K} \operatorname{Pr}\left(\cap_{i=k+1}^{j-1}\left(a_{i}<T_{i}<\beta_{i}\right) \cap T_{j} \leq \alpha_{j} \mid \cap_{i=1}^{k} T_{i}=t_{i}\right)
+$$
+where $t_{i}$ is the observed test statistic $T_{i}$ at the $i$ th stage. For a two-stage design, the conditional power can be expressed as
+$$
+c P_{1}=\operatorname{Pr}\left(T_{2} \leq \alpha_{2} \mid t_{1}\right) .
+$$
+The futility index is defined as the conditional probability of accepting the null hypothesis:
+$$
+F I_{k}=1-c P_{k}
+$$
+
+## Methods 
+
+### Four Inroduction
+
+Many interesting methods for adaptive design have been developed. Virtually all methods can be viewed as some **combination of stagewise p-values**. The stagewise p-values are obtained based on the subsample from each stage; therefore, they are mutually independent and uniformly distributed over [0,1] under the null hypothesis. 
+
+The first method uses the same stopping boundaries as a classical group sequential design (O’Brien and Fleming, 1979; Pocock, 1977) and **allows stopping for early efficacy or futility**. Lan and DeMets (1983) proposed the error spending method (ESM), in which the timing and number of analyses can be changed based on a prespecified error-spending function. ESM is derived from Brownian motion. The method has been extended to allow for sample-size reestimation (SSR) (Cui, Hung, and Wang, 1999). It can be viewed as a fixed-weight method (i.e., using fixed weights for z-scores from the first and second stages regardless of sample-size change). Lehmacher and Wassmer (1999) further degeneralized this **weight method by using the inverse-normal method**, in which the z-score is not necessarily taken from a normal endpoint, but from the inverse-normal function of stagewise p-values. Hence, the method can be used for any type of endpoint. 
+
+> 第一种方法使用与经典组顺序设计相同的停止边界（O'Brien 和 Fleming，1979 年；Pocock，1977 年）并且 ** 允许停止以获得早期有效性或无效**。 Lan 和 DeMets (1983) 提出了错误消耗方法 (ESM)，其中可以根据预先指定的错误消耗函数更改分析的时间和数量。 ESM 源自布朗运动。该方法已扩展到允许样本大小重新估计 (SSR)（Cui、Hung 和 Wang，1999）。它可以被视为一种固定权重方法（即，无论样本大小如何变化，对第一和第二阶段的 z 分数使用固定权重）。 Lehmacher 和 Wassmer (1999) 通过使用逆正态方法进一步取消了这种权重方法，其中 z 分数不一定取自正态端点，而是取自阶段性 p 值的逆正态函数。因此，该方法可用于任何类型的端点。
+
+The second method is based on a **direct combination of stagewise pvalues**. Bauer and Kohne (1994) use the **Fisher combination (product) of stagewise p-values** to derive the stopping boundaries. Chang (2006a) used the **sum of the stagewise p-values** to construct a test statistic and derived a closed form for determination of stopping boundaries and p-value calculations as well as conditional power for trial monitoring. 
+
+> 第二种方法是基于stagewise pvalues的**直接组合**。 Bauer and Kohne (1994)使用stagewise p-values的Fisher组合（乘积）来推导停止边界。 Chang (2006a) 使用 ** 阶段性 p 值之和 ** 来构建检验统计量，并推导出封闭形式，用于确定停止边界和 p 值计算以及用于试验监测的条件功效。
+
+The third method is based on the **conditional error function**. Proschan and Hunsberger (1995) developed an adaptive design method based on the conditional error function for two-stage designs with normal test statistics. Müller and Schäfer (2001) developed the conditional error method where the conditional error function is avoided and replaced with a conditional error that is calculated on fly. Instead of a two-stage design, Müller and Schäfer ’s method can be applied to a K-stage design and allows for many adaptations. 
+
+> 第三种方法是基于条件误差函数。 Proschan和Hunsberger（1995）开
+发了一种基于条件误差函数的自适应设计方法，
+用于具有正常检验统计量的两阶段设计。 Müller 和 Schäfer (2001) 开发了条件误差方法，其中避免了条件误差函数并用动态计算的条件
+误差代替。 Müller 和 Schäfer 的方法可以应用于 K 阶段设计，
+而不是两阶段设计，并允许进行许多调整。
+
+The fourth method is based on **recursive algorithms** such as Brannath Posch-Bauer’s recursive combination tests (Brannath, Posch and Bauer, 2002), Müller and Schäfer’s decision-function method (Müller and Schäfer, 2004), and Chang’s (2006e) recursive two-stage adaptive design (RTAD). All four recursive methods are developed for K-stage designs allowing for general adaptations. 
+
+> 第四种方法基于 ** 递归算法**，例如 Brannath Posch-Bauer 的递归组合测试（Brannath、Posch 和 Bauer，2002）、Müller 和 Schäfer 的决策函数方法（Müller 和 Schäfer，2004）和 Chang (2006e) ) 递归两阶段自适应设计 (RTAD)。所有四种递归方法都是为 K 阶段设计开发的，允许进行一般调整。
+
+
+Focus on three major issues: type-I error control, analysis including point and confidence interval estimations, and design evaluations.
+
+
+
+### Sample size re-estimation
+
+样本量重新估计是依据预先设定的期中分析计划，利用累积的试验数据重新计算样本量，以保证最终的统计检验能达到预先设定的目标或修改后的目标，并同时能够控制整体I类错误率。
+
+初始样本量的估计通常取决于效应量、主要终点的变异度、试验随访时间、受试者脱落率等诸多因素，而这些常常基于以往的研究数据。多数情况下，试验设计阶段样本量的估计所需要的参数信息往往不够充分，可能会导致错估样本量。适应性设计中的样本量重新估计为此类问题提供了有效的解决方案。
+
+样本量重新估计的方法可以分为盲态方法和非盲态方法。
+
+* 盲态方法，也称为非比较分析方法（non-comparative analysis），是指期中分析时不使用实际试验分组的信息，或者**虽然使用了实际试验分组的信息，但未做任何涉及组间比较的分析**，如在期中分析时对两个治疗组的数据合并后做的汇总分析。
+盲态方法的样本量重新估计是指根据累积的数据，计算样本量的重要参数（如合并方差或标准差），然后对样本量进行重新估计，因期中分析时不涉及组间的疗效比较，故**一般不需要调整I类错误率**。该方法比较容易实施，一般不会引入操作偏倚，而且相关的统计方法也较为完善，只需要在试验设计的阶段预先做好规划。
+
+* 非盲态方法，也称比较分析方法（comparative analysis），是指期中分析时使用了试验分组信息（包括各组的真实名称或可区分的分组代码）的分析，**分析内容涉及组间的比较**。
+非盲态方法的样本量重新估计是指根据累积数据以及分组信息，计算样本量的重要参数（如每组的效应量），然后对样本量进行重新估计，**因期中分析涉及组间的疗效比较，通常需要对I类错误率进行相应调整**。
+非盲态分析的样本量重新估计需要预先在研究方案中阐明，包括何时进行重新估计、决策时使用什么标准、重新估计时使用什么方法、如何调整检验水准α以便控制整体I类错误率、由谁执行非盲态分析，以及最后由谁执行整个操作过程。应该特别注意，一个试验中一般建议只做一次样本量重新估计。当重新估计的样本量少于初次设计的样本量时，除非有非常特别的理由，通常不接受样本量减少的调整。
+
+
+### Additional Considerations
+
+#### Bayesian Methods
+
+贝叶斯适应性设计是指一个使用了贝叶斯方法并同时含有适应性调整的试验设计。贝叶斯方法是一类统计方法，它根据贝叶斯原理将一个**分布函数（先验分布）总结的前期试验的信息/数据和目前试验中得到的数据结合在一起，从而得到一个用来总结这些信息/数据的新的分布函数（后验分布）**，并基于此后验分布函数做出统计推断的方法。前期试验的信息/数据可以基于目前试验中将要检验的药物，也可以基于其他相关的药物。
+
+在临床试验中，首要任务是要**得到一个准确和可靠的药物疗效估计**。有时可以用一个先验分布来总结前期试验的信息/数据得到一个药物疗效的初始估计。因为前期试验的信息/数据不够充分或有其他的不确定性，其本身不能够得到一个准确和可靠的疗效估计，需要在目前的试验中收集更多的数据。**根据新收集的数据，对疗效的初始估计（先验分布）进行更新并得到一个新的估计（后验分布）**。用贝叶斯方法得出的疗效估计常可视为前期试验的信息/数据和目前试验的数据以某种特定方式而做出的**加权平均**，即如果没有目前试验的数据，疗效估计就会全部基于前期试验的信息/数据；如果有目前试验的数据，疗效估计就是一个加权平均。目前试验的数据的权重会随着其数据量的增加而加大，并向1趋近。
+
+由于贝叶斯方法在统计推断中使用了前期或相关的信息/数据，在某些方面它自然有其优越性。贝叶斯方法的灵活性是可用一些统计模型来借用相关的数据。在很多情形下，独自进行一个达到合适样本量的临床试验会比较困难，若用贝叶斯方法来借用相关的数据从而得到更为可信的结论或许有其必要性。例如，儿童的临床试验中借用成人临床试验中的数据；在罕见病中由于无法入组足够多的病人而借用类似的疾病适应症的数据；在某一区域没有入组足够的病人而借用相邻区域的数据；在一个非劣性临床试验中借用过去试验中的数据从而减少对照组的病例数。贝叶斯方法对这些借用都会给出定量的分析和解释。
+
+尽管贝叶斯方法在某些方面具有优越性，其**最大的问题是统计推断的结果有不确定性**。使用同样的前期试验的信息/数据和目前试验的数据，若选择不同的先验分布或者即便选择相同的先验分布而使用不同的参数值，贝叶斯推断也可能得出不同的结论。**另外贝叶斯方法在最终的统计推断时也无公认的方法来选择决策标准**。因为这些问题，**目前贝叶斯方法更多地用于Ⅰ期临床试验中药物剂量的探索，Ⅱ期临床试验中用于选择后续研发策略，Ⅲ期临床试验中的期中分析时的无效性推断和一些预测分析，以及其他很多不以注册为目的的分析**。
+
+由于适应性设计的复杂性以及基于频率理论的统计方法的局限性，尽管贝叶斯方法有其不足，在一些设计中使用贝叶斯方法或许是一种更为合适的选择。如果使用贝叶斯方法，需要有足够的前期信息/数据、文献和研究以支持所使用的统计模型的合理性，包括所选择的先验分布及各个参数值。另外由于贝叶斯推断基于先验分布和参数值的选择而导致的不确定性，还需要通过大量模拟结果来说明在各种假想的，有可能在实际中发生的情形下方案的实施特性，特别是要通过模拟显示试验中基于后验概率所定义的决策标准是否合理，例如可用对应于基于频率理论的统计方法的整体I类错误率来衡量所选择的决策标准。再者，还要考虑使用贝叶斯方法在实际中的可行性，例如如何向研究者解释各种统计模型的意义，基于后验概率所定义的决策标准的意义，药物疗效估计的解释，基于不等应答适应性概率的随机分组是否给受试者带来额外的安全性风险，以及更新应答适应性概率所带来的延迟是否会使入组的实际操作变得极其困难等问题。这里的应答适应性概率是指根据已入组的病人的数据计算出的各个试验组的疗效，并以此概率来重新更新未来病人的随机入组的比例。
+
+#### Simulation method
+
+基于模拟方法的适应性设计是指在适应性试验中，基于模拟方法考察所做统计推断的合理性。在临床试验中，统计检验是在统计假设下基于某个分布理论或近似的正态分布理论而做出的统计推断。这些分布理论或近似的正态分布理论所要求的条件在传统的临床试验中一般都会得到满足。为了适应药物研发的需求，许多新颖、复杂的试验设计不断出现，例如主方案**试验同时涉及多个目标人群、多个假设、多个终点或多重检验**，这对推导统计检验的分布理论提出了新的挑战。在很多**极其复杂的试验中，基于分布理论的条件有可能不再满足，因此借助模拟方法来建立统计推断所需要的依据经常是唯一的选择**
+
+统计模拟试验的最大优点是在假设的临床试验情形下能更好地了解试验特性。具体到临床试验的模拟，重要的是，怎样选择模拟的模型和参数使其尽可能合理地描述试验在实际中发生的情形，并能够控制整体I类错误率。
+
+若无明确的分布理论依据，通过模拟方法来证明临床试验中统计检验的整体I类错误率能在零假设下完全得到控制从理论上来说是不可能的。整体I类错误率涉及整个零假设空间，即假设试验和对照药物疗效相同，这从理论上来说有无穷的可能性，故任何一个模拟都无法穷举所有的情形以便验证。怎样在模拟中排除一些明显不合理的情形使其更符合实际，则需要从疾病特征和历史数据来考虑，并使基于缩小的零假设空间的模拟结果从统计角度仍具有可靠性。另外在模拟时，除了考虑怎样选择主要参数外，还要考虑滋扰参数、入组率、脱落率/删失率、随访时间和模拟的准确率等诸多其他因素。在选择这些参数后，再加入适应性设计中涉及的各种修改，以及有可能涉及的多个目标人群、多个终点和多重检验，以便显示所提出的统计方法在临床试验中经过多重调整后的I类错误率仍可得到控制。
+
+鉴于基于模拟方法的统计推断具有不确定性，除非应用的适应性设计非常有必要，并且比传统的临床试验确有很大的优势，否则需要综合各个方面的因素再进行慎重地选择。如果有充足的医学文献、前期的数据等证据显示应用适应性设计具有必要性，并且可靠的模拟方法、模拟结果显示适应性设计确实具有很大的优越性，则可以考虑一个基于模拟方法的适应性设计。
+
+
+
+## Combination of p-values
+
+**使用基于每个阶段的子样本的阶段性 p 值推导出了停止边界的封闭形式，其中我们假设 p 值是独立且均匀分布的，通过将 MSP、MPP 或其他方法的结果与 MIP 进行比较，我们可以研究通过结合不同阶段的数据可以获得多少功效。强烈建议在确定应使用哪种方法之前，进行足够的模拟**
+
+focus on two-stage designs and derive the closed forms for determination of stopping boundaries and adjusted pvalues. 
+
+* method based on individual p-values (MIP)
+* method based on the sum of p-values (MSP)
+* method based on the product of p-values (MPP) 
+
+
+### Method Based on Individual p-values
+
+$$
+T_{k}=p_{k}
+$$
+where $p_{k}$ is the stagewise $p$ -value from the $k$ th stage subsample. A level- $\alpha$ test requires
+$$
+\alpha=\sum_{k=1}^{K} \alpha_{k} \prod_{i=1}^{k-1}\left(\beta_{i}-\alpha_{i}\right)
+$$
+$\alpha_{k}$ and $\beta_{k}$ are called the efficacy and futility boundaries, respectively.
+For a two-stage design,$\alpha=\alpha_{1}+\alpha_{2}\left(\beta_{1}-\alpha_{1}\right)$
+The $p$ -value is given by
+$$
+p(t ; k)=\left\{\begin{array}{lr}
+t, & k=1 \\
+\alpha_{1}+t\left(\beta_{1}-\alpha_{1}\right) k & =2 .
+\end{array}\right.
+$$
+MIP is useful in the sense that it is very simple and can serve as the "baseline" for comparing different methods. However, MIP does not use combined data from different stages, while most other adaptive designs do.
+
+> MIP 非常有用，因为它非常简单，可以作为比较不同方法的“基线”。 MIP 不使用来自不同阶段的组合数据，而大多数其他自适应设计使用。
+
+
+```
+%Macro DCSPbinary(nSims=1000000, Model=“ind,” alpha=0.025, beta=0.2,
+NId=0, Px=0.2, Py=0.4, DuHa=0.2, nAdj=“N,” Nmax=100, N0=100,
+nInterim=50, a=2, alpha1=0.01, beta1=0.15, alpha2=0.1071);
+Data DCSPbinary; Keep Model FSP ESP AveN Power nClassic;
+seedx=2534; seedy=6762; Model=&model; NId=&NId;
+Nmax=&Nmax; N1=&nInterim; Px=&Px; Py=&Py;
+eSize=abs((&DuHa+NId)/((Px*(1-Px)+Py*(1-Py))/2)**0.5);
+nClassic=Round(2*((probit(1-&alpha)+probit(1-&beta))/eSize)**2);
+FSP=0; ESP=0; AveN=0; Power=0;
+Do isim=1 To &nSims;
+nFinal=N1;
+Px1=Ranbin(seedx,N1,px)/N1;
+Py1=Ranbin(seedy,N1,py)/N1;
+sigma=((Px1*(1-Px1)+Py1*(1-Py1))/2)**0.5;
+T1 = (Py1-Px1+NId)*Sqrt(N1/2)/sigma;
+p1=1-ProbNorm(T1);
+If p1>&beta1 Then FSP=FSP+1/&nSims;
+If p1<=&alpha1 Then Do;
+Power=Power+1/&nSims; ESP=ESP+1/&nSims;
+End;
+If p1>&alpha1 and p1<=&beta1 Then Do;
+eRatio=abs(&DuHa/(abs(Py1-Px1)+0.0000001));
+nFinal=Min(&Nmax,Max(&N0,eRatio**&a*&N0));
+If &nAdj=“N” then nFinal=&Nmax;
+If nFinal>N1 Then Do;
+N2=nFinal-N1;
+Px2=Ranbin(seedx,N2,px)/N2;
+Py2=Ranbin(seedy,N2,py)/N2;
+sigma=((Px2*(1-Px2)+Py2*(1-Py2))/2)**0.5;
+T2 = (Py2-Px2+NId)*Sqrt(N2/2)/sigma;
+p2=1-ProbNorm(T2);
+If Model=“ind” Then TS2=p2;
+If Model=“sum” Then TS2=p1+p2;
+If Model=“prd” Then TS2=p1*p2;
+If .<TS2<=&alpha2 then Power=Power+1/&nSims;
+End;
+End;
+AveN=AveN+nFinal/&nSims;
+End;
+Output;
+Run;
+Proc Print Data=DCSPbinary; Run;
+%Mend DCSPbinary;
+
+
+
+
+
+
+```
+
+**Example**
+
+Acute Ischemic Stroke急性缺血性卒中试验的适应性设计 III 期试验旨在用于近期发病的急性缺血性卒中患者。复合终点（死亡和心肌梗死 death and MI）是主要终点，事件发生率为对照组 14% 和测试组 12%。基于大样本假设，经典设计的样本量为每组 5937 个，在单边 alpha = 0.025 处检测差异的功效为 90%。使用 MIP，根据对 50% 患者的反应评估计划进行中期分析。
+
+
+1. 在第一阶段选择停止边界：α1 = 0.01，β1 = 0.25；然后从表 4.1 中得到 α2 = 0.0625。
+2. 检查停止边界以确保家族误差得到控制。我们使用以下 SAS 代码在原假设（两组的事件发生率均为 14%）下运行模拟：%DCSPbinary(Model=“ind”, alpha=0.025, beta=0.1, Px=0.14, Py=0.14, DuHa=0.02, nAdj=“N”, Nmax=7000, nInterim=3500, alpha1=0.01, beta1=0.25, alpha2=0.0625);The simulated familywise error rate is α = 0.0252; therefore, the stopping boundaries are confirmed.
+3. 使用以下 SAS 代码计算备择假设下的功效或样本量（对照组和测试组的事件率分别为 14% 和 12%）：%DCSPbinary(Model=“ind”, alpha=0.025, beta=0.1, Px=0.12, Py=0.14, DuHa=0.02, nAdj=“N”, Nmax=7000, nInterim=3500, alpha1=0.01, beta1=0.25, alpha2=0.0625);
+4. 执行敏感性分析（在条件 Hs 下）。 由于治疗差异是未知的，因此希望在关于治疗差异的不同假设下进行模拟，例如，治疗差异 = 0.015（14% 对 12.5%）。 对于敏感性分析  %DCSPbinary(Model=“ind”, alpha=0.025, beta=0.1, Px=0.125, Py=0.14, DuHa=0.015, nAdj=“N”, Nmax=7000, nInterim=3500, alpha1=0.01, beta1=0.25, alpha2=0.0625);
+
+
+```{r, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Stopping Boundaries α2 with MIP"}
+knitr::include_graphics("./02_Plots/MIPStop.png")
+```
+
+从结果我们可以看到设计在 H0 和 Ha (4341, 4905) 下的预期样本量 (N) 小于经典设计 (5937)。但是，组顺序设计的最大样本量 (7000) 大于经典设计 (5937)。表 4.2 还显示了早期无效停止概率 (early futility stopping probability **FSP**) 和早期疗效停止概率 (early efficacy stopping probability **ESP**)。敏感性分析表明，当治疗差异低于预期时，功率损失较大，即当初始效应大小被高估时，组序贯设计不能保护功率。为了保护功率，我们可以使用样本大小的重新估计方法
+
+计算调整后的 p 值。假设试验结束，阶段性 p 值 p1 = 0.012（大于 α1 =0.01 且不显着；因此试验继续到第二阶段）且 p2 = 0.055 < α2 = 0.0625。因此，拒绝原假设，并且测试药物明显优于对照。p = α1 + p2(β1 - α1) = 0.01 + 0.055(0.25 - 0.01) = 0.0232。
+
+
+$$
+\begin{array}{cccccc}
+\hline \text { Simulation condition } & \mathrm{FSP} & \mathrm{ESP} & \mathrm{N} & \mathrm{N}_{\max } & \text { Power (alpha) } \\
+\hline \mathrm{H}_{o} & 0.750 & 0.010 & 4341 & 7000 & (0.025) \\
+\mathrm{H}_{a} & 0.035 & 0.564 & 4905 & 7000 & 0.897 \\
+\mathrm{H}_{s} & 0.121 & 0.317 & 5468 & 7000 & 0.668 \\
+\hline
+\end{array}
+$$
+
+
+
+
+
+### Method Based on the Sum of p-values
+
+Chang (2006a) proposed an adaptive design method, in which the test statistic is defined as the sum of the stagewise $p$ -values. This method is referred to as MSP. At the $k$ th stage, the test statistic is defined as
+$$
+T_{k}=\Sigma_{i=1}^{k} p_{i}, k=1, \ldots, K
+$$
+The key to derive the stopping boundary is to calculate the probability function $\psi_{k}(t)$ under the null hypothesis and the decision rules. For a two stage design, the stopping rules are
+$$
+\text { At Stage 1, }\left\{\begin{array}{ll}
+\text { Reject } H_{0} & \text { if } T_{1} \leq \alpha_{1} \\
+\text { Accept } H_{0} & \text { if } T_{1}>\beta_{1} \\
+\text { Continue with adaptations if } \alpha_{1}<T_{1} \leq \beta_{1} \text { , }
+\end{array}\right.
+$$
+where $0<\alpha_{1}<\beta_{1} \leq 1$.
+$$
+\text { At Stage 2, }\left\{\begin{array}{ll}
+\text { Reject } H_{0} & \text { if } T_{2} \leq \alpha_{2} \\
+\text { Accept } H_{0} & \text { if } T_{2}>\alpha_{2}
+\end{array}\right. \text { . }
+$$
+Noticing that $p_{i}$ is often uniformly distributed in $[0,1]$ under the null hypotheis, for the first stage we have
+
+we let $\pi_{1}$ and $\pi_{2}$ be the $\alpha$ spent at stage 1 and stage $2\left(\pi_{1}+\pi_{2}=\alpha\right)$, that is,
+$$
+\pi_{1}=\psi_{1}\left(\alpha_{1} \mid H_{0}\right)
+$$
+and
+$$
+\pi_{2}=\psi_{2}\left(\alpha_{2} \mid H_{0}\right)
+$$
+respectively. Since $\pi_{2}=\alpha-\pi_{1}$, the previous equation can be written as
+$$
+\alpha_{2}=\sqrt{2\left(\alpha-\pi_{1}\right)}+\pi_{1} .
+$$
+
+
+**SAS Code**
+
+* ux and uy are true treatment means in the x and y groups, respectively. 
+* DuHa = the estimate for the true treatment difference under the alternative Ha. 
+* alpha1 = early efficacy stopping boundary (one-sided), 
+* beta1 = early futility stopping boundary (one-sided), 
+* alpha2 = final efficacy stopping boundary (one-sided). 
+* The null hypothesis test is H0: δ+NId < 0, where δ = uy− ux is the treatment difference, and NId = noninferiority margin. 
+* nSims = the number of simulation runs, 
+* alpha = one-sided overall type-I error rate, 
+* beta = type-II error rate. 
+* nAdj = “N” for the case without sample-size reestimation and nAdj = “Y” for the case with sample-size adjustment, 
+* Nmax = maximum sample size allowed, 
+* N0 = the initial sample size at the final analysis, nInterim = sample size for the interim analysis, a = the parameter in (4.22) for the sample-size adjustment, 
+* FSP = futility stopping probability, 
+* ESP = efficacy stopping probability, 
+* AveN = average sample-size, 
+* Power = power of the hypothesis testing, 
+* nClassic = sample-size for the corresponding classical design, 
+* Model = “ind,” “sum,” or “prd” for the methods MIP, MSP, and MPP, respectively.
+
+
+```
+%Macro DCSPnormal(nSims=1000000, Model=“sum”, alpha=0.025, beta=0.2,
+sigma=2, NId=0, ux=0, uy=1,
+nInterim=50, Nmax=100, N0=100, DuHa=1, nAdj=“Y”, a=2, alpha1=0.01,
+beta1=0.15, alpha2=0.1871);
+Data DCSPnormal; Keep Model FSP ESP AveN Power nClassic;
+seedx=1736; seedy=6214; alpha=&alpha; NId=&NId; Nmax=&Nmax;
+ux=&ux; uy=&uy; sigma=&sigma; model=&Model; N1=&nInterim;
+eSize=abs(&DuHa+NId)/sigma;
+nClassic=round(2*((probit(1-alpha)+probit(1-&beta))/eSize)**2);
+FSP=0; ESP=0; AveN=0; Power=0;
+Do isim=1 To &nSims;
+nFinal=N1;
+ux1 = Rannor(seedx)*sigma/Sqrt(N1)+ux;
+uy1 = Rannor(seedy)*sigma/Sqrt(N1)+uy;
+T1 = (uy1-ux1+NId)*Sqrt(N1)/2**0.5/sigma;
+p1=1-ProbNorm(T1);
+If p1>&beta1 then FSP=FSP+1/&nSims;
+If p1<=&alpha1 then do;
+Power=Power+1/&nSims; ESP=ESP+1/&nSims;
+End;
+If p1>&alpha1 and p1<=&beta1 Then Do;
+eRatio = abs(&DuHa/(abs(uy1-ux1)+0.0000001));
+nFinal = min(&Nmax,max(&N0,eRatio**&a*&N0));
+If &DuHa*(uy1-ux1+NId) < 0 Then nFinal = N1;
+If &nAdj = “N” then nFinal = &Nmax;
+If nFinal > N1 Then Do;
+ux2 = Rannor(seedx)*sigma/Sqrt(nFinal-N1)+ux ;
+uy2 = Rannor(seedy)*sigma/Sqrt(nFinal-N1)+uy;
+T2 = (uy2-ux2+NId)*Sqrt(nFinal-N1)/2**0.5/sigma;
+p2=1-ProbNorm(T2);
+If Model=“ind” Then TS2=p2;
+If Model=“sum” Then TS2=p1+p2;
+If Model=“prd” Then TS2=p1*p2;
+If .<TS2<=&alpha2 Then Power=Power+1/&nSims;
+End;
+End;
+AveN=AveN+nFinal/&nSims;
+End;
+Output;
+Run;
+Proc Print Data=DCSPnormal; run;
+%Mend DCSPnormal;
+```
+
+**Example**
+
+phase-III asthma study 在一项包含 2 个剂量组（对照组和活性组）的 III 期哮喘研究中，主要疗效终点是 FEV1 相对于基线的百分比变化。对照组和活性组的估计 FEV1 从基线改善分别为 5% 和 12%，共同标准偏差为 σ = 22%。基于大样本假设，固定设计的样本量为每组 208 个，在单边 alpha = 0.025 处检测差异的功效为 90%。使用 MSP，计划根据 50% 患者的反应评估进行中期分析。要设计自适应试验（GSD）
+
+1. 选择第一阶段停止边界：α1 = 0.01，β1 = 0.15；我们可以得到 α2 = 0.1871。 
+2. 检查停止边界stopping boundary以确保通过提交以下 SAS 语句来控制族误差：%DCSPnormal(Model=“sum”, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.05, nInterim=155, Nmax=310, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=0.15, alpha2=0.1871); 模拟的家庭错误率 α = 0.0253。 因此，停止边界被确认。
+3. 使用以下 SAS 语句计算所需的功效或样本量 %DCSPnormal(Model=“sum”, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.12, nInterim=155, Nmax=310, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=0.15, alpha2=0.1871); 
+4. 对对照组和测试组分别使用 0.05 和 0.1 的处理均值进行敏感性分析 %DCSPnormal(Model=“sum”, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.10, nInterim=155, Nmax=310, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=0.15, alpha2=0.1871);
+
+
+```{r, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Stopping Boundaries α2 with MSP"}
+knitr::include_graphics("./02_Plots/MSPStop.png")
+```
+
+
+The simulation results are summarized in Following Table. 我们可以看到设计在 H0 和 Ha (177, 198) 下的预期样本量 (N¯) 小于经典设计 (208)。如果试验提前停止，每组只需要 155 名患者。然而，组序设计的最大样本量 (310) 大于经典设计 (208)。敏感性分析表明，当治疗差异略低于预期时，功率损失较大。为了保护功率，我们可以使用样本大小的重新估计方法。计算条件 p 值。假设试验以 p1 = 0.012 的第一阶段的阶段性 p 值（未调整，基于阶段的子样本）完成（大于 α1 = 0.01，因此试验继续到第二阶段）和阶段性p2 第二阶段的 p 值 = 0.18。第 2 阶段的检验统计量为 t = p1 + p2 = 0.012 + 0.18 = 0.192 > α2 = 0.1871。因此，我们未能拒绝零假设，也不能声称测试药物的优越功效。
+
+
+$$
+\begin{array}{lllllc}
+\hline \text { Simulation condition } & \text { FSP } & \text { ESP } & \mathrm{N} & \mathrm{N}_{\max } & \text { Power (alpha) } \\
+\mathrm{H}_{o} & 0.849 & 0.010 & 177 & 310 & (0.025) \\
+\mathrm{H}_{a} & 0.039 & 0.682 & 198 & 310 & 0.949 \\
+\mathrm{H}_{s} & 0.167 & 0.373 & 226 & 310 & 0.743 \\
+\hline
+\end{array}
+$$
+
+
+### Method with Product of p-values
+
+This method is referred to as MPP. The test statistic in this method is based on the product of the stagewise $p$ -values from the subsamples. For two-stage designs, the test statistic is defined as
+$$
+T_{k}=\Pi_{i=1}^{k} p_{i}, k=1,2 .
+$$
+The $\alpha$ spent in the two stages is given by
+$$
+\pi_{1}=\int_{0}^{\alpha_{1}} d t_{1}=\alpha_{1}
+$$
+and
+$$
+\pi_{2}=\int_{\alpha_{1}}^{\beta_{1}} \int_{0}^{\alpha_{2}} \frac{1}{t_{1}} d t_{2} d t_{1}
+$$
+We can obtain the following formulation for determining stopping boundaries:
+$$
+\alpha=\alpha_{1}+\alpha_{2} \ln \frac{\beta_{1}}{\alpha_{1}}, \alpha_{1}<\beta_{1} \leq 1
+$$
+Note that the stopping boundaries based on Fisher's criterion are special cases of obove function, where $\alpha_{2}=\exp \left[-\frac{1}{2} \chi_{4}^{2}(1-\alpha)\right]$.
+
+```
+%Macro DCSPSurv(nSims=1000000, Model=“sum”, alpha=0.025, beta=0.2,
+NId=0, tStd=12, tAcr=4, ux=0, uy=1, DuHa=1, nAdj=“Y”, Nmax=100,
+N0=100, nInterim=50, a=2, alpha1=0.01, beta1=0.15, alpha2=0.1871);
+Data DCSPSurv; Keep Model FSP ESP AveN Power nClassic;
+seedx=2534; seedy=6762; alpha=&alpha; NId=&NId;
+Nmax=&Nmax; ux=&ux; uy=&uy; N1=&nInterim; model=&model;
+Expuxd=exp(-ux*&tStd); Expuyd=exp(-uy*&tStd);
+sigmax=ux*(1+Expuxd*(1-exp(ux*&tAcr))/(&tAcr*ux))**(-0.5);
+sigmay=uy*(1+Expuyd*(1-exp(uy*&tAcr))/(&tAcr*uy))**(-0.5);
+sigma=((sigmax**2+sigmay**2)/2)**0.5;
+eSize=abs(&DuHa+NId)/sigma;
+nClassic=Round(2*((probit(1-alpha)+Probit(1-&beta))/eSize)**2);
+FSP=0; ESP=0; AveN=0; Power=0;
+Do isim=1 To &nSims;
+nFinal=N1;
+ux1 = Rannor(seedx)*sigma/Sqrt(N1)+ux;
+uy1 = Rannor(seedy)*sigma/Sqrt(N1)+uy;
+T1 = (uy1-ux1+NId)*Sqrt(N1)/2**0.5/sigma;
+p1=1-ProbNorm(T1);
+If p1>&beta1 Then FSP=FSP+1/&nSims;
+If p1<=&alpha1 Then do;
+Power=Power+1/&nSims; ESP=ESP+1/&nSims;
+End;
+If p1>&alpha1 and p1<=&beta1 Then Do;
+eRatio=Abs(&DuHa/(Abs(uy1-ux1)+0.0000001));
+nFinal=min(Nmax,max(&N0,eRatio**&a*&N0));
+If &DuHa*(uy1-ux1+NId)<0 then nFinal=N1;
+If &nAdj=“N” then nFinal=Nmax;
+If nFinal>N1 Then Do;
+ux2 = Rannor(seedx)*sigma/Sqrt(nFinal-N1)+ux ;
+uy2 = Rannor(seedy)*sigma/Sqrt(nFinal-N1)+uy;
+T2 = (uy2-ux2+NId)*Sqrt(nFinal-N1)/2**0.5/sigma;
+p2=1-ProbNorm(T2);
+If Model=“ind” Then TS2=p2;
+If Model=“sum” Then TS2=p1+p2;
+If Model=“prd” Then TS2=p1*p2;
+If .<TS2<=&alpha2 Then Power=Power+1/&nSims;
+End;
+End;
+AveN=AveN+nFinal/&nSims;
+End;
+Output;
+Run;
+Proc Print Data=DCSPSurv; Run;
+%Mend DCSPSurv;
+```
+
+#### Example
+
+Adaptive Design for Oncology Trial
+
+
+在一项两臂比较肿瘤学试验中，主要疗效终点是进展时间 (TTP: time-to-progression)。对照组的中位 TTP 估计为 8 个月（危险率 = 0.08664），而测试组的中位 TTP 估计为 10.5 个月（危险率 = 0.06601）。假设统一招生，累积期限为 9 个月，总学习时间为 24 个月。对数秩检验将用于分析。为计算样本量，假设指数生存分布。经典设计需要每组 323 名受试者的样本量。当 40% 的患者入组时，我们设计了一项中期分析试验。疗效的中期分析是根据 TTP 计划的，但它不允许无效停止。使用 MPP，我们选择以下边界：α1 = 0.005、β1 = 1（β1 = 1 意味着没有无效停止）和 α2 = 0.0038。
+
+
+```{r, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Stopping Boundaries α2 with MPP"}
+knitr::include_graphics("./02_Plots/MPPStop.png")
+```
+
+1. 在第一阶段选择停止边界：α1 = 0.005，β1 = 1；我们可以得到 α2 = 0.0038。
+2. 检查停止边界以确保通过提交以下 SAS 语句来控制族误差： %DCSPSurv(Model=“prd”, alpha=0.025, beta=0.15, tStd=24, tAcr=9, ux=0.08664, uy=0.08664, DuHa=0.02063, nAdj=“N”, Nmax=344, N0=344, nInterim=138, alpha1=0.005, beta1=1, alpha2=0.0038); The simulated familywise error rate α = 0.0252. Therefore, the stopping boundaries are confirmed.
+3. 使用以下 SAS 宏调用计算所需的功效或样本量： %DCSPSurv(Model=“prd”, alpha=0.025, beta=0.15, tStd=24, tAcr=9, ux=0.06601, uy=0.08664, DuHa=0.02063, nAdj=“N”, Nmax=344, N0=344, nInterim=138, alpha1=0.005, beta1=1, alpha2=0.0038); 我们修改了样本大小，直到达到所需的功效。 事实证明，最大样本量为 344，中期分析的样本量为每组 138 个。
+4. 在条件 Hs 下进行敏感性分析。 因为中位 TTP 的 2.5 个月差异是保守估计，所以显而易见的问题是：如果中位 TTP 的真实治疗差异为 3 个月（8 个月与 11 个月或危险率 = 0.06301)对照组和测试组的危险率分别为 0.08664 和 0.06301 %DCSPSurv(Model=“prd”, alpha=0.025, beta=0.15, tStd=24, tAcr=9, ux=0.06301, uy=0.08664, DuHa=0.02363, nAdj=“N”, Nmax=344, N0=344, nInterim=138, alpha1=0.005, beta1=1, alpha2=0.0038);
+
+We now summarize the simulation outputs for the three scenarios in Table. 我们可以看到设计在 Ha（289/组）下的预期样本量（N¯）小于经典设计（323/组）。如果试验提前停止，每组只需要 138 名患者。但是，组顺序设计的最大样本量 (344) 大于经典设计 (323)。敏感性分析表明，如果中位 TTP 的差异为 3 个月而不是 2.5 个月，则提前停止概率从 26.8% 增加到 38.1%。这也表明节省了时间。此外，如果中位 TTP 的差异是 3 个月而不是 2.5 个月，则功效将为 93.7%。我们可以看到，当效应量大于我们的初始估计时，组序设计是非常有利的。
+
+计算调整后的 p 值。如果试验在 p1 = 0.002 的第一阶段停止，则条件和总体 p 值相同且等于 0.002。如果第一个阶段性 p 值 p1 = 0.05（大于 α1 = 0.005 且不显着；因此试验继续到第二阶段）且 p2 = 0.07，则第 2 阶段的检验统计量为 t = p1p2 = (0.05) (0.07) = 0.0035 < α2 = 0.0038。因此，我们拒绝零假设并声称测试药物的功效的概率是
+
+$$
+p_{c}(2)=t \ln \frac{\beta_{1}}{\alpha_{1}}=0.0185
+$$
+
+and the adjusted $p$-value is
+$$
+p_{a}=\alpha_{1}+p_{c}(2)=0.005+0.0185=0.0235<\alpha=0.025 .
+$$
+Therefore, the $H_{0}$ should be rejected.
+
+
+$$
+\begin{array}{llllll}
+\hline \text { Simulation condition } & \text { FSP } & \text { ESP } & \mathrm{N} & \mathrm{N}_{\max } & \text { Power (alpha) } \\
+\mathrm{H}_{o} & 0 & 0.005 & 343 & 344 & 0.025 \\
+\mathrm{H}_{a} & 0 & 0.268 & 289 & 344 & 0.851 \\
+\mathrm{H}_{s} & 0 & 0.381 & 265 & 344 & 0.937 \\
+\hline
+\end{array}
+$$
+
+
+**Sample-Size Reestimation with Survival Endpoint**
+
+在本例中，将比较 MIP、MSP 和 MPP，并说明如何使用这 3 种不同的方法计算调整后的 p 值。假设在一项两臂比较肿瘤学试验中，主要疗效终点是 TTP。对照组的中位 TTP 估计为 8 个月（危险率 = 0.08664），而测试组的中位 TTP 估计为 10.5 个月（危险率 = 0.06601）。假设统一入学，累积期限为 9 个月，总学习时间为 24 个月。对数秩检验将用于分析。为计算样本量，假设指数生存分布。
+
+> Classical design
+
+> 当测试组的中位时间为 10.5 个月时，经典设计要求每组样本量为 323，具有 85% 的功效，显着性水平（单边）α = 0.025。
+
+> Adaptive design
+
+> 为了提高效率，采用了一种适应性设计，其中每组的临时样本量为 200 名患者。中期分析允许使用停止边界α1 = 0.01、β1 = 0.25 和 α2 = 0.0625（MIP）、0.1832（MSP）和 0.00466（MPP）来实现早期有效性或无效性停止。允许调整的最大样本量为 Nmax = 400。样本量调整的参数 No 为 350（No 通常选择接近经典设计的样本量，以便自适应设计具有与经典设计相似的功效）请注意，功效是拒绝原假设的概率。因此，当原假设为真时，功效为 I 型错误率 α。
+
+| Test | Control | ESP   | FSP   | Expected N | Power (%) MIP/MSP/MPP |
+|------|---------|-------|-------|------------|-----------------------|
+| 8    | 8       | 0.010 | 0.750 | 248        | 2.5/2.5/2.5           |
+| 10.5 | 8       | 0.512 | 0.046 | 288        | 86.3/87.3/88.8        |
+
+
+这与所有三种方法的预期一致。 H0 和 Ha 下的预期样本量小于经典设计的样本量（290/组）。 MIP、MSP 和 MPP 的功率分别为 86.3%、87.3% 和 88.8%。所有三种设计都具有相同的预期样本量，即 288/组，小于具有 85% 功效的经典设计的样本量（323/组）。在自适应设计中，条件功率比功率更重要。
+
+#### Fisher’s product test (Combination Tests)
+
+* p = p-value (e.g. from z-test) of first n1 patients (stage 1) 
+* q = p-value (e.g. from z-test) of second n2 patients (stage 2)
+
+At stage 2 combine the stage-wise p-values p and q by a pre-specified function (“**combination function**”). Then compare this with to a pre-specified critical value. (Pre-specified critical region in (p, q)-plane), Control of type I error rate possible, since p and q are independent and on [0, 1] uniformly distributed under H0.
+
+```{r Fisher-product-test-1, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: Fisher’s product test, (BAUER 1989, BAUER & KÖHNE 1994)"}
+knitr::include_graphics("./02_Plots/Fisher-product-test-1.png")
+knitr::include_graphics("./02_Plots/Fisher-product-test-1g.png")
+```
+
+
+
+#### Fisher’s product test with early rej. and acceptance
+
+```{r Fisher-product-test-2, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: Fisher’s product test with early rej. and acceptance"}
+knitr::include_graphics("./02_Plots/Fisher-product-test-2a.png")
+knitr::include_graphics("./02_Plots/Fisher-product-test-2.png")
+```
+
+**Choice of critical values**
+
+1. Full second stage level
+2. Equal local rejection levels
+3. Choice of $\alpha, \alpha_{1}$ and $\alpha_{0}$
+
+
+**Full second stage level**
+
+Choose $\alpha_{2}=\alpha$, i.e. critical value $c_{\alpha}=e^{-\chi_{4,1-\alpha_{2}}^{-2} / 2}$ and $\alpha_{0}<1$. Determine $\alpha_{1}$ such that
+$$
+\mathbf{P}_{\Delta=0}\left(p_{1} \leq \alpha_{1}\right)+\mathbf{P}_{\Delta=0}\left(\alpha_{1}<p_{1} \leq \alpha_{0}, p q \leq c_{\alpha}\right)=\alpha
+$$
+Type I error rate calculation:
+$$
+\begin{array}{c}
+\alpha=\mathbf{P}_{\Delta=0}\left(p_{1} \leq \alpha_{1}\right)+\mathbf{P}_{\Delta=0}\left(\alpha_{1}<p_{1} \leq \alpha_{0}, p q \leq c_{\alpha}\right) \\
+=\alpha_{1}+\int_{\alpha_{1}}^{\alpha_{0}} \int_{0}^{1} \mathbf{1}_{\left\{p q \leq c_{\alpha}\right\}} d p d q=\alpha_{1}+\int_{\alpha_{1}}^{\alpha_{0}}\left(\frac{C_{\alpha}}{p}\right) d p \\
+=\alpha_{1}+c_{\alpha}\left[\ln \left(\alpha_{0}\right)-\ln \left(\alpha_{1}\right)\right]
+\end{array}
+$$
+
+**Equal local rejection levels**
+
+Fix $\alpha_{0}<1$ and $\alpha_{1}=\alpha_{2}=\alpha^{*}<\alpha$ such that the type I error rate
+$$
+\alpha^{*}+c_{\alpha}\left[\ln \left(\alpha_{0}\right)-\ln \left(\alpha^{*}\right)\right]=\alpha
+$$
+
+**Choice of $\alpha, \alpha_{1}$ and $\alpha_{0}$**
+
+Fix $\alpha, \alpha_{1}$ and $\alpha_{0}$ and calculate the critical value $c$ as
+$$
+c=\frac{\alpha-\alpha_{1}}{\ln \left(\alpha_{0}\right)-\ln \left(\alpha_{1}\right)}
+$$
+Non-stochastic curtailment:
+$$
+\alpha_{1}>c \quad \Longleftrightarrow \quad \alpha_{1}+\alpha_{1}\left(\ln \left(\alpha_{0}\right)-\ln \left(\alpha_{1}\right)\right) \geq \alpha
+$$
+
+### R Implementing
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Sample-Size Based on Conditional Power
+nByCPower = function(nAdjModel, a2, eSize, cPower, p1, w1, w2){
+  if (nAdjModel=="MIP") {BFun = qnorm(1-a2)}
+  if (nAdjModel=="MSP") {
+    BFun = qnorm(1-max(0.000001,a2-p1))
+  }
+  if (nAdjModel=="MPP") {BFun =qnorm(1- a2/p1)}
+  if (nAdjModel=="MPP") {
+    BFun = (qnorm(1-a2)- w1*qnorm(1-p1))/w2
+    }
+  2*((BFun-qnorm(1-cPower))/eSize)^2
+}
+
+pw1=nByCPower("MSP",.1,.3,.4,.05,.6,.4)  
+pw1
+
+```
+
+
+
+
+## Inverse normal combination function
+
+> 基于逆正态 p 值 (MINP) 的方法，其中第 k 阶段 Tk 的检验统计量是分阶段 p 值的加权逆正态的线性组合。权重可以是固定的，也可以是信息时间的函数。
+
+
+### Method with Linear Combination of z-Scores
+
+Let $z_{k}$ be the stagewise normal test statistic at the $k$ th stage. In a group sequential design, the test statistic can be expressed as
+$$
+T_{k}^{*}=\sum_{i=1}^{k} w_{k i} z_{i}
+$$
+
+we use the transformation $T_{k}=1-\Phi\left(T_{k}^{*}\right)$ such that
+$$
+T_{k}=1-\Phi\left(\sum_{i=1}^{k} w_{k i} z_{i}\right)
+$$
+where $\Phi=$ cdf of the standard normal distribution.
+
+
+```
+%Macro SB2StgMINP(nSims=100000, Model=“fixedW”, w1=0.5, w2=0.5, alpha
+=.025, nInterim=50, Nmax=100, alpha1=0.01, beta1=0.15, alpha2=0.1871);
+Data SB2StgMINP; Keep Model Power;
+alpha=&alpha; Nmax=&Nmax; Model=&model;
+w1=&w1; w2=&w2; n1=&nInterim; Power=0; seedx=231;
+Do isim=1 To &nSims;
+nFinal=N1;
+T1 = Rannor(seedx);
+p1=1-ProbNorm(T1);
+If p1<=&alpha1 then do;
+Power=Power+1/&nSims;
+End;
+if p1>&alpha1 and p1<=&beta1 then do;
+T2 = Rannor(seedx);
+If Modelˆ=“fixedW” Then do;
+w1=Sqrt(n1/nFinal);
+w2=Sqrt((1-n1/nFinal));
+End;
+Z2=(w1*T1+w2*T2)/Sqrt(w1*w1+w2*w2);
+p2=1-ProbNorm(Z2);
+If .<p2<=&alpha2 then Power=Power+1/&nSims;
+End;
+End;
+Output;
+Run;
+Proc Print data=SB2StgMINP; Run;
+%Mend SB2StgMINP;
+
+%SB2StgMINP(Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, nInterim=50,
+Nmax=100, alpha1=0, beta1=0.15, alpha2=0.0327);
+```
+
+### Weighted inverse normal method
+
+**Lehmacher and Wassmer Method**
+
+To extend the method with linear combination of z-scores, Lehmacher and
+Wassmer (1999) proposed the test statistic at the kth stage that results
+from the inverse-normal method of combining independent stagewise pvalues
+$$
+T_{k}^{*}=\sum_{i=1}^{k} w_{k i} \Phi^{-1}\left(1-p_{i}\right)
+$$
+where the weights satisfy the equality $\sum_{i=1}^{k} w_{k i}^{2}=1$ and $\Phi^{-1}$ is the inverse function of $\Phi$, the standard normal cdf Under the null hypothesis, the stagewise $p_{i}$ is usually uniformly distributed over $[0,1]$. The random variables $z_{i}=\Phi^{-1}\left(1-p_{i}\right)$ and $T_{k}^{*}$ have the standard normal distribution. Lehmacher and Wassmer (1999) suggested using equal weights, i.e., $w_{i k} \equiv \frac{1}{\sqrt{k}}$.
+
+Again, to be consistent with the unified formulations proposed in Chapter 3 , transform the test statistic to the $p$-scale, i.e.,
+$$
+T_{k}=1-\Phi\left(\sum_{i=1}^{k} w_{k i} \Phi^{-1}\left(1-p_{i}\right)\right)
+$$
+
+
+
+For two stages, use of the combination function:
+$$
+C(p, q)=1-\Phi(\sqrt{0.5} \underbrace{\Phi^{-1}(1-p)}_{z_{1}}+\sqrt{0.5} \underbrace{\Phi^{-1}(1-q)}_{z_{2}})
+$$
+We have that
+
+* $Z_{1}=\Phi^{-1}(1-p) \sim N(0,1)$ and $Z_{2}=\Phi^{-1}(1-q) \sim N(0,1)$
+* $Z_{1}$ and $Z_{2}$ are independent and standard normal.
+$\mathbf{D}$ Therefore: $\quad Z_{2}^{*}=\sqrt{0.5} Z_{1}+\sqrt{0.5} Z_{2} \sim N(0,1)$
+("weighted $z$ -score")
+* $\mathbf{\Sigma} C(p, q)=1-\Phi(Z)$ is uniformly distributed under $H_{0}$.
+
+  
+
+```{r Inverse-normal-combination-1, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: Comparison to Fisher’s product test (alpha_0 = 1)"}
+knitr::include_graphics("./02_Plots/Inverse-normal-combination-1.png")
+```
+
+
+**Weighted inverse normal method**
+
+Prefix $0 \leq w_{1}, w_{2} \leq 1$ with $w_{1}^{2}+w_{2}^{2}=1$ and use the combination function:
+$$
+C(p, q)=1-\Phi(w_{1} \underbrace{\Phi^{-1}(1-p)}_{Z_{1}}+w_{2} \underbrace{\Phi^{-1}(1-q)}_{Z_{2}})
+$$
+This implies
+* $Z_{2}^{*}=w_{1} Z_{1}+w_{2} Z_{2} \sim N(0,1)$ with $\operatorname{Cov}\left(Z_{1}, Z_{2}^{*}\right)=w_{1}$
+* Distribution as in GSD with interim information time $t=w_{1}^{2}$.
+* We can use local levels from any GSD with $t_{1}=w_{1}^{2}$.
+* This adaptive GSD is also called "weighted $z$ -score test" (Cui et al., 1999 ) and can be extended to designs with $K>2$ stages.
+
+```
+%Macro MINP(nSims=1000000, Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, beta=0.2, sigma=2, NId=0, ux=0, uy=1, nInterim=50, Nmax=100,
+N0=100, DuHa=1, nAdj=“N”, a=2, alpha1=0.01, beta1=0.15, alpha2=0.1871);
+Data MINP; Keep Model FSP ESP AveN Power nClassic PAdj;
+seedx=1736; seedy=6214; alpha=&alpha; NId=&NId;
+Nmax=&Nmax; Model=&model; w1=&w1; w2=&w2; ux=&ux;
+uy=&uy; sigma=&sigma; N1=&nInterim;
+eSize=abs(&DuHa+NId)/sigma;
+nClassic=Round(2*((Probit(1-alpha)+Probit(1-&beta))/eSize)**2);
+FSP=0; ESP=0; AveN=0; Power=0;
+Do isim=1 To &nSims;
+nFinal=N1;
+ux1 = Rannor(seedx)*sigma/Sqrt(N1)+ux;
+uy1 = Rannor(seedy)*sigma/Sqrt(N1)+uy;
+T1 = (uy1-ux1+NId)*Sqrt(N1)/2**0.5/sigma;
+p1=1-ProbNorm(T1);
+If p1>&beta1 Then FSP=FSP+1/&nSims;
+If p1<=&alpha1 Then Do;
+Power=Power+1/&nSims; ESP=ESP+1/&nSims;
+End;
+If p1>&alpha1 and p1<=&beta1 Then Do;
+eRatio=Abs(&DuHa/(Abs(uy1-ux1)+0.0000001));
+nFinal=min(&Nmax,max(&N0,eRatio**&a*&N0));
+If &DuHa*(uy1-ux1+NId)<0 Then nFinal=N1;
+If &nAdj=“N” Then nFinal=&Nmax;
+If nFinal>N1 Then Do;
+ux2 = Rannor(seedx)*sigma/Sqrt(nFinal-N1)+ux ;
+uy2 = Rannor(seedy)*sigma/Sqrt(nFinal-N1)+uy;
+T2 = (uy2-ux2+NId)*Sqrt(nFinal-N1)/2**0.5/sigma;
+If Modelˆ=“fixedW” Then Do;
+w1=Sqrt(N1/nFinal);
+w2=Sqrt((1-N1/nFinal));
+End;
+Z2=(w1*T1+w2*T2)/Sqrt(w1*w1+w2*w2);
+p2=1-ProbNorm(Z2);
+If .<p2<=&alpha2 Then Power=Power+1/&nSims;
+End;
+End;
+AveN=AveN+nFinal/&nSims;
+End;
+PAdj=&alpha1+power-ESP; ** Stagewise ordering p-value;
+Output;
+Run;
+Proc Print Data=MINP; Run;
+%Mend MINP;
+```
+
+Asthma study
+
+假设有 2 个剂量组（对照组和活性组）的 III 期哮喘研究，其中 FEV1 相对于基线的百分比变化作为主要疗效终点。对照组和活性组的估计 FEV1 从基线改善分别为 5% 和 12%，共同标准偏差为 σ = 22%。基于大样本假设，固定设计的样本量为每组 208 个，功效为 90%，单边 alpha = 0.025。使用 MIP，计划根据对 50% 患者的反应评估进行中期分析。
+
+1. 在第一阶段选择停止边界：α1 = 0.01，β1 = 1；那么从表中得到对应的 α2 = 0.019。
+2. 检查停止边界以确保使用以下 SAS 语句控制族误差： %MINP(Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.05, nInterim=100, Nmax=200, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=1, alpha2=0.019); The simulated familywise error rate α = 0.0253. Therefore, the stopping boundaries are confirmed.
+3.  Calculate power or sample size required using the following SAS statement: %MINP(Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.12, nInterim=100, Nmax=200, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=1, alpha2=0.019); 
+4. 在条件 Hs: 0.05 vs 0.1 下进行敏感性分析，%MINP(Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.10, nInterim=100, Nmax=200, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=1, alpha2=0.019); 
+
+$$
+\begin{array}{cccccc}
+\hline \text { Simulation condition } & \text { FSP } & \text { ESP } & \mathrm{N} & \mathrm{N}_{\max } & \text { Power (alpha) } \\
+\mathrm{H}_{o} & 0 & 0.010 & 199 & 200 & (0.025) \\
+\mathrm{H}_{a} & 0 & 0.470 & 153 & 200 & 0.873 \\
+\mathrm{H}_{s} & 0 & 0.237 & 176 & 200 & 0.597 \\
+\hline
+\end{array}
+$$
+
+现在计算调整后的 p 值。 如果试验在第一阶段停止，则 p 值不需要任何调整。假设试验结束，第一阶段的阶段性 p 值 p1 = 0.012（大于 α1 = 0.01 且不显着；因此，试验继续到第二阶段），第二阶段 p2 = 0.015 < α2 = 0.019。因此拒绝原假设。但是，p2 = 0.015 是天真的或未经调整的 p 值。阶段 2 调整后的 p 值可以通过模拟得到，观察阶段性 p 值 p2 以替换 SAS Macro 5.2 中的 α2；那么 p 值是来自 SAS 输出的 padj = α1 + pc。
+
+%MINP(Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.05, nInterim=155, Nmax=310, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=1, alpha2=0.015);
+
+**sample-size reestimation**
+
+现在假设我们要进行样本大小重新估计，并且计划对 100 名患者/组进行中期分析。我们提出了两个权重相等的设计：
+
+* (1) 试验不允许提前停止，中期分析仅用于样本大小的重新估计。停止边界为 α1 = 0、β1 = 1 和 α2 = 0.025； 
+* (2) 中期分析是为了提前停止和重新估计样本量。停止边界为 α1 = 0、β1 = 0.5 和 α2 = 0.0253。
+
+最大样本量为 Nmax = 400/组，初始样本量为 N0 = 200/组。在治疗差异较小（5% 对 10%）时评估 n 重新估计。
+
+For without sanmpel size reassessment: 
+
+%MINP(Model=“fixedW”, w1=0.5, w2=0.5, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.10, nInterim=100, Nmax=200, DuHa=0.07, nAdj=“N”, alpha1=0.01, beta1=1, alpha2=0.019); 
+
+For Design 1:
+
+%MINP(Model=“fixedW”, w1=1, w2=1, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.1, nInterim=100, Nmax=400, N0=200, nAdj=“Y”, DuHa=0.07, alpha1=0, beta1=1, alpha2=0.025); 
+
+For Design 2:
+
+%MINP(Model=“fixedW”, w1=1, w2=1, alpha=0.025, beta=0.1, sigma=0.22, ux=0.05, uy=0.1, nInterim=100, Nmax=400, N0=200, nAdj=“Y”, DuHa=0.07, alpha1=0, beta1=0.5, alpha2=0.0253);
+
+$$
+\begin{array}{llllll}
+\hline \text { Design } & \text { FSP } & \text { ESP } & \mathrm{N} & \mathrm{N}_{\max } & \text { Power } \\
+\text { Without SSR } & 0.167 & 0.237 & 176 & 200 & 0.597 \\
+\text { SSR only } & 0 & 0 & 304 & 400 & 0.823 \\
+\text { SSR \& futility stopping } & 0.054 & 0 & 304 & 400 & 0.825 \\
+\hline
+\end{array}
+$$
+
+
+## Conditional Error Function Method (CEFM) and Conditional Power
+
+条件误差函数法（CEFM），主要用于两阶段设计。这种方法的研究人员包括 Proschan 和 Hunsberger (1995)、Liu 和 Chi (2001)、Müller 和 Schäfer (2001) 以及 Denne (2001) 等。我们将使用条件误差函数方法轻松推导出两种通用 p 值组合方法的停止边界公式
+
+### Proschan–Hunsberger Method 
+
+**From inverse-normal transformation to CEFM: circular conditional error function**
+
+Proschan and Hunsberger (1995) proposed a conditional error function method for two-stage design. Here we modify the Proschan-Hunsberger method slightly to fit different types of endpoints by using inverse-normal transformation $z_{k}=\Phi^{-1}\left(1-p_{k}\right)$ and $p_{k}=1-\Phi\left(z_{k}\right)$, where $p_{k}$ is the stagewise $p$-value based on a subsample from stage $k$.
+
+Let the test statistics for the first stage (sample-size $n_{1}$ ) and second stage (sample-size $n_{2}$ ) be
+$$
+T_{1}=p_{1}
+$$
+and
+$$
+T_{2}=1-\Phi\left(w_{1} \Phi^{-1}\left(1-p_{1}\right)+w_{2} \Phi^{-1}\left(1-p_{2}\right)\right)
+$$
+respectively.
+The stopping rules are given by
+
+* If $T_{k} \leq \alpha_{k}, (k=1,2)$, stop and reject $H_{0}$ 
+* If $T_{k}>\beta_{k},(k=1,2)$, stop and accept $H_{0}$ 
+* Otherwise continue,
+
+where $\alpha_{2}=\beta_{2}$.
+
+Assume that $T_{1}$ has the standard normal distribution under the null hypothesis. Let $A\left(p_{1}\right)$ be the conditional probability of making type-I error at the second stage given $T_{1}=p_{1}$. Notice that $p_{1}$ is uniformly distributed over $[0,1]$; a level $\alpha$ test requires
+$$
+\alpha=\alpha_{1}+\int_{\alpha_{1}}^{\beta_{1}} A\left(p_{1}\right) d p_{1},
+$$
+where $A\left(p_{1}\right)$ is called the conditional error function on a $p$-scale, which is similar to the conditional error function on a $z$-scale given by Proschan and Hunsberger (1995). The conditional error function can be any nondecreasing function $0 \leq A\left(p_{1}\right) \leq 1$ as far as type-I error is concerned.
+
+Proschan and Hunsberger (1995) suggest the circular conditional error function:
+$$
+A\left(p_{1}\right)=1-\Phi\left(\sqrt{\left[\Phi^{-1}\left(1-\alpha_{1}\right)\right]^{2}-\left[\Phi^{-1}\left(1-p_{1}\right)\right]^{2}}\right), \quad \alpha_{1}<p_{1} \leq \beta_{1} .
+$$
+For a given α1 and β1, it can be obtained by δ = 0
+$$
+A\left(p_{1}\right)=1-\Phi\left[\frac{\Phi^{-1}\left(1-\alpha_{2}\right)-w_{2} \Phi^{-1}\left(1-p_{1}\right)}{w_{1}}\right]
+$$
+Because $A\left(p_{1}\right)$ is the same with or without SSR, it can be obtained through the procedure described for no SSR; then solve $(9.7)$ for $\alpha_{2}$ :
+$$
+\alpha_{2}=\frac{\sqrt{n_{1}} \Phi^{-1}\left(1-p_{1}\right)+\sqrt{n_{2}} \Phi^{-1}\left(1-A\left(p_{1}\right)\right)}{\sqrt{n_{1}+n_{2}}}
+$$
+Note that we have used the equation $w_{i}=\sqrt{n_{i} /\left(n_{1}+n_{2}\right)}$. From (9.6) and (9.7), we can obtain the conditional power
+$$
+c P_{\delta}\left(n_{2}, z_{c} \mid p_{1}\right)=1-\Phi\left(\Phi^{-1}\left(1-A\left(p_{1}\right)\right)-\frac{\delta}{\sigma} \sqrt{\frac{n_{2}}{2}}\right)
+$$
+To achieve a target conditional power $c P$, the sample-size required can be obtained for $n_{2}$ :
+$$
+n_{2}=\frac{2 \sigma^{2}}{\delta^{2}}\left[\Phi^{-1}\left(1-A\left(p_{1}\right)\right)-\Phi^{-1}(1-c P)\right]^{2} .
+$$
+Note that for constant conditional error, $A\left(p_{1}\right)=c$, where $c$ is a constant, (9.5) leads to $\alpha=\alpha_{1}+c\left(\beta_{1}-\alpha_{1}\right)$. Therefore, the constant conditional error approach is equivalent to MIP.
+
+
+假设我们对一项针对冠心病患者coronary heart disease的临床试验感兴趣，该试验比较了降胆固醇药物cholesterol-reducing drug和安慰剂在从基线到研究结束时的血管造影变化（angiographic changes from baseline to end of study）。另一项类似的研究显示效应大小约为观察到的标准偏差的三分之一。 90% 功效检测相似效应量所需的样本量约为每组 190 名患者。根据对每组 95 名患者的评估，已预先确定循环条件误差函数 circular conditional error function将与一项中期分析一起使用。
+
+* 如果 z1 > 2.27 (p1 < 0.0116)，试验将因疗效而停止 (efficacy stop)。
+* 如果在中期分析中 z1 < 0 (p1 > 0.5)，试验将因无效而停止 (futility stop)。
+* 如果 0 ≤ z1 < 2.27 (0.0116 < p1 ≤ 0.5)，试验将进入第二阶段。
+
+假设在中期分析之后，z 分数 z1 = 1.5 (p1 = 0.0668)。相应的效应大小 (δ/σ) 约为 0.218。条件误差是 A(0.0668) = 0.0436，它是从
+$$
+A\left(p_{1}\right)=1-\Phi\left[\frac{\Phi^{-1}\left(1-\alpha_{2}\right)-w_{2} \Phi^{-1}\left(1-p_{1}\right)}{w_{1}}\right]
+$$
+获得的，其中 w1 = w2 = √ 0.5 和 α2 = 0.0116。为了在经验估计的治疗效果下获得 80% 的条件功效，第二阶段的新估计样本量
+$$
+n_{2}=\frac{2 \sigma^{2}}{\delta^{2}}\left[\Phi^{-1}\left(1-A\left(p_{1}\right)\right)-\Phi^{-1}(1-c P)\right]^{2} .
+$$
+新估计样本量为 274/组
+
+
+### Denne Method 
+
+Denne (2001) 在中期分析中开发了一种新的 SSR 程序。 Denne 方法不是在进行自适应时保持条件误差不变，而是确保条件误差函数 A (p1) 保持不变。
+
+Denne (2001) developed a new procedure for SSR at an interim analysis. Instead of keeping the conditional error $\left(\int_{\alpha_{1}}^{\beta_{1}} A\left(p_{1}\right) d p_{1}\right)$ constant when making an adaptation, the Denne method ensures that the conditional error function $A\left(p_{1}\right)$ remains unchanged.
+
+Let $w_{01}, w_{02}$, and $\alpha_{02}$ be weights and the final stopping boundary before sample-size modification; let $w_{1}, w_{2}$, and $\alpha_{2}$ be weights and the final stopping boundary after sample-size modification. To control overall $\alpha$, the stopping boundary $\alpha_{2}$ is adjusted such that $A\left(p_{1}\right)$ is unchanged:
+$$
+\frac{\Phi^{-1}\left(1-\alpha_{02}\right)-w_{02} \Phi^{-1}\left(1-p_{1}\right)}{w_{01}}=\frac{\Phi^{-1}\left(1-\alpha_{2}\right)-w_{2} \Phi^{-1}\left(1-p_{1}\right)}{w_{1}},
+$$
+
+
+
+

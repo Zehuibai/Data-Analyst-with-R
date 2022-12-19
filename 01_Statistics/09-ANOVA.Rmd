@@ -1,0 +1,637 @@
+---
+title: 'As-a-Statistician-ANOVA'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+packages<-c("tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+
+## Unstructured Models
+
+These are models where **little is assumed about distributions, correlations**, etc. Nonparametric procedures fall in this class. The models for the actual data in this case may be quite complicated, but the assumption is that the analysis has been distilled down to a collection of pvalues. Multiple inference methods in this class consist essentially of adjusting these p-values for the purposes of making tests. Such methods work reasonably well for a variety of models, and if you have a model that is not contained in one of the major classes given below, then you can choose an MCP that assumes little structure. In particular, these methods are valid, though typically conservative when there are correlations. Generalized Bonferroni methods and standard false discovery rate controlling methods are in this group. 
+
+ 
+
+## Balanced One-Way Analysis-of-Variance (ANOVA) 
+
+These are models for data from experiments where several groups are compared, and where the sample sizes are equal for all groups. Independence of data values is a crucial assumption for these models. If they are not independent, then you might be able to use one of the alternatives. Other assumptions strictly needed for these models are homogeneity of error variance and normality of the observations within each group. But these are not as important as the independence assumption (unless severely violated).  
+ 
+
+### Modeling Assumptions and Basic Analysis
+
+The model for the data throughout this chapter is assumed to be
+$$
+y_{i j}=\mu_{i}+\varepsilon_{i j}
+$$
+where the $y_{i j}$ are the observed data, with $i=1, \ldots, g$ indicating group and $j=1, \ldots, n$ indicating measurement observed within a group. This is a full-rank parameterization, unlike the default PROC GLM parameterization, which is not of full rank since it includes the "intercept" term $\gamma$. 
+
+The $\mu_{i}$ are assumed to be fixed, unknown population mean values, and the errors $\varepsilon_{i j}$ are assumed to be random variables that
+
+- have mean zero,
+- have constant variance $\sigma^{2}$,
+- are independent, and
+- are normally distributed.
+
+**Constant Variance**
+
+The assumption of constant variance is also called homoscedasticity, and its violation is called
+heteroscedasticity. As it turns out, at least in the balanced one-way model, heteroscedasticity is
+not necessarily much of a problem, and inferences can still be approximately valid with mild
+violations of this assumption. 
+
+**Levene's Test for Homogeneity**
+
+There are also formal statistical tests for homoscedasticity,
+available with the HOVTEST option in the GLM MEANS statement; you can use this in
+conjunction with the informal descriptive and graphical assessments.
+
+```
+proc glm data=Wloss;
+ class Diet;
+ model Wloss=Diet;
+ means Diet / hovtest;
+run; 
+```
+
+**Independence**
+
+The assumption that the measurements are independent is crucial. In the extreme, its violation
+can lead to estimates and inferences that are effectively based on much less information than it
+might appear that you have, based on the sample size of your data set. Common ways for this
+assumption to be violated include 
+
+1. there are repeated measurements on the subjects (measurements on the same subject are usually correlated),
+2. subjects are “paired” in some fashion, such as the husband/wife
+3. the data involve time series or spatial autocorrelation. 
+
+As with heteroscedasticity, autocorrelation can be diagnosed with informal graphical and formal
+inferential measures, but the other two violations (which are probably more common in
+ANOVA) require knowledge of the design for the data—how it was collected. You can check
+for the various types of dependence structure using hypothesis tests, but, again, testing methods
+should not be used exclusively to diagnose seriousness of the problem. 
+
+**Normality**
+
+It is usually not critical that the distribution of the response be precisely normal: the Central
+Limit Theorem states that estimated group means are approximately normally distributed even
+if the observations have non-normal distributions. This happy fact provides approximate largesample justification for the methods described in this chapter, as long as the other assumptions
+are valid. However, if the sample sizes are small and the distributions are not even close to
+normal, then the Central Limit Theorem may not apply. 
+
+**Testing the Normality Assumption in ANOVA**
+
+```
+proc glm data=Wloss;
+ class Diet;
+ model Wloss=Diet;
+ output out=wlossResid r=wlossResid;
+run;
+proc univariate data=wlossResid normal;
+ var wlossResid;
+ ods select TestsForNormality;
+run; 
+```
+
+
+### Parameter Estimates
+
+**Means and SD**
+
+The estimated population means are the individual sample means for each group,
+$$
+\hat{\mu}_{i}=\bar{y}_{i}=\frac{\sum_{j=1}^{n} y_{i j}}{n},
+$$
+and the estimated common variance of the errors is the pooled mean squared error (MSE),
+$$
+\hat{\sigma}^{2}=\mathrm{MSE}=\frac{\sum_{i=1}^{g} \sum_{j=1}^{n}\left(y_{i j}-\bar{y}_{i}\right)^{2}}{g(n-1)}
+$$
+These formulas are special cases of the general formulas $\hat{\boldsymbol{\beta}}=\left(\mathbf{X}^{\prime} \mathbf{X}\right)^{-1} \mathbf{X}^{\prime} \mathbf{Y}$ and $\hat{\sigma}^{2}=(\mathbf{Y}-\mathbf{X} \hat{\boldsymbol{\beta}})^{\prime}(\mathbf{Y}-\mathbf{X} \hat{\boldsymbol{\beta}}) / d f$; here the $\mathbf{X}$ matrix is full rank.
+
+
+**Simultaneous Confidence Intervals**
+
+The general form of the simultaneous confidence interval
+$$
+\mathbf{c}^{\prime} \hat{\boldsymbol{\beta}} \pm c_{\alpha} s . e .\left(\mathbf{c}^{\prime} \hat{\boldsymbol{\beta}}\right)
+$$
+produces intervals for the difference of means $\mu_{i}-\mu_{i^{\prime}}$ having the form
+$$
+\bar{y}_{i}-\bar{y}_{i^{\prime}} \pm c_{\alpha} \hat{\sigma} \sqrt{2 / n}
+$$
+where $c_{\alpha}$ is a critical value that is selected to make the $\mathrm{FWE}=\alpha .$ The term $\hat{\sigma} \sqrt{2 / n}$ is the square root of the estimated variance of the difference, also called the standard error of the estimated difference.
+
+In the case of non-multiplicity-adjusted confidence intervals, you set $c_{\alpha}$ equal to the $1-\alpha / 2$ quantile of the $t$ distribution, $t_{1-\alpha / 2, g(n-1)} .$ Each confidence interval thus constructed will contain the true difference $\mu_{i}-\mu_{i^{\prime}}$ with confidence $100(1-\alpha) \%$. 
+
+However, when you look at many intervals (say, $k$ of them) then all $k$ intervals will contain their respective true differences simultaneously with much lower confidence. The Bonferroni inequality gives a pessimistic estimate of the simultaneous confidence of these $k$ non multiplicity-adjusted intervals as $100 \times(1-k \alpha) \%$. This implies that you can construct Bonferroni-adjusted confidence intervals by setting $c_{\alpha}=t_{1-\alpha^{\prime} / 2, g(n-1)}$, where $\alpha^{\prime}=\alpha / k$. However, the Bonferroni method is conservative:
+the value $c_{\alpha}=t_{1-\alpha^{\prime} / 2, g(n-1)}$ is larger than it needs to be, in the sense that the actual simultaneous confidence level will be somewhat larger than the nominal level $100(1-\alpha) \%$.
+
+
+
+### R Implementation
+
+* `df.residual` returns the degrees of freedom of the residual
+* `coef` returns the estimated coefficients (and sometimes their standard deviations)
+* `residuals` returns residuals
+* `deviance` returns the variance
+* `fitted` returns the fitted value
+* `logLik` calculates the log-likelihood and returns the number of arguments
+* `AIC` computes the Akaike information criterion (AIC) (depending on logLik())
+
+```{r One-Way ANOVA Test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Date exploration
+
+Intelligenz <- data.frame(IQ.Werte=c(99, 131, 118, 112, 128, 136, 120, 107,
+                                     134, 122,134, 103, 127, 121, 139, 114, 
+                                     121, 132,120, 133, 110, 141, 118, 124, 
+                                     111, 138, 120,117, 125, 140, 109, 128, 
+                                     137, 110, 138, 127, 141, 119, 148),
+                             Fach=c(rep(1,10),rep(2,8),rep(3,9),rep(4,12)))
+Intelligenz$Fach <- factor(Intelligenz$Fach,labels=c("I", "II", "III","IV"))
+
+## Compute summary statistics
+library(dplyr)
+group_by(Intelligenz, Fach) %>%
+  dplyr::summarise(
+    count = n(),
+    mean = mean(IQ.Werte, na.rm = TRUE),
+    sd = sd(IQ.Werte, na.rm = TRUE)
+  )
+
+## Visualize your data with ggpubr
+library("ggpubr")
+ggboxplot(Intelligenz, x = "Fach", y = "IQ.Werte", 
+          color = "Fach", 
+          palette = c("#00AFBB", "#E7B800", "#FC4E07","#E7298A"),
+          order = c("I","II","III","IV"),
+          ylab = "IQ.Werte", xlab = "Fach")
+
+## Model Fitting
+Intelligenz.aov <- aov(IQ.Werte~Fach, data=Intelligenz)
+summary(Intelligenz.aov)
+```
+
+
+### SAS Implementation
+
+Comparing Weight Loss for Five Different Regimens Ott (1988) reports an experiment undertaken to evaluate the effectiveness of five weightreducing agents. There are 10 male subjects in each group who have been randomly assigned to one of the regimens A, B, C, D, or E. This is a classic example of the balanced one-way ANOVA setup. After a fixed length of time, the weight loss of each of the 50 subjects is measured. The goal of the study is to rank the treatments, to the extent possible, using the observed weight loss data for the 50 subjects. 
+These box plots are convenient for depicting and comparing the distributions of the data in each treatment group.
+
+
+
+```
+data Wloss;
+ do Diet = 'A','B','C','D','E';
+ do i = 1 to 10;
+ input Wloss @@;
+ output;
+ end;
+ end;
+datalines;
+12.4 10.7 11.9 11.0 12.4 12.3 13.0 12.5 11.2 13.1
+ 9.1 11.5 11.3 9.7 13.2 10.7 10.6 11.3 11.1 11.7
+ 8.5 11.6 10.2 10.9 9.0 9.6 9.9 11.3 10.5 11.2
+ 8.7 9.3 8.2 8.3 9.0 9.4 9.2 12.2 8.5 9.9
+12.7 13.2 11.8 11.9 12.2 11.2 13.7 11.8 11.5 11.7
+;
+proc sgplot data=Wloss;
+ vbox Wloss/category=Diet;
+run;
+```
+
+### Model Diagnosis
+
+1. Homogeneity Test
+    + Homogeneity of variance assumption using Plot
+    + Homogeneity of variance assumption using Levene's test, which is less sensitive to departures from normal distribution. (insensitive to deviation from normal distribution)
+    + Homogeneity of variance assumption with no assumption of equal variances (relaxes the homogeneity of variance assumptions)
+2. Normality assumption
+3. Multiple Test
+
+#### Homogeneity Test
+
+```{r Homogeneity Test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Check the homogeneity of variance assumption
+plot(Intelligenz.aov, 1)
+
+## Levene’s test,  Homogeneity of variance assumption
+library(car)
+leveneTest(IQ.Werte ~ Fach, data = Intelligenz)
+
+## With no assumption of equal variances
+oneway.test(IQ.Werte~Fach, data=Intelligenz)
+```
+
+#### Normality assumption
+
+Using QQ Plot or Shapiro–Wilk test to test residuals
+
+```{r Normality assumption,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Check the normality assumption
+plot(Intelligenz.aov, 2)
+
+## Shapiro–Wilk test to test residuals
+## Extract the residuals and run Shapiro-Wilk test
+aov_residuals <- residuals(object = Intelligenz.aov )
+shapiro.test(x = aov_residuals )
+```
+
+
+#### Violation of assumptions
+
+**Random Effects Models**
+
+$$Y_{ij} = \mu + \alpha_i + \epsilon_{ij},$$
+We assume $\alpha_i \; \textrm{i.i.d.} \sim N(0, \sigma_{\alpha}^2).$ and 
+$$E[Y_{ij}] = \mu$$
+$$\text{Var}(Y_{ij}) = \sigma_{\alpha}^2 + \sigma^2$$
+$$\text{Cor}(Y_{ij}, Y_{kl}) =    \left\{   \begin{array}{cc}     0 & i \neq k \\     \sigma_{\alpha}^2 / (\sigma_{\alpha}^2 + \sigma^2) & i = k, j \neq l (\text{intraclass correlation (ICC)})\\     1 & i = k, j = l   \end{array}   \right.$$
+
+MLE is not usable for parameter estimation for the variance components $\sigma_a^2$ and $\sigma^2$, **Restricted maximum likelihood (REML)** is applied here. REML is less biased. The parameter $\mu$ is estimated with maximum-likelihood assuming that the variances are known.
+
+**Non-Parametric Test**
+
+Non-parametric alternative to one-way ANOVA test, **Kruskal-Wallis rank sum test**, which can be used when ANOVA assumptions are not met. 
+
+```
+kruskal.test(IQ.Werte~Fach, data=Intelligenz)
+```
+
+
+
+## Unbalanced One-Way ANOVA and Analysis-of-Covariance (ANCOVA)
+
+These data are similar to the balanced ANOVA except that sample sizes may be unbalanced, or the comparisons between means might be done while controlling one or more covariates (e.g., confounding variables, pre-experimental measurements). The distributional assumptions are identical to those of the ANOVA, with the exception that for ANCOVA, the **normality assumption must be evaluated by using residuals** and not actual data values. 
+ 
+
+
+
+## Two-Ways ANOVA Test
+
+You consider the effects of two or more factors, with possibly unbalanced sample sizes and/or covariates. The distributional assumptions are the same as for the unbalanced oneway ANOVA or ANCOVA (if there are covariates). 
+
+
+### Introduction
+
+$$
+Y_{i j k}=\mu+\alpha_{i}+\beta_{j}+(\alpha \beta)_{i j}+\epsilon_{i j k}
+$$
+- ai is the main effect of factor $A$ at leveli
+- $\beta \mathrm{j}$ is the main effect of factor $\mathrm{B}$ at level $\mathrm{j}$ 
+- $(aß)ij$ is the interaction effect between $A$ and $B$ for the level combination i,j (it is not the product ai\betaj)
+
+Test: the total sum of squares
+$$
+S S_{T}=S S_{A}+S S_{B}+S S_{A B}+S S_{E}
+$$
+
+
+* $SS_A = \sum_{i=1}^a b n (\widehat{\alpha}_i)^2$ “between rows”
+* $SS_B = \sum_{j=1}^b a n (\widehat{\beta}_j)^2$ “between columns”
+* $SS_{AB} = \sum_{i=1}^a \sum_{j=1}^b n (\widehat{\alpha\beta})_{ij}^2$ “correction”
+* $SS_E = \sum_{i=1}^a \sum_{j=1}^b \sum_{k=1}^n (y_{ijk} - \overline{y}_{ij\cdot})^2$ Error “within cells”
+* $SS_T = \sum_{i=1}^a \sum_{j=1}^b \sum_{k=1}^n (y_{ijk} - \overline{y}_{\cdot\cdot\cdot})^2$ “total”
+
+
+### R implementation
+
+```{r Two-Ways ANOVA Test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Date exploration
+my_data <- ToothGrowth
+
+# Show a random sample
+set.seed(1234)
+dplyr::sample_n(my_data, 10)
+
+# Convert dose as a factor and recode the levels
+my_data$dose <- factor(my_data$dose, 
+                  levels = c(0.5, 1, 2),
+                  labels = c("D0.5", "D1", "D2"))
+                  
+## Compute mean and SD by groups using dplyr R package:
+require("dplyr")
+group_by(my_data, supp, dose) %>%
+  summarise(
+    count = n(),
+    mean = mean(len, na.rm = TRUE),
+    sd = sd(len, na.rm = TRUE)
+  )
+  
+                  
+# Visualize data
+library("ggpubr")
+ggboxplot(my_data, x = "dose", y = "len", color = "supp",
+          palette = c("#00AFBB", "#E7B800"))
+
+## Two-way interaction plot
+library("ggpubr")
+ggline(my_data, x = "dose", y = "len", color = "supp",
+       add = c("mean_se", "dotplot"),
+       palette = c("#00AFBB", "#E7B800"))
+
+## Model Fitting
+## Compute two-way ANOVA test
+res.aov2 <- aov(len ~ supp + dose, data = my_data)
+summary(res.aov2)
+
+## Two-way ANOVA with interaction effect
+res.aov3 <- aov(len ~ supp * dose, data = my_data)
+res.aov3 <- aov(len ~ supp + dose + supp:dose, data = my_data)
+summary(res.aov3)
+
+  ## dose的p值<2e-16（显着），表明剂量水平与显着不同的牙齿长度len 有关。
+  ## supp * dose之间相互作用的p值为0.02（显着），表明dose与牙齿长度len之间的关系取决于supp方法
+  ## 在交互作用不明显的情况下，应使用加性模型。
+
+## Diagnosis
+## 1. Compute mean and SD by groups using dplyr R package:
+require("dplyr")
+group_by(my_data, supp, dose) %>%
+  summarise(
+    count = n(),
+    mean = mean(len, na.rm = TRUE),
+    sd = sd(len, na.rm = TRUE)
+  )
+model.tables(res.aov3, type="means", se = TRUE)
+
+## 2. Multiple Test
+pairwise.t.test(my_data$len, my_data$dose,
+                p.adjust.method = "BH")
+
+## Multiple pairwise-comparison between the means of groups
+TukeyHSD(res.aov3, which = "dose")
+
+library(multcomp)
+summary(glht(res.aov2, linfct = mcp(dose = "Tukey")))
+
+## 3. Homogeneity and normality
+## Check the homogeneity of variance assumption (outliers)
+plot(res.aov3, 1)
+
+## Levene’s test to check the homogeneity of variances.
+library(car)
+leveneTest(len ~ supp*dose, data = my_data)
+
+## Check the normality assumpttion
+plot(res.aov3, 2)
+
+# Extract the residuals, Shapiro-Wilk test
+aov_residuals <- residuals(object = res.aov3)
+shapiro.test(x = aov_residuals )
+```
+
+### SAS Implementation
+
+```
+data Waste;
+ do Temp = 1 to 3;
+ do Envir = 1 to 5;
+ do rep=1 to 2;
+ input Waste @@;
+ output;
+ end;
+ end;
+ end;
+datalines;
+7.09 5.90 7.94 9.15 9.23 9.85 5.43 7.73 9.43 6.90
+7.01 5.82 6.18 7.19 7.86 6.33 8.49 8.67 9.62 9.07
+7.78 7.73 10.39 8.78 9.27 8.90 12.17 10.95 13.07 9.76
+;
+run;
+ods graphics on;
+proc glm data=Waste;
+ class Temp Envir;
+ model Waste = Temp Envir Temp*Envir;
+run;
+quit;
+ods graphics off;
+
+```
+
+
+
+
+### Unbalanced design
+
+With unbalanced designs, LS-means typically are more relevant than arithmetic means for quantifying general population characteristics, since the LS-means estimate the marginal means over a balanced population, whether or not the design itself is balanced; the arithmetic means only estimate the marginal means for a population whose margins match those of the design. In particular, the arithmetic means estimate balanced population margins only when the design itself is balanced. Moreover, the LS-means match the arithmetic means when the design is balanced. 
+
+```
+## unequal numbers of subjects in each group.
+library(car)
+my_anova <- aov(len ~ supp * dose, data = my_data)
+Anova(my_anova, type = "III")
+```
+
+```
+*** Comparisons of LS-Means with Unbalanced Data;
+data Drug;
+ input Drug Disease @;
+ do i=1 to 6;
+ input Response @;
+ output;
+ end;
+cards;
+1 1 42 44 36 13 19 22
+1 2 33 . 26 . 33 21
+1 3 31 -3 . 25 25 24
+2 1 28 . 23 34 42 13
+2 2 . 34 33 31 . 36
+2 3 3 26 28 32 4 16
+3 1 . . 1 29 . 19
+3 2 . 11 9 7 1 -6
+3 3 21 1 . 9 3 .
+4 1 24 . 9 22 -2 15
+4 2 27 12 12 -5 16 15
+4 3 22 7 25 5 12 .
+;
+ods graphics on;
+proc glm;
+ class Drug Disease;
+ model Response = Drug Disease Drug*Disease/ss3;
+ lsmeans Drug/ pdiff cl adjust=simulate(seed=121211 acc=.0002
+report);
+run; quit;
+ods graphics off; 
+```
+
+ 
+```
+*** Computing LS-Means by Hand;
+data Balanced;
+ do Drug = 1 to 4;
+ do Disease = 1 to 3;
+ output;
+ end;
+ end;
+data DrugPlus; set Drug(where=(Response ^= .)) Balanced;
+proc glm data=DrugPlus;
+ class Drug Disease;
+ model Response = Drug Disease Drug*Disease;
+ output out=PredBal(where=(Response = .)) p=pResponse;
+proc means data=PredBal;
+ class Drug;
+ ways 1;
+ var pResponse;
+run; 
+```
+
+
+
+
+## Heteroscedastic Responses
+
+If the error variances are not constant, then the ordinary methods might be biased (in the sense of providing higher error rates than advertised) or inefficient (in the sense that the method lacks power to detect real differences). 
+
+## Repeated Measures ANOVA Data 
+
+When there are repeated measures on the same experimental unit, the crucial independence assumption that is used for the previous models no longer applies. For example, the data may contain repeated measures on blood pressure for an individual. In such cases, you can **model the dependence** of blood pressure measurements by using a variety of possible dependence structure models, and perform multiplicity-adjusted analyses within the context of such models. **Normality (or at least approximate normality) remains an important assumption** for these models. 
+
+ 
+
+## Multivariate Responses with Normally Distributed Data 
+
+In these models, there are multiple measurements on the same individual. While repeated measures models usually assume that the measurements are taken on the same characteristic (like blood pressure), the multivariate response models allow completely different scales of measurement. For example, blood pressure and self-rated anxiety level form a multivariate response vector. Multiple inferences from such data are improved by incorporating the correlations among such measurements. In addition to the normality assumption, the multivariate observation vectors also are assumed independent, with constant covariance matrices. Our suggested method of analysis will allow covariates as well, so you can perform multiple comparisons with **multivariate analysis of covariance (MANCOVA)** data.
+
+ 
+
+## Independent Observations from Parametric Nonnormal Distributions
+
+As an example, suppose you know that the observations are counts of defects on a manufactured item, and you wish to compare shifts A, B, and C. The model used may be Poisson, and you still wish to perform multiple comparisons. In this case, you can use any of several SAS procedures to fit the Poisson model, and can perform adjustments for multiple comparisons easily using the fitted results from such models.
+
+ 
+## Dependent Observations from Parametric Nonnormal Distributions
+
+Following the previous example, suppose you know that the counts of defects on manufactured items are associated with different machines. You still wish to compare shifts A, B, and C, but you want to account for the machine effect. In this case, you may model the observations on a common machine as dependent, using a random effects model, where the machine effect is considered random. Again the model may be Poisson, but with a repeated measures component. In this case, you can use PROC GLIMMIX both to perform the repeated measures modeling and to perform the multiple comparisons.
+
+
+ 

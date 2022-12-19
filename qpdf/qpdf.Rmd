@@ -170,6 +170,22 @@ pdf_rotate_pages(
 # Extract
 
 ```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+pdf_subset(input = "G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Oper_20-21.pdf", 
+           pages = c(1,4,12:25,54:85,146:150), 
+           output = "G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Oper_2021_Extract1.pdf", 
+           password = "")
+
+pdf_subset(input = "G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Ballett_20-21.pdf", 
+           pages = c(18,1), 
+           output = "G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Oper_2021_Extract2.pdf", 
+           password = "")
+
+pdf_combine(input = c("G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Oper_2021_Extract1.pdf", 
+                      "G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Oper_2021_Extract2.pdf"),
+            output = "G:\\Statistik\\SAS Macro programs\\external\\ZBA\\Data-Analyst-with-R\\qpdf\\Book-2020-2021.pdf", 
+            password = "")
+
+
 pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-input/SOB_vorschau_2022_23.pdf", 
            pages = c(3,124:132), 
            output = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf/pdf-output/Spielplan_2022_23.pdf", 
@@ -177,6 +193,26 @@ pdf_subset(input = "C:/Users/Zehui.Bai/Documents/GitHub/Data-Analyst-with-R/qpdf
 
 
 ```
+
+
+# Combind
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+pdf_combine(input = c("C:\\Users\\Zehui.Bai\\Desktop\\D\\DM01_R_strings.pdf", 
+                      "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM02_R_dplyr.pdf",
+                      "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM03_R_tidyr.pdf",
+                      "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM04_R_factors.pdf",
+                      "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM07_R_ggplot2.pdf"),
+            output = "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM.pdf", 
+            password = "")
+pdf_subset(input = "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM.pdf", 
+           pages = c(1,3:9), 
+           output = "C:\\Users\\Zehui.Bai\\Desktop\\D\\DM2.pdf", 
+           password = "")
+```
+
+
+
 
 
 # Compress

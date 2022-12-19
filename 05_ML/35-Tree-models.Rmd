@@ -1,0 +1,1086 @@
+# Tree models
+
+
+
+## Decision Tree Model
+
+
+
+### Decision tree algorithm
+
+Tree-based models are a class of nonparametric algorithms that work by partitioning the feature space into a number of smaller (non-overlapping) regions with similar response values using a set of splitting rules. Predictions are obtained by fitting a simpler model (e.g., a constant like the average response value) in each region. 
+
+> 基于树的模型是一类非参数算法，其通过使用一组拆分规则将特征空间划分为具有相似响应值的多个较小（非重叠）区域来工作。 通过在每个区域中拟合更简单的模型（例如，类似于平均响应值的常数）来获得预测。
+
+{% embed url="https://www.cnblogs.com/pinard/p/6050306.html" %}
+
+{% embed url="https://www.cnblogs.com/pinard/p/6053344.html" %}
+
+
+### ID3 Algorithm 
+
+1970年代，一个叫昆兰的大牛找到了用信息论中的熵来度量决策树的决策选择过程，方法一出，它的简洁和高效就引起了轰动，昆兰把这个算法叫做ID3。熵度量了事物的不确定性，**越不确定的事物，它的熵就越大**。具体的，随机变量X的熵的表达式如下：
+
+$$
+H(X) = -\sum\limits_{i=1}^{n}p_i logp_i
+$$
+
+* 其中n代表X的n种不同的离散取值
+* $$p_i$$代表了X取值为i的概率
+* log为以2或者e为底的对数。
+
+熟悉了一个变量X的熵，很容易推广到多个个变量的联合熵，这里给出两个变量X和Y的联合熵表达式：
+
+$$
+H(X,Y) = -\sum\limits_{x_i \in X}\sum\limits_{y_i \in Y}p(x_i,y_i)logp(x_i,y_i)
+$$
+
+有了联合熵，又可以得到条件熵的表达式H(X|Y)，条件熵类似于条件概率,它度量了我们的X在知道Y以后剩下的不确定性。表达式如下：
+
+$$
+H(X|Y) = -\sum\limits_{x_i \in X}\sum\limits_{y_i \in Y}p(x_i,y_i)logp(x_i|y_i) = \sum\limits_{j=1}^{n}p(y_j)H(X|y_j)
+$$
+
+* H(X)度量了X的不确定性
+* 条件熵H(X|Y)度量了我们在知道Y以后X剩下的不确定性
+* **H(X)-H(X|Y):  **度量了X在知道Y以后不确定性减少程度，这个度量我们在信息论中称为互信息，，记为I(X,Y)。在决策树ID3算法中叫做**信息增益 **information divergence。ID3算法就是用信息增益来判断当前节点应该用什么特征来构建决策树。信息增益大，则越适合用~~来~~分类。
+
+ID3算法就是用信息增益大小来判断当前节点应该用什么特征来构建决策树，用**计算出的信息增益最大的特征来建立决策树的当前节点**。
+
+#### 举例: 
+
+有15个样本D，输出为0或者1。其中有9个输出为1， 6个输出为0。 样本中有个特征A，取值为A1，A2和A3。在取值为A1的样本的输出中，有3个输出为1， 2个输出为0，取值为A2的样本输出中,2个输出为1,3个输出为0， 在取值为A3的样本中，4个输出为1，1个输出为0.
+
+* 样本D的熵为： $$H(D) = -(\frac{9}{15}log_2\frac{9}{15} + \frac{6}{15}log_2\frac{6}{15}) = 0.971$$ 
+* 样本D在特征下的条件熵为： $$H(D|A) = \frac{5}{15}H(D1) + \frac{5}{15}H(D2) + \frac{5}{15}H(D3)$$ $$= -\frac{5}{15}(\frac{3}{5}log_2\frac{3}{5} + \frac{2}{5}log_2\frac{2}{5}) - \frac{5}{15}(\frac{2}{5}log_2\frac{2}{5} + \frac{3}{5}log_2\frac{3}{5}) -\frac{5}{15}(\frac{4}{5}log_2\frac{4}{5} + \frac{1}{5}log_2\frac{1}{5}) = 0.888$$ 
+* 对应的信息增益为 $$I(D,A) = H(D) - H(D|A) = 0.083$$ 
+
+#### Algorithm process
+
+输入的是m个样本，样本输出集合为D，每个样本有n个离散特征，特征集合即为A，输出为决策树T。
+
+1. 初始化信息增益的间值 $$\epsilon$$
+2. 判断样本是否为同一类输出 $$D_{i},$$ 如果是则返回单节点树T。标记类别为 $$D_{i}$$
+3. 判断特征是否为空, 如果是则返回单节点树T， 标记类别为样本中输出类别D实例数最多的类别。
+4. 计算A中的各个特征 (一共n个) 对输出D的信息增益, 选择信息增益最大的特征 $$A_{g}$$ 
+5. 如果 $$A_{g}$$ 的信息增益小于间值 $$\epsilon,$$ 则返回单节点树T，标记类别为样本中输出类别D实例数最多的类别。
+6. 如果 $$A_{g}$$ 的信息增益小于间值 $$\epsilon,$$ , 按特征 $$A_{g}$$ 的不同取值 $$A_{g i}$$ 将对应的样本输出D分成不同的类别 $$D_{i 。}$$ 每个类别产生一个子节点。对应特征值为 $$A_{g i}$$ 返回增加了节点的数T。
+7. 对于所有的子节点, 令 $$D=D_{i}, A=A-\left\{A_{g}\right\}$$ 递归调用2-6步, 得到子树 $$T_{i}$$ 并返回。
+
+#### 不足
+
+1. ID3没有考虑连续特征，比如长度，密度都是连续值，无法在ID3运用。
+2. ID3采用信息增益大的特征优先建立决策树的节点。很快就被人发现，在相同条件下，**取值比较多的特征比取值少的特征信息增益大**。
+3. ID3算法对于缺失值的情况没有做考虑
+4. 没有考虑过拟合的问题 Overfitting
+
+### C4.5 Algorithm 
+
+ID3算法有四个主要的不足，一是不能处理连续特征，第二个就是用信息增益作为标准容易偏向于取值较多的特征，最后两个是缺失值处理的问和过拟合问题。昆兰在C4.5算法中改进了上述4个问题. ID3 算法的作者昆兰基于上述不足，对ID3算法做了改进，这就是C4.5算法
+
+第一个问题，不能处理连续特征， C4.5的思路是将连续的特征离散化。比如m个样本的连续特征A有m个，从小到大排列为a1,a2,...,am,则C4.5取相邻两样本值的平均数，一共取得m-1个划分点. 其中第i个划分点$$T_i$$表示为 $$T_i = \frac{a_i+a_{i+1}}{2}$$ 。对于这m-1个点，分别计算以该点作为二元分类点时的信息增益。选择信息增益最大的点作为该连续特征的二元离散分类点。比如取到的增益最大的点为at,则小于at的值为类别1，大于at的值为类别2，这样我们就做到了连续特征的离散化。
+
+第二个问题，信息增益作为标准容易偏向于取值较多的特征的问题。我们引入一个信息增益比的变量 $$I_R(X,Y)$$ ，它是信息增益和特征熵的比值。表达式如下
+
+$$
+I_R(D,A) = \frac{I(A,D)}{H_A(D)}
+$$
+
+其中D为样本特征输出的集合，A为样本特征，对于特征熵$$H_A(D)$$
+
+$$
+H_A(D) = -\sum\limits_{i=1}^{n}\frac{|D_i|}{|D|}log_2\frac{|D_i|}{|D|}
+$$
+
+其中n为特征A的类别数， Di为特征A的第i个取值对应的样本个数。|D|为样本个数。**特征数越多的特征对应的特征熵越大，它作为分母，可以校正信息增益容易偏向于取值较多的特征的问题**。
+
+第三个缺失值处理的问题，主要需要解决的是两个问题，
+
+* 一是在样本某些特征缺失的情况下选择划分的属性，
+  * 对于某一个有缺失特征值的特征A。C4.5的思路是将数据分成两部分，对每个样本设置一个权重（初始可以都为1），然后划分数据，一部分是有特征值A的数据D1，另一部分是没有特征A的数据D2. 然后对于没有缺失特征A的数据集D1来和对应的A特征的各个特征值一起计算加权重后的信息增益比，最后乘上一个系数，这个系数是无特征A缺失的样本加权后所占加权总样本的比例。
+* 二是选定了划分属性，对于在该属性上缺失特征的样本的处理。
+  * 将缺失特征的样本同时划分入所有的子节点，不过将该样本的权重按各个子节点样本的数量比例来分配。比如缺失特征A的样本a之前权重为1，特征A有3个特征值A1,A2,A3。 3个特征值对应的无缺失A特征的样本个数为2,3,4.则a同时划分入A1，A2，A3。对应权重调节为2/9,3/9, 4/9。
+
+第四个问题，C4.5引入了正则化系数进行初步的剪枝。
+
+#### 不足
+
+1. 由于决策树算法非常容易过拟合，因此对于生成的决策树必须要进行剪枝。剪枝的算法有非常多，C4.5的剪枝方法有优化的空间。思路主要是两种，一种是预剪枝，即在生成决策树的时候就决定是否剪枝。另一个是后剪枝，即先生成决策树，再通过交叉验证来剪枝。(CART树: 主要采用的是后剪枝加上交叉验证选择最合适的决策树)
+2. C4.5生成的是多叉树，即一个父节点可以有多个节点。很多时候，在计算机中二叉树模型会比多叉树运算效率高。如果采用二叉树，可以提高效率。
+3. C4.5只能用于分类，如果能将决策树用于回归的话可以扩大它的使用范围。
+4. C4.5由于使用了熵模型，里面有大量的耗时的对数运算,如果是连续值还有大量的排序运算。如果能够加以模型简化可以减少运算强度但又不牺牲太多准确性的话，那就更好了。
+
+### CART Algorithm 
+
+对于C4.5算法的不足，比如模型是用较为复杂的熵来度量，使用了相对较为复杂的多叉树，只能处理分类不能处理回归等。对于这些问题， CART算法大部分做了改进。
+
+* 在ID3算法中我们使用了信息增益来选择特征，信息增益大的优先选择。
+* 在C4.5算法中，采用了信息增益比来选择特征，以减少信息增益容易选择特征值多的特征的问题。
+* CART分类树算法使用基尼系数来代替信息增益比，基尼系数代表了模型的不纯度，基尼系数越小，则不纯度越低，特征越好。这和信息增益(比)是相反的。
+
+具体的，在分类问题中，假设有K个类别，第k个类别的概率为 $$p_k$$ , 则基尼系数的表达式为：
+
+$$
+Gini(p) = \sum\limits_{k=1}^{K}p_k(1-p_k) = 1- \sum\limits_{k=1}^{K}p_k^2
+$$
+
+如果是二类分类问题，计算就更加简单了，如果属于第一个样本输出的概率是p，则基尼系数的表达式为： 
+
+$$
+Gini(p) = 2p(1-p)
+$$
+
+对于个给定的样本D,假设有K个类别, 第k个类别的数量为$$C_k$$,则样本D的基尼系数表达式为：
+
+$$
+Gini(D) = 1-\sum\limits_{k=1}^{K}(\frac{|C_k|}{|D|})^2
+$$
+
+对于样本D,如果根据特征A的某个值a,把D分成D1和D2两部分，则在特征A的条件下，D的基尼系数表达式为：
+
+$$
+Gini(D,A) = \frac{|D_1|}{|D|}Gini(D_1) + \frac{|D_2|}{|D|}Gini(D_2)
+$$
+
+对于CART分类树连续值的处理问题，其思想和C4.5是相同的，都是将连续的特征离散化。唯一的区别在于在选择划分点时的度量方式不同，C4.5使用的是信息增益比，则CART分类树使用的是基尼系数。将连续的特征离散化。比如m个样本的连续特征A有m个，从小到大排列为a1,a2,...,am,则C4.5取相邻两样本值的平均数，一共取得m-1个划分点. 其中第i个划分点$$T_i$$表示为 $$T_i = \frac{a_i+a_{i+1}}{2}$$ 。对于这m-1个点，分别计算以该点作为二元分类点时的基尼系数。选择基尼系数最小的点作为该连续特征的二元离散分类点。比如取到的基尼系数最小的点为$$a_t$$则小于$$a_t$$的值为类别1，大于$$a_t$$的值为类别2，这样我们就做到了连续特征的离散化。
+
+#### Classification tree
+
+分类树与回归树的运行原理是一样的，区别在于决定分裂过程的不是RSS，而是**误差率**。误差率不是简单地由误分类的观测数除以总观测数算出。实际上，进行树分裂 时，误分类率本身可能会导致这样一种情况:  可以从下次分裂中获得一些有用信息，但误分类率却没有改善。
+
+* 假设有一个节点N0，节点中有7个标号为No的观测和3个标号为Yes的观测，我们就可以说误 分类率为30%
+* 另一种误差测量方式进行计算，这种方式称为**基尼指数**。 单个节点的基尼指数计算公式如下: \
+  基尼指数=1-(类别1的概率)^2-(类别的概率)^2\
+  在此：对于N0，基尼指数为1 - (0.7)2 - (0.3)2，等于0.42
+
+假设将节点N0分裂成两个节点N1和N2，N1中有3个观测属于 类别1，没有属于类别2的观测; N2中有4个观测属于类别1，3个属于类别2。现在，树的这个分支 的整体的误分类率还是30% 整体的基尼指数： 
+
+* 基尼指数(N1) = 1 - (3/3)^2 - (0/3)^2= 0 
+* 基尼指数(N2) = 1 - (4/7)^2 - (3/7)^2= 0.49 
+* 新基尼指数 = (N1比例×基尼指数(N1))+(N2比例×基尼指数(N2)) = (0.3×0) + (0.7×0.49)=0.343. 改善了模型的不纯度，将其从原来的0.42减小到0.343，误分类率却没有变化。rpart()包就是使用Gini指数测量误差的
+
+#### 分类树建立算法的具体流程
+
+算法输入是训练集D，基尼系数的阈值，样本个数阈值。算法从根节点开始，用训练集递归的建立CART树。
+
+1. 对于当前节点的数据集为D，如果样本个数小于阈值或者没有特征，则返回决策子树，当前节点停止递归。
+2. 计算样本集D的基尼系数，如果基尼系数小于阈值，则返回决策树子树，当前节点停止递归。
+3. 计算当前节点现有的各个特征的各个特征值对数据集D的基尼系数，缺失值的处理方法和C4.5算法里描述的相同。
+4. 在计算出来的各个特征的各个特征值对数据集D的基尼系数中，选择基尼系数最小的特征A和对应的特征值a。根据这个最优特征和最优特征值，把数据集划分成两部分D1和D2，同时建立当前节点的左右节点，做节点的数据集D为D1，右节点的数据集D为D2.
+5. 对左右的子节点递归的调用1-4步，生成决策树。
+
+#### Regression tree
+
+树方法的精髓就是划分特征，从第一次分裂开始就要考虑如何最大程度改善RSS，然 后持续进行二叉分裂，直到树结束。后面的划分并不作用于全体数据集，而仅作用于上次划分时 落到这个分支之下的那部分数据。这个自顶向下的过程被称为“递归划分”。这个过程是贪婪的:
+
+> Greed 贪婪的含义是，**算法在每次分裂中都追求最大程度减少RSS，而不管以后的划分中表现如何**。这样做的结果是，你可能会生成一个带有无效分支的 树，尽管偏差很小，但是方差很大。为了避免这个问题，生成完整的树之后，你要**对树进行剪枝**， 得到最优的规模。
+
+* 优点是可以处理高度非线性关系
+* 首要的问题就是，一个观测被赋予所属终端节点的平均值，这会损害整体预测效果(高偏差)
+* 如果你一直对数据进行划分，树的层次越来越深，这样可以达到低偏差的效果，但是高方差又成了问题 (可以用交叉验证来选择合适的深度)
+
+#### 回归树建立算法的具体流程
+
+CART回归树和CART分类树的建立和预测的区别主要有下面两点：
+
+　　　　1)连续值的处理方法不同
+
+　　　　2)决策树建立后做预测的方式不同。
+
+对于连续值的处理，我们知道CART分类树采用的是用基尼系数的大小来度量特征的各个划分点的优劣情况。这比较适合分类模型，但是对于回归模型，我们使用了常见的和方差的度量方式，CART回归树的度量目标是，对于任意划分特征A，对应的任意划分点s两边划分成的数据集D1和D2，求出使D1和D2各自集合的均方差最小，同时D1和D2的均方差之和最小所对应的特征和特征值划分点。表达式为：(其中，c1为D1数据集的样本输出均值，c2为D2数据集的样本输出均值。)
+
+$$
+\begin{equation}
+SSE = \sum_{i \in R_1}\left(y_i - c_1\right)^2 + \sum_{i \in R_2}\left(y_i - c_2\right)^2
+\end{equation}
+$$
+
+$$
+\underbrace{min}_{A,s}\Bigg[\underbrace{min}_{c_1}\sum\limits_{x_i \in D_1(A,s)}(y_i - c_1)^2 + \underbrace{min}_{c_2}\sum\limits_{x_i \in D_2(A,s)}(y_i - c_2)^2\Bigg]
+$$
+
+对于决策树建立后做预测的方式，CART分类树采用叶子节点里概率最大的类别作为当前节点的预测类别。而回归树输出不是类别，它采用的是用最终叶子的均值或者中位数来预测输出结果。
+
+### Pruning
+
+CART回归树和CART分类树的剪枝策略除了在度量损失的时候一个使用均方差，一个使用基尼系数。由于决策时算法很容易对训练集过拟合，而导致泛化能力差，为了解决这个问题，我们需要对CART树进行剪枝，即类似于线性回归的正则化，来增加决策树的泛化能力。
+
+有很多的剪枝方法，我们应该这么选择呢？CART采用的办法是**后剪枝法**，即先生成决策树，然后**产生所有可能的剪枝后的CART树，然后使用交叉验证来检验各种剪枝的效果**，选择泛化能力最好的剪枝策略。也就是说，CART树的剪枝算法可以概括为两步，
+
+1. 从原始决策树生成各种剪枝效果的决策树
+2. 用交叉验证来检验剪枝后的预测能力，选择泛化预测能力最好的剪枝后的数作为最终的CART树
+
+#### 剪枝的损失函数度量
+
+在剪枝的过程中，对于任意的一刻子树$$T_,$$其损失函数为：
+
+$$
+C_{\alpha}(T_t) = C(T_t) + \alpha |T_t|
+$$
+
+其中，α为正则化参数，这和线性回归的正则化一样。 $$C(T_t)$$ 为训练数据的预测误差，分类树是用基尼系数度量，回归树是均方差度量。|Tt|是子树T的叶子节点的数量.
+
+* 当 $$\alpha = 0$$ 时，即没有正则化，原始的生成的CART树即为最优子树。
+* 当 $$\alpha = \infty$$ ，即正则化强度达到最大，此时由原始的生成的CART树的根节点组成的单节点树为最优子树。当然，这是两种极端情况。
+* 一般来说，$$\alpha$$**越大，则剪枝剪的越厉害，生成的最优子树相比原生决策树就越偏小**。对于固定的$$\alpha$$，一定存在使损失函数Cα(T)最小的唯一子树。
+
+看过剪枝的损失函数度量后，我们再来看看剪枝的思路，对于位于节点t的任意一颗子树$$T_t$$，如果没有剪枝，它的损失是 $$C_{\alpha}(T_t) = C(T_t) + \alpha |T_t|$$, 如果将其剪掉，仅仅保留根节点，则损失是 $$C_{\alpha}(T) = C(T) + \alpha$$ . 当 $$\alpha = 0$$ 或者$$\alpha$$很小时， $$C_{\alpha}(T_t) < C_{\alpha}(T)$$ , 当$$\alpha$$增大到一定的程度时 $$C_{\alpha}(T_t) = C_{\alpha}(T)$$ 
+
+#### 算法主要过程如下
+
+输入是CART树建立算法得到的原始决策树 $$T_{0}$$ 输出是最优决策子树 $$T_{\alpha 。}$$
+
+1. 初始化 $$k=0, T=T_{0},$$ 最优子树集合 $$\omega=\{T\}_{\circ}$$
+2. $$\alpha_{\min }=\infty$$
+3. 从叶子节点开始自下而上计算各内部节点t的训练误差损失函数 $$C_{\alpha}\left(T_{t}\right)$$ (回归树为均方差, 分类树为基尼系数)，叶子节点数 $$\left|T_{t}\right|,$$ 以及正则化间值 $$\alpha=\min \left\{\frac{C(T)-C\left(T_{t}\right)}{\left|T_{t}\right|-1}, \alpha_{\min }\right\},$$ 更新 $$\alpha_{\min }=\alpha$$
+4. $$\alpha_{k}=\alpha_{\min }$$
+5. 自上而下的访问子树的内部节点, 如果 $$\frac{C(T)-C\left(T_{t}\right)}{\left|T_{t}\right|-1} \leq \alpha_{k}$$ 时, 进行剪枝。并决定叶节点$$t$$的值。如果是分类树, 则是概率最高的类别, 如果是回归树，则是所有样本输出的均值。这样得到 $$\alpha_{k}$$ 对应的最优子树 $$T_{k}$$
+6. 最优子树集合 $$\omega=\omega \cup T_{k}$$
+7. $$k=k+1, T=T_{k},$$ 如果$$T$$不是由根节点单独组成的树, 则回到步骤2继续递归执行。否则就已经得到了所有的可选最优子树集合 $$\omega .$$
+8. 采用交叉验证在 $$\omega$$ 选择最优子树 $$T_{\alpha}$$
+
+### Package ‘rpart’
+
+Recursive partitioning for classification, regression and survival trees: [https://cran.r-project.org/web/packages/rpart/rpart.pdf](https://cran.r-project.org/web/packages/rpart/rpart.pdf)
+
+
+
+
+
+
+
+## Random Forest
+
+为了显著提高模型的预测能力，我们可以生成多个树，然后将这些树的结果组合起来。
+随机 森林技术在模型构建过程中使用两种奇妙的方法，以实现这个构想。
+    
+    第一个方法称为自助聚集，或称装袋。在装袋法中，使用数据集的一次随机抽样建立一个独立树，抽样的数量大概为全部观测的2/3(请记住，剩下的1/3被称为袋外数据，out-of-bag)。这个过程重复几十次或上百次，最后取平均结果。其中每个树都任其生长，不进行任何基于误差测量的剪枝，这意味着每个独立树的方差都很大。但是，通过对结果的平均化处理可以降低方差，同时又不增加偏差。
+
+    另一个在随机森林中使用的方法是，对数据进行随机抽样(装袋)的同时，独立树每次分裂时对输入特征也进行随机抽样。在randomForest包中，我们使用随机抽样数的默认值来对预测特征进行抽样。对于分类问题，默认值为所有预测特征数量的平方根;对于回归问题，默认值为所有预测 特征数量除以3。
+    
+通过每次分裂时对特征的随机抽样以及由此形成的一套方法，你可以减轻高度相关的预测特 征的影响，这种预测特征在由装袋法生成的独立树中往往起主要作用。这种方法还使你不必思索 如何减少装袋导致的高方差。独立树彼此之间的相关性减少之后，对结果的平均化可以使泛化效 果更好，对于异常值的影响也更加不敏感，比仅进行装袋的效果要好。
+
+在随机森林方法中，创建了大量的决策树。每个观察结果都被送入每个决策树。 每个观察结果最常用作最终输出。对所有决策树进行新的观察，并对每个分类模型进行多数投票。
+对于在构建树时未使用的情况进行错误估计。 这被称为OOB(Out-of-bag)错误估计，以百分比表示
+
+
+### Bootstrap (Bagging)
+
+随机采样(bootstrap)就是从我们的训练集里面采集固定个数的样本，但是每采集一个样本后，都将样本放回。也就是说，之前采集到的样本在放回后有可能继续被采集到。Bagging算法，一般会随机采集和训练集样本数m一样个数的样本。
+
+* Gradient Boosting Decision Tree Algorithm  GBDT的子采样是无放回采样
+* Bagging的子采样是放回采样。
+
+对于一个样本，它在某一次含m个样本的训练集的随机采样中，每次被采集到的概率是 $$\frac{1}{m}$$ 。不被采集到的概率为$$1-\frac{1}{m}$$。如果m次采样都没有被采集中的概率是 $$(1-\frac{1}{m})^m$$ . 当 $$m \to \infty$$ $$(1-\frac{1}{m})^m \to \frac{1}{e} \simeq 0.368$$ 。
+
+也就是说，在bagging的每轮随机采样中，训练集中大约有36.8%的数据没有被采样集采集中。对于这部分大约36.8%的没有被采样到的数据，我们常常称之为**袋外数据(Out Of Bag, 简称OOB)**。这些数据没有参与训练集模型的拟合，因此可以用来检测模型的泛化能力。
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+# Helper packages
+library(dplyr)       # for data wrangling
+library(ggplot2)     # for awesome plotting
+library(doParallel)  # for parallel backend to foreach
+library(foreach)     # for parallel processing with for loops
+# Modeling packages
+library(caret)       # for general model fitting
+library(rpart)       # for fitting decision trees
+library(ipred)       # for fitting bagged decision trees
+# make bootstrapping reproducible
+set.seed(123)
+# train bagged model
+prostate <- read.delim("./01_Datasets/prostate.txt", header=T)
+ames_bag1 <- bagging(
+  formula = lpsa ~ .,
+  data = prostate,
+  nbagg = 100,  
+  coob = TRUE,
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+ames_bag1
+
+## Apply bagging within caret and use 10-fold CV
+ames_bag2 <- train(
+  lpsa ~ .,
+  data = prostate,
+  method = "treebag",
+  trControl = trainControl(method = "cv", number = 10),
+  nbagg = 200,  
+  control = rpart.control(minsplit = 2, cp = 0)
+)
+ames_bag2
+```
+
+
+
+### bagging算法流程
+
+输入为样本集 $$D=\left\{\left(x, y_{1}\right),\left(x_{2}, y_{2}\right), \ldots\left(x_{m}, y_{m}\right)\right\},$$ 弱学习器算法, 弱分类器迭代次数 。 输出为最终的强分类器 $$f(x)$$
+
+1. 对于t $$=1,2 \ldots, T:$$
+   * a 对训练集进行第t次随机采样, 共采集m次, 得到包含m个样本的采样集 $$D_{t}$$
+   * b 用采样集 $$D_{t}$$ 训练第t个弱学习器 $$G_{t}(x)$$
+2. 如果是分类算法预测, 则T个弱学习器投出最多票数的类别或者类别之一为最终类别。如果是回归算法, T个弱学习器得到的回归结果进行算术平均得 到的值为最终的模型输出。
+
+### Random Forest Algorithm
+
+随机森林是Bagging算法的进化版, 首先，RF使用了CART决策树作为弱学习器. 第二，在使用决策树的基础上，RF对决策树的建立做了改进，对于普通的决策树，我们会在节点上所有的n个样本特征中选择一个最优的特征来做决策树的左右子树划分，但是RF通过随机选择节点上的一部分样本特征，这个数字小于n，假设为 $$n_{sub}$$ 个样本特征中，选择一个最优的特征来做决策树的左右子树划分。这样进一步增强了模型的泛化能力。
+
+* $$n_{sub}$$越小，则模型约健壮，当然此时对于训练集的拟合程度会变差。也就是说模型的方差会减小，但是偏倚会增大。
+* 在实际案例中，一般会通过交叉验证调参获取一个合适的$$n_{sub}$$
+
+随机森林技术在模型构建过程中使用两种奇妙的方法
+
+1. 第一个方法称为自助聚集，或称装袋。在装袋法中，使用数据集的一次随机抽样建立一个独立树，抽样的数量大概为全部观测的2/3(请记住，剩下的1/3被称为袋外数据，out-of-bag)。这个过程重复几十次或上百次，最后取平均结果。其中每个树都任其生长，不进行任何基于误差测量的剪枝，这意味着每个独立树的方差都很大。但是，通过对结果的平均化处理可以降低方差，同时又不增加偏差。
+2. 另一个在随机森林中使用的方法是，对数据进行随机抽样(装袋)的同时，独立树每次分裂时对输入特征也进行随机抽样。在randomForest包中，我们使用随机抽样数的默认值来对预测特征进行抽样。对于分类问题，默认值为所有预测特征数量的平方根;对于回归问题，默认值为所有预测 特征数量除以3。
+
+通过每次分裂时对特征的随机抽样以及由此形成的一套方法，你可以减轻高度相关的预测特 征的影响，这种预测特征在由装袋法生成的独立树中往往起主要作用。这种方法还使你不必思索 如何减少装袋导致的高方差。独立树彼此之间的相关性减少之后，对结果的平均化可以使泛化效 果更好，对于异常值的影响也更加不敏感，比仅进行装袋的效果要好。
+
+#### RF算法
+
+输入为样本集 $$D=\left\{\left(x, y_{1}\right),\left(x_{2}, y_{2}\right), \ldots\left(x_{m}, y_{m}\right)\right\},$$ 弱分类器迭代次数T。
+
+输出为最终的强分类器 $$f(x)$$
+
+1. 对于t $$=1,2 \ldots, T:$$
+   * a)对训练集进行第t次随机采样，共采集m次, 得到包含m个样本的采样集 $$D_{t}$$
+   *   b)用采样集 $$D_{t}$$ 训练第t个决策树模型 $$G_{t}(x),$$ 在训练决策树模型的节点的时候, 在节点上所有的样本特征中选择一部分样本特征, 在这些随机选
+
+       择的部分样本特征中选择一个最优的特征来做决策树的左右子树划分
+2. 如果是分类算法预测, 则T个弱学习器投出最多票数的类别或者类别之一为最终类别。如果是回归算法, T个弱学习器得到的回归结果进行算术平均得 到的值为最终的模型输出。
+
+### Random forest promotion
+
+RF在实际应用中的良好特性，基于RF，有很多变种算法，应用也很广泛，不光可以用于分类回归，还可以用于特征转换，异常点检测等。
+
+#### Extra trees
+
+extra trees是RF的一个变种, 原理几乎和RF一模一样，仅有区别有：
+
+　　　　1） 对于每个决策树的训练集，RF采用的是随机采样bootstrap来选择采样集作为每个决策树的训练集，而extra trees一般不采用随机采样，即每个决策树采用原始训练集。
+
+　　　　2） 在选定了划分特征后，RF的决策树会基于基尼系数，均方差之类的原则，选择一个最优的特征值划分点，这和传统的决策树相同。但是extra trees比较的激进，他会随机的选择一个特征值来划分决策树。
+
+从第二点可以看出，由于随机选择了特征值的划分点位，而不是最优点位，这样会导致生成的决策树的规模一般会大于RF所生成的决策树。也就是说，模型的方差相对于RF进一步减少，但是偏倚相对于RF进一步增大。在某些时候，extra trees的泛化能力比RF更好。
+
+#### Totally Random Trees Embedding
+
+Totally Random Trees Embedding(以下简称 TRTE)是一种非监督学习的数据转化方法。它将低维的数据集映射到高维，从而让映射到高维的数据更好的运用于分类回归模型。我们知道，在支持向量机中运用了核方法来将低维的数据集映射到高维，此处TRTE提供了另外一种方法。
+
+TRTE在数据转化的过程也使用了类似于RF的方法，建立T个决策树来拟合数据。当决策树建立完毕以后，数据集里的每个数据在T个决策树中叶子节点的位置也定下来了。比如我们有3颗决策树，每个决策树有5个叶子节点，某个数据特征xx划分到第一个决策树的第2个叶子节点，第二个决策树的第3个叶子节点，第三个决策树的第5个叶子节点。则x映射后的特征编码为(0,1,0,0,0,     0,0,1,0,0,     0,0,0,0,1), 有15维的高维特征。这里特征维度之间加上空格是为了强调三颗决策树各自的子编码。
+
+映射到高维特征后，可以继续使用监督学习的各种分类回归算法了。
+
+#### Isolation Forest
+
+Isolation Forest（以下简称IForest）是一种异常点检测的方法。它也使用了类似于RF的方法来检测异常点。对于在T个决策树的样本集，IForest也会对训练集进行随机采样,但是采样个数不需要和RF一样，对于RF，需要采样到采样集样本个数等于训练集个数。但是IForest不需要采样这么多，一般来说，采样个数要远远小于训练集个数？为什么呢？因为我们的目的是异常点检测，只需要部分的样本我们一般就可以将异常点区别出来了。
+
+对于每一个决策树的建立， IForest采用随机选择一个划分特征，对划分特征随机选择一个划分阈值。这点也和RF不同。另外，IForest一般会选择一个比较小的最大决策树深度max_depth,原因同样本采集，用少量的异常点检测一般不需要这么大规模的决策树。
+
+对于异常点的判断, 则是将测试样本点 $$x$$ 拟合到T颗决策树。计算在每颗决策树上该样本的早子节点的深度 $$h_{t}(x)$$ 。, 从而可以计算出平均高度h $$(\mathrm{x})$$ 。此 时我们用下面的公式计算样本点x的异常概率：
+
+$$
+s(x, m)=2^{-\frac{h(x)}{c(m)}}
+$$
+
+其中， m为样本个数。 $$c(m)$$ 的表达式为： $$c(m)=2 \ln (m-1)+\xi-2 \frac{m-1}{m},$$ $$\xi$$为欧拉常数 $$s(x, m)$$ 的取值范围是 $$[0,1],$$ 取值越接近于1，则是异常点的概率也越大。
+
+### Package ‘randomForest’
+
+Source: [https://cran.r-project.org/web/packages/randomForest/randomForest.pdf](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf)
+
+
+
+
+## Modelling
+
+### Data preparation 
+
+
+准备数据：前列腺癌数据集。使用ifelse()函数将gleason评分编码为指标变量，划分训练数据集和测试数据集，训练数据集为pros.train，测试数据集为pros.test
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load package
+
+library(party)
+library(rpart)         # classification and regression trees
+library(partykit)      # treeplots
+library(MASS)          # breast and pima indian data
+library(randomForest)  # random forests
+library(xgboost)       # gradient boosting 
+library(caret)         # tune hyper-parameters
+```
+
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Load dataset
+prostate <- read.delim("./01_Datasets/prostate.txt", header=T)
+prostate$gleason <- ifelse(prostate$gleason == 6, 0, 1)
+pros.train <- subset(prostate, train == TRUE)[, 2:10]
+pros.test = subset(prostate, train == FALSE)[, 2:10]
+```
+
+
+
+
+
+
+
+
+### Regression tree
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 在训练数据集上建立回归树，使用party包中的rpart()函数
+set.seed(123)
+tree.pros <- rpart(lpsa ~ ., data = pros.train)
+tree.pros$cptable     ## 检查每次分裂的误差，以决定最优的树分裂次数
+                      ## CP的第一列是成本复杂性参数
+                      ## 第二列nsplit是树 分裂的次数，
+                      ## rel error列表示相对误差，即某次分裂的RSS除以不分裂的RSS(RSS(k)/RSS(0))
+                      ## xerror和xstd都是基于10折交叉验证的
+                      ## xerror是平均误差，xstd是交叉验证过程的标准差
+## 可以 看出，5次分裂在整个数据集上产生的误差最小，但使用交叉验证时，4次分裂产生的误差略微更 小。
+## 可以使用plotcp()函数查看统计图,使用误差条表示树的规模和相对误差之间的关系，误差条和树规模是对应的
+plotcp(tree.pros)
+
+## 树的xerror可以通过剪枝达到最 小化。
+## 剪枝的方法是先建立一个cp对象，将这个对象和表中第5行相关联，然后使用prune()函 数完成剩下的工作
+cp <- min(tree.pros$cptable[5, ])
+prune.tree.pros <- prune(tree.pros, cp = cp)
+
+## 可以用统计图比较完整树和剪枝树。
+## 由partykit包生成的树图明显优于party包生成的，在plot()函数中，可使用as.party()函数作为包装器函数, 它们显示了树的分裂、节点、每节点观测数，以及预测结果的箱线图
+plot(as.party(tree.pros))
+plot(as.party(prune.tree.pros))     ## 使用as.party()函数处理剪枝树
+                                    ## 除了最后一次分裂(完整树包含变量age)，两个树是完全一样的
+
+
+## Predict
+## 剪枝树在测试集上表现如何。在测试数据上使用predict()函数进行预测，并建立一个对象保存这些预测值。然后用预测值减去实际值，得到误差，最后算出误差平方的平均值
+party.pros.test <- predict(prune.tree.pros, 
+                           newdata = pros.test)
+rpart.resid <- party.pros.test - pros.test$lpsa    ## calculate residual
+mean(rpart.resid^2)
+```
+
+
+
+
+
+
+### Classification tree
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## CART breast cancer 乳腺癌数据
+## 删除患者ID，对特征进行重新命名，删除一些缺失值，然后建立训练数据集和测试数据集
+data(biopsy)
+biopsy <- biopsy[, -1]
+names(biopsy) <- c("thick", "u.size", "u.shape", "adhsn", "s.size", "nucl", "chrom", "n.nuc", "mit", "class")
+biopsy.v2 <- na.omit(biopsy)
+set.seed(123)                       # random number generator
+ind <- sample(2, nrow(biopsy.v2), replace = TRUE, prob = c(0.7, 0.3))
+biop.train <- biopsy.v2[ind == 1, ] # the training data set
+biop.test <- biopsy.v2[ind == 2, ]  # the test data set
+str(biop.test)                      # 建立分类树之前，要确保结果变量是一个因子
+
+
+## 生成树，然后检查输出中的表格，找到最优分裂次数
+set.seed(123)
+tree.biop <- rpart(class ~ ., data = biop.train)
+tree.biop$cptable
+
+## 交叉验证误差仅在两次分裂后就达到了最小值(第3行)。现在可以对树进行剪枝，再在图中绘制剪枝树
+cp <- min(tree.biop$cptable[3, ])
+prune.tree.biop = prune(tree.biop, cp <- cp)
+## plot(as.party(tree.biop))
+plot(as.party(prune.tree.biop))
+
+## 在测试集上的表现
+rparty.test <- predict(prune.tree.biop, newdata = biop.test,
+                       type = "class")
+table(rparty.test, biop.test$class)
+## 只有两个分支的基本树模型给出了差不多96%的正确率
+(136+64)/209
+```
+
+
+
+
+
+### Random forest for regression
+
+建立一个随机森林对象的通用语法是使用 randomForest()函数，指定模型公式和数据集这两个基本参数。回想一下每次树迭代默认的变 量抽样数，对于回归问题，是p/3;对于分类问题，是p的平方根，p为数据集中预测变量的个数。 对于大规模数据集，就p而言，你可以调整mtry参数，它可以确定每次迭代的变量抽样数值。如 果p小于10，可以省略上面的调整过程。想在多特征数据集中优化mtry参数时，可以使用caret包， 或使用randomForest包中的tuneRF()函数。
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+set.seed(123)
+rf.pros <- randomForest(lpsa ~ ., data = pros.train)
+rf.pros        ## 生成了500个不同的树(默认设置)，并且在每次树分裂时随机抽出两个变量。
+               ## 结果的MSE为0.68，差不多53%的方差得到了解释
+               ## 改善。过多的树会导致过拟合,“多大的数量是‘过多’”依赖于数据规模。
+               ## 第一是做出rf.pros的统计图，另一件是求出最小的MSE
+
+## 图表示MSE与模型中树的数量之间的关系。可以看出，树的数量增加时，一开始MSE会有显著改善，当森林中大约建立了100棵树之后，改善几乎停滞
+plot(rf.pros)
+which.min(rf.pros$mse)   ## 具体的最优树数量
+                         ## 指定ntree =
+set.seed(123)
+rf.pros.2 <- randomForest(lpsa ~ ., data = pros.train, ntree = which.min(rf.pros$mse))
+rf.pros.2
+
+## 对模型进行检验之前，先看看另一张统计图。如果使用自助抽样和两个随机预测变量建立了80棵不同的树，要想将树的结果组合起来，需 要一种方法确定哪些变量驱动着结果。
+## 做出变量重要性统计图及相应的列表。 Y轴是按重要性降序排列的变量列表，X轴是MSE改善百分比。
+## 在分类问题中，X轴应 该是基尼指数的改善
+varImpPlot(rf.pros.2, scale = TRUE,
+           main = "Variable Importance Plot - PSA Score")
+## 查看具体数据，可以 使用importance()函数
+importance(rf.pros.2)    
+
+
+## 看看模型在测试数据上的表现:
+rf.pros.test <- predict(rf.pros.2, newdata = pros.test)
+## plot(rf.pros.test, pros.test$lpsa)
+rf.resid <- rf.pros.test - pros.test$lpsa 
+## calculate residual
+mean(rf.resid^2)
+```
+
+
+
+
+### Random forest for classification
+ 
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 乳腺癌诊断数据
+set.seed(123)
+rf.biop <- randomForest(class ~ ., data = biop.train)
+rf.biop         ## OOB(袋外数据)误差率
+
+plot(rf.biop)
+## 找出具体值。和前面不同的一点是，需要指定第一列来得到误差率，这是整体误差率
+which.min(rf.biop$err.rate[, 1])
+
+## 使模型正确率达到最优
+set.seed(123)
+rf.biop.2 <- randomForest(class ~ ., data = biop.train, ntree = 125)
+rf.biop.2
+
+## predict
+rf.biop.test <- predict(rf.biop.2, 
+                        newdata = biop.test, 
+                        type = "response")
+table(rf.biop.test, biop.test$class)
+## 训练集上的误差率还不到3%
+(138 + 67) / 209
+
+## 变量重要性统计图
+varImpPlot(rf.biop.2)
+## 变量重要性是指每个变量对基尼指数平均减少量的贡献，此处的变量重要性与单个树分裂时有很大区别。回忆一下，单个树是在细胞大小均匀度开始分裂的(与随机森林一致)，然后是nuclei，接着是细胞密度。这揭示了随机森林技术具有非常大的潜力，不但可以提高模 型预测能力，还可以改善特征选择的结果
+```
+
+
+### 皮玛印第安人糖尿病数据集
+
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 皮玛印第安人糖尿病模型:数据准备
+data(Pima.tr)
+data(Pima.te)
+pima <- rbind(Pima.tr, Pima.te)
+set.seed(502)
+ind <- sample(2, nrow(pima), replace = TRUE, prob = c(0.7, 0.3))
+pima.train <- pima[ind == 1, ]
+pima.test <- pima[ind == 2, ]
+
+## 建立模型
+set.seed(321)
+rf.pima <- randomForest(type ~ ., data = pima.train)
+rf.pima
+# plot(rf.pima)
+
+## 对树的数目 进行优化
+which.min(rf.pima$err.rate[,1])
+set.seed(321)
+rf.pima.2 <- randomForest(type ~ ., data = pima.train, ntree = which.min(rf.pima$err.rate[,1]))
+rf.pima.2         ## OOB误差有些许改善
+
+
+
+rf.pima.test <- predict(rf.pima.2, 
+                        newdata = pima.test, 
+                        type = "response")
+table(rf.pima.test, pima.test$type)
+(75+33)/147
+#varImpPlot(rf.pima.2)
+
+```
+
+
+ 
+
+
+
+### 使用随机森林进行特征选择
+
+Boruta包:[Kursa M., Rudnicki W. (2010), Feature Selection with the Boruta Package, Journal of Statistical Software, 36(11), 1 - 13]
+
+    1. 算法会复制所有输入特征，并对特征中的观测顺序进行重新组合，以去除 相关性，从而创建影子特征.
+    2. 然后使用所有输入特征建立一个随机森林模型，并计算每个特征(包 括影子特征)的正确率损失均值的Z分数
+    3. 如果某个特征的Z分数显著高于影子特征的Z分数，那么这个特征就被认为是重要的;反之，这个特征就被认为是不重要的
+    4. 然后，去除掉影子特征和那些已经确认了重要性的特征，重复上面的过程，直到所有特征都被赋予一个表示重要性的值
+    5. 算法结束之后，每个初始特征都会被标记为确认、待定或 拒绝
+    6. 对于待定的特征，必须自己确定是否要包括在下一次建模中。根据具体情况，可以有以下几种选择:
+        * 改变随机数种子，重复运行算法多次(k次)，然后只选择那些在k次运行中都标记为“确认”的属性
+        * 将你的训练数据分为k折，在每折数据上分别进行算法迭代，然后选择那些在所有k折数据上都标记为“确认”的属性
+        
+        
+        
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## prepare datasets
+## 数据集中有208个观测，60个输入特征，以及1个用于分类的标号向量。标号是个因子，如果sonar对象是岩石，标号就是R;如果sonar对象是矿藏，标号则是M
+data(Sonar, package="mlbench")
+dim(Sonar)
+table(Sonar$Class)
+
+## 在boruta()函数中创建一条模型公式。标号必须是因子类型，否则算法不会正常执行。如果想跟踪算法的进程，可以设定doTrace = 1。不要忘了设定随机数种子
+class(Sonar$Class)
+library(Boruta)
+set.seed(1)
+feature.selection <- Boruta(Class ~ ., data = Sonar, doTrace = 1)
+## 需要大量的计算能力
+feature.selection$timeTaken
+## 得出最终重要决策的计数
+table(feature.selection$finalDecision)
+
+## 以找出特征名称: 以找出特征名称
+fNames <- getSelectedAttributes(feature.selection) 
+## 包括“确认”和“待定”的特征
+fNames <- getSelectedAttributes(feature.selection, withTentative = TRUE)
+fNames
+## 使用这些特征名称，可以创建一个Sonar数据集的子集
+Sonar.features <- Sonar[, fNames]
+dim(Sonar.features)
+```
+
+
+
+
+
+
+
+
+## Gradient Boosting
+
+## Gradient Descent
+
+
+在求解机器学习算法的模型参数，即无约束优化问题时，梯度下降（Gradient Descent）是最常采用的方法之一，另一种常用的方法是最小二乘法。
+
+### Gradient
+
+在微积分里面，对多元函数的参数求∂偏导数，把求得的各个参数的偏导数以向量的形式写出来，就是梯度。比如函数f(x,y), 分别对x,y求偏导数，求得的梯度向量就是(∂f/∂x, ∂f/∂y)T,简称grad f(x,y)或者▽f(x,y)。对于在点(x0,y0)的具体梯度向量就是(∂f/∂x0, ∂f/∂y0)T.或者▽f(x0,y0)，如果是3个参数的向量梯度，就是(∂f/∂x, ∂f/∂y，∂f/∂z)T,以此类推
+
+梯度向量的几何意义，就是函数变化增加最快的地方。具体来说，对于函数 $f(x ， y)$ ，在点 $\left(x_{0} ， y_{0}\right)$ ，沿着梯度 向量的方向就是 $\left(\partial f / \partial x_{0} ， \partial f / \partial y_{0}\right)^{\top}$ 的方向是 $f(x, y)$ 增加最快的地方。或者说，沿着梯度向量的方向，更加容易找到函数的最大值。反过来说，沿着梯度向量相反 的方向，也就是 $-\left(\partial f / \partial x_{0} ， \partial f / \partial y_{0}\right)^{\top}$ 的方向，梯度减少最快，也就是更加容易找到函数的最小值。
+
+在机器学习算法中，在最小化损失函数时，可以通过梯度下降法来一步步的迭代求解，得到最小化的损失函数，和模型参数值。反过来，如果我们需要求解损失函数的最大值，这时就需要用梯度上升法来迭代. 梯度下降法和梯度上升法是可以互相转化的。比如我们需要求解损失函数f(θ)的最小值，这时我们需要用梯度下降法来迭代求解。但是实际上，我们可以反过来求解损失函数 -f(θ)的最大值，这时梯度上升法就派上用场了
+
+### Gradient Descent
+
+梯度下降的一个直观的解释。比如我们在一座大山上的某处位置，由于我们不知道怎么下山，于是决定走一步算一步，也就是在每走到一个位置的时候，求解当前位置的梯度，沿着梯度的负方向，也就是当前最陡峭的位置向下走一步，然后继续求解当前位置梯度，向这一步所在位置沿着最陡峭最易下山的位置走一步。这样一步步的走下去，一直走到觉得我们已经到了山脚。当然这样走下去，有可能我们不能走到山脚，而是到了某一个局部的山峰低处。
+
+从上面的解释可以看出，梯度下降不一定能够找到全局的最优解，有可能是一个局部最优解。当然，如果损失函数是凸函数，梯度下降法得到的解就一定是全局最优解。
+
+**相关概念**
+
+* **步长（Learning rate）**：步长决定了在梯度下降迭代的过程中，每一步沿梯度负方向前进的长度。用上面下山的例子，步长就是在当前这一步所在位置沿着最陡峭最易下山的位置走的那一步的长度。
+* **特征 (feature)** ：指的是样本中输入部分，比如2个单特征的样本 $\left(x^{(0)}, y^{(0)}\right),\left(x^{(1)}, y^{(1)}\right)$,则第一个样本特征为 $x^{(0)}$ ，第一个样本输出为 $y^{(0)}$ 
+* **假设函数 (hypothesis function)** : 在监督学习中，为了拟合输入样本，而使用的假设函数，记为 $h_{\theta}(x)$ 。比如对于单个特征的 $\mathrm{m}$ 个样本 $\left(x^{(i)}, y^{(i)}\right)(i=1,2, \ldots m)$ ，可以采用拟合函数如下: $h_{\theta}(x)=\theta_{0}+\theta_{1} x$
+* **损失函数 (loss function) **: 为了评估模型拟合的好坏，通常用损失函数来度量拟合的程度。损失函数极小化，意味着拟合程度最好，对应的模型参 数即为最优参数。在线性回归中，损失函数通常为样本输出和假设函数的差取平方。比如对于 $\mathrm{m}$ 个样本 $\left(x_{i}, y_{i}\right)(i=1,2, \ldots m)$, 采用线性回归，损失函数 为:
+$$
+J\left(\theta_{0}, \theta_{1}\right)=\sum_{i=1}^{m}\left(h_{\theta}\left(x_{i}\right)-y_{i}\right)^{2}
+$$
+其中 $x_{i}$ 表示第 $\mathrm{i}$ 个样本特征, $y_{i}$ 表示第 $\mathrm{i}$ 个样本对应的输出， $h_{\theta}\left(x_{i}\right)$ 为假设函数
+
+### Gradient Descent Algorithm
+
+1. 确认优化模型的假设函数 (hypothesis function)和损失函数(loss function)。比如对于线性回归，假设函数表示为 $h_{\theta}\left(x_{1}, x_{2}, \ldots x_{n}\right)=\theta_{0}+\theta_{1} x_{1}+\ldots+\theta_{n} x_{n}$ 同样是线性回归，对应于上面的假设函数，损失函数为:
+$$
+J\left(\theta_{0}, \theta_{1} \ldots, \theta_{n}\right)=\frac{1}{2 m} \sum_{j=1}^{m}\left(h_{\theta}\left(x_{0}^{(j)}, x_{1}^{(j)}, \ldots x_{n}^{(j)}\right)-y_{j}\right)^{2}
+$$
+2. 算法相关参数初始化: 主要是初始化 $\theta_{0}, \theta_{1} \ldots, \theta_{n}$ ，算法终止距离 $\varepsilon$ 以及步长 $\alpha$ 。在没有任何先验知识的时候，一般将所有的 $\theta$ 初始化为 0 ， 将步长初始化为 1 。在调优的时候再优化
+3. 确定当前位置的损失函数的梯度，对于 $\theta_{i}$, 其梯度表达式如下:
+$$
+\frac{\partial}{\partial \theta_{i}} J\left(\theta_{0}, \theta_{1} \ldots, \theta_{n}\right)
+$$
+4. 用步长乘以损失函数的梯度，得到当前位置下降的距离，即 $\alpha \frac{\partial}{\partial \theta_{i}} J\left(\theta_{0}, \theta_{1} \ldots, \theta_{n}\right)$ 对应于前面登山例子中的某一步
+5. 确定是否所有的 $\theta_{i}$,梯度下降的距离都小于 $\varepsilon$ ，如果小于 $\varepsilon$ 则算法终止，当前所有的 $\theta_{i}(i=0,1, \ldots n)$ 即为最终结果。否则进入下一步
+6. 更新所有的 $\theta$ ，对于 $\theta_{i}$ ，其更新表达式如下。更新完毕后继续转入步骤3.
+$$
+\theta_{i}=\theta_{i}-\alpha \frac{\partial}{\partial \theta_{i}} J\left(\theta_{0}, \theta_{1} \ldots, \theta_{n}\right)
+$$
+
+
+
+**Algorithm Optimization**
+
+1. 算法的步长选择。在前面的算法描述中步长为 1 ，但是实际上取值取决于数据样本，可以多取一些值，从大到小，分别运行算法，看看迭代效果，如果损失函数在变小，说明取值有效，否则要增大步长。前面说了。步长太大，会导致迭代过快，甚至有可能错过最优解。步长太小，迭代速度太慢，很长时间算法都不能结束。所以算法的步长需要多次运行后才能得到一个较为优的值。
+2. 算法参数的初始值选择。初始值不同，获得的最小值也有可能不同，因此梯度下降求得的只是局部最小值；当然如果损失函数是凸函数则一定是最优 解。由于有局部最优解的风险，需要多次用不同初始值运行算法，关键损失函数的最小值，选择损失函数最小化的初值。
+3.归一化。由于样本不同特征的取值范围不一样，可能导致迭代很慢，为了减少特征取值的影响，可以对特征数据归一化，也就是对于每个特征x，求出 它的期望 $\bar{x}$ 和标准差std $(\mathrm{x})$ ，然后转化为:
+$$
+\frac{x-\bar{x}}{\operatorname{std}(x)}
+$$
+这样特征的新期望为 0 ，新方差为 1 ，迭代速度可以大大加快。
+
+
+### Gradient Descent Familiy
+
+#### 批量梯度下降法（BGD, Batch Gradient Descent)
+
+批量梯度下降法，是梯度下降法最常用的形式，具体做法也就是在更新参数时使用所有的样本来进行更新，如前所示,由于有m个样本，这里求梯度的时候就用了所有m个样本的梯度数据。
+$$
+\theta_i = \theta_i - \alpha\sum\limits_{j=1}^{m}(h_\theta(x_0^{(j)}, x_1^{(j)}, ...x_n^{(j)}) - y_j)x_i^{(j)}
+$$
+
+#### 随机梯度下降法（SGD, Stochastic Gradient Descent）
+
+随机梯度下降法，其实和批量梯度下降法原理类似，区别在与求梯度时没有用所有的m个样本的数据，而是仅仅选取一个样本j来求梯度。对应的更新公式是：
+$$
+\theta_i = \theta_i - \alpha (h_\theta(x_0^{(j)}, x_1^{(j)}, ...x_n^{(j)}) - y_j)x_i^{(j)}
+$$
+对于训练速度来说，随机梯度下降法由于每次仅仅采用一个样本来迭代，训练速度很快，而批量梯度下降法在样本量很大的时候，训练速度不能让人满意。对于准确度来说，随机梯度下降法用于仅仅用一个样本决定梯度方向，导致解很有可能不是最优。对于收敛速度来说，由于随机梯度下降法一次迭代一个样本，导致迭代方向变化很大，不能很快的收敛到局部最优解。小批量梯度下降法是中庸的办法
+
+
+#### 小批量梯度下降法（MBGD, Mini-batch Gradient Descent）
+
+小批量梯度下降法是批量梯度下降法和随机梯度下降法的折衰，也就是对于 $\mathrm{m}$ 个样本，我们采用 $x$ 个样子来迭代，1<x<m。般可以取 $x=10$ ，当然根据样 本的数据，可以调整这个x的值。对应的更新公式是:
+$$
+\theta_{i}=\theta_{i}-\alpha \sum_{j=t}^{t+x-1}\left(h_{\theta}\left(x_{0}^{(j)}, x_{1}^{(j)}, \ldots x_{n}^{(j)}\right)-y_{j}\right) x_{i}^{(j)}
+$$
+
+
+
+
+ 
+
+### GBDT分类算法
+
+### Package ‘gbm’
+
+对Freund和Schapire的AdaBoost算法以及Friedman的梯度增强机的扩展的实现。 包括最小二乘，绝对损失，t分布损失，分位数回归，逻辑，多项式逻辑，泊松，Cox比例风险部分可能性，AdaBoost指数损失，Huberized铰链损失和学习排名度量（LambdaMart）的回归方法。
+
+Source: [https://cran.r-project.org/web/packages/gbm/gbm.pdf](https://cran.r-project.org/web/packages/gbm/gbm.pdf)
+
+
+
+
+
+
+### 极限梯度提升——分类
+
+xgboost package
+
+     nrounds:最大迭代次数(最终模型中树的数量)。
+     colsample_bytree:建立树时随机抽取的特征数量，用一个比率表示，默认值为1(使用100%的特征)。 
+     min_child_weight:对树进行提升时使用的最小权重，默认为1。
+     eta:学习率，每棵树在最终解中的贡献，默认为0.3。
+     gamma:在树中新增一个叶子分区时所需的最小减损。
+     subsample:子样本数据占整个观测的比例，默认值为1(100%)。  max_depth:单个树的最大深度。
+
+使用expand.grid()函数可以建立实验网格，以运行caret包的训练过程。 对于前面列出的参数，如果没有设定具体值，那么即使有默认值，运行函数时也 会收到出错信息。下面的参数取值是基于以前的一些训练迭代而设定的。可以根据实验参数调整过程。
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## 建立一个具有24个模型的网格，caret包会运行这些模型，以确定最好的调优参数。
+grid = expand.grid(
+  nrounds = c(75, 100),
+  colsample_bytree = 1,
+  min_child_weight = 1,
+  eta = c(0.01, 0.1, 0.3), #0.3 is default,
+  gamma = c(0.5, 0.25),
+  subsample = 0.5,
+  max_depth = c(2, 3)
+)
+head(grid)
+
+## 使用car包的train()函数之前，创建一个名为cntrl的对象，来设定trainControl的参数。这个对象会保存要使用的方法，以训练调优参数。我们使用5折交叉验证
+## 在trControl中设定了verboseIter为TURE，所以可以看到每折交叉验证中的每次训练迭代。
+cntrl = trainControl(
+  method = "cv",
+  number = 5,
+  verboseIter = TRUE,
+  returnData = FALSE,
+  returnResamp = "final"                                                        
+)
+
+## 设定好所需参数即可:训练数据集、 标号、训练控制对象和实验网格。设定随机数种子
+set.seed(1)
+train.xgb = train(
+  x = pima.train[, 1:7],
+  y = ,pima.train[, 8],
+  trControl = cntrl,
+  tuneGrid = grid,
+  method = "xgbTree"
+)
+
+## 得到最优的参数，以及每种参数设置的结果
+train.xgb
+```
+
+
+
+
+接下来创建一个参数列表，供Xgboost包的训练函数xgb.train()使用。然后将数据框转换为一个输入特征矩阵，以及一个带标号的 数值型结果列表(其中的值是0和1)。接着，将特征矩阵和标号列表组合成符合要求的输入，即一个xgb.Dmatrix对象
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+param <- list(  objective           = "binary:logistic", 
+                booster             = "gbtree",
+                eval_metric         = "error",
+                eta                 = 0.1, 
+                max_depth           = 2, 
+                subsample           = 0.5,
+                colsample_bytree    = 1,
+                gamma               = 0.5
+)
+
+x <- as.matrix(pima.train[, 1:7])
+y <- ifelse(pima.train$type == "Yes", 1, 0)
+train.mat <- xgb.DMatrix(data = x, 
+                         label = y)
+
+## 创建模型
+set.seed(1)
+xgb.fit <- xgb.train(params = param, data = train.mat, nrounds = 75)
+xgb.fit
+
+## 查看模型效果之前，先检查变量重要性，并绘制统计图。你可以检查3个项目:gain、cover和frequecy。gain是这个特征对其所在分支的正确率做出的改善，cover是与这个特征相关的全体观测的相对数量，frequency是这个特征在所有树中出现的次数百分比
+impMatrix <- xgb.importance(feature_names = dimnames(x)[[2]], model = xgb.fit)
+impMatrix 
+xgb.plot.importance(impMatrix, main = "Gain by Feature")
+
+
+
+## 与训练集一样，测试集数据也要转换为矩阵
+library(InformationValue)
+pred <- predict(xgb.fit, x)
+optimalCutoff(y, pred)      ## 找出使误差最小化的最优概率阈
+pima.testMat <- as.matrix(pima.test[, 1:7])
+xgb.pima.test <- predict(xgb.fit, pima.testMat)
+y.test <- ifelse(pima.test$type == "Yes", 1, 0)
+optimalCutoff(y.test, xgb.pima.test)
+confusionMatrix(y.test, xgb.pima.test, threshold = 0.39)
+1 - misClassError(y.test, xgb.pima.test, threshold = 0.39)    ## 模型误差大概是25%
+
+## ROC曲线
+plotROC(y.test, xgb.pima.test)
+```
+
+
+
+
+
+
+
+
+
+## Cubist Model
+
+### Introduction
+
+Cubist is a rule–based model that is an extension of Quinlan’s M5 model tree. A tree is grown where the terminal leaves contain linear regression models. These models are based on the predictors used in previous splits. Also, there are intermediate linear models at each step of the tree. A prediction is made using the linear regression model at the terminal node of the tree, but is “smoothed” by taking into account the prediction from the linear model in the previous node of the tree (which also occurs recursively up the tree). The tree is reduced to a set of rules, which initially are paths from the top of the tree to the bottom. Rules are eliminated via pruning and/or combined for simplification.
+
+> Cubist是基于规则的模型，是Quinlan M5模型树的扩展。在末端叶子包含线性回归模型的地方生长一棵树。这些模型基于先前拆分中使用的预测变量。而且，在树的每个步骤中都有中间线性模型。使用树的末端节点处的线性回归模型进行预测，但通过考虑树的前一节点中的线性模型进行的预测（也可以在树上递归地进行）来“平滑”预测。将树简化为一组规则，这些规则最初是从树的顶部到底部的路径。通过修剪消除规则和/或将其组合以简化。
+
+**Cubist package**
+
+| [cubist](https://rdrr.io/rforge/Cubist/man/cubist.html)                       | Fit a Cubist model                                         |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [cubistControl](https://rdrr.io/rforge/Cubist/man/cubistControl.html)         | Various parameters that control aspects of the Cubist fit. |
+| [dotplot.cubist](https://rdrr.io/rforge/Cubist/man/dotplot.cubist.html)       | Visualization of Cubist Rules and Equations                |
+| [exportCubistFiles](https://rdrr.io/rforge/Cubist/man/exportCubistFiles.html) | Export Cubist Information To the File System               |
+| [predict.cubist](https://rdrr.io/rforge/Cubist/man/predict.cubist.html)       | Predict method for cubist fits                             |
+| [summary.cubist](https://rdrr.io/rforge/Cubist/man/summary.cubist.html)       | Summarizing Cubist Fits                                    |
+
+
+
+### Application Data Preparation
+
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("Cubist")
+library("mlbench")
+
+## Data Preparation
+
+data(BostonHousing)
+BostonHousing$chas <- as.numeric(BostonHousing$chas) - 1
+
+set.seed(1)
+inTrain <- sample(1:nrow(BostonHousing), floor(.8*nrow(BostonHousing)))
+
+## Predictors
+train_pred <- BostonHousing[ inTrain, -14]
+test_pred  <- BostonHousing[-inTrain, -14]
+
+## Responder variable
+train_resp <- BostonHousing$medv[ inTrain]
+test_resp  <- BostonHousing$medv[-inTrain]
+```
+
+
+
+### Fit Continious Outcome
+
+The modelTree method for Cubist shows the usage of each variable in either the rule conditions or the (terminal) linear model. In actuality, many more linear models are used in prediction that are shown in the output. Because of this, the variable usage statistics shown at the end of the output of the summary function will probably be inconsistent with the rules also shown in the output. At each split of the tree, Cubist saves a linear model (after feature selection) that is allowed to have terms for each variable used in the current split or any split above it. Quinlan (1992) discusses a smoothing algorithm where each model prediction is a linear combination of the parent and child model along the tree. As such, the final prediction is a function of all the linear models from the initial node to the terminal node. The percentages shown in the Cubist output reflects all the models involved in prediction (as opposed to the terminal models shown in the output).
+
+> Cubist的modelTree方法显示了规则条件或（最终）线性模型中每个变量的用法。实际上，在预测中使用了更多的线性模型，这些模型显示在输出中。因此，摘要功能输出末尾显示的变量使用情况统计信息可能与输出中也显示的规则不一致。在树的每个分割处，Cubist都会保存一个线性模型（在特征选择之后），该线性模型允许对当前分割处或其上方任何分割处使用的每个变量都具有术语。 Quinlan（1992）讨论了一种平滑算法，其中每个模型预测都是沿着树的父模型和子模型的线性组合。这样，最终预测是从初始节点到终端节点的所有线性模型的函​​数。立体派输出中显示的百分比反映了预测中涉及的所有模型（与输出中显示的终端模型相对）。
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Continious Outcome
+## Building mOdel
+model_tree <- cubist(x = train_pred, y = train_resp)
+summary(model_tree)
+
+
+## Make the prediction on the test datasets
+Cubist.probs <- predict(model_tree, test_pred)
+
+## Test set RMSE
+sqrt(mean((Cubist.probs - test_resp)^2))
+
+## Test set R^2
+cor(Cubist.probs, test_resp)^2
+```
+
+### Variable Importance
+ 
+the variable importance is a linear combination of the usage in the rule conditions and the model.
+
+
+
+### Summary display
+
+The tidyRules function in the tidyrules package returns rules in a tibble (an extension of dataframe) with one row per rule. The tibble provides these information about the rule: support, mean, min, max, error, LHS, RHS and committee. 
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("tidyrules")
+tr <- tidyRules(model_tree)
+tr
+
+tr[, c("LHS", "RHS")]
+```
+
+### specific parts 
+
+These results can be used to look at specific parts of the data. For example, the 4th rule predictions are:
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+library("rlang")
+library("dplyr")
+char_to_expr <- function(x, index = 1, model = TRUE) {
+  x <- x %>% dplyr::slice(index) 
+  if (model) {
+    x <- x %>% dplyr::pull(RHS) %>% rlang::parse_expr()
+  } else {
+    x <- x %>% dplyr::pull(LHS) %>% rlang::parse_expr()
+  }
+  x
+}
+
+rule_expr  <- char_to_expr(tr, 4, model = FALSE)
+model_expr <- char_to_expr(tr, 4, model = TRUE)
+```
+  
+  
+### Ensembles By Committees 
+
+The Cubist model can also use a boosting–like scheme called committees where iterative model trees are created in sequence. The first tree follows the procedure described in the last section. Subsequent trees are created using adjusted versions to the training set outcome: if the model over–predicted a value, the response is adjusted downward for the next model (and so on). Unlike traditional boosting, stage weights for each committee are not used to average the predictions from each model tree; the final prediction is a simple average of the predictions from each model tree.
+
+> 其中按顺序创建迭代模型树。 第一棵树遵循最后一部分中描述的过程。 使用对训练集结果的调整后的版本来创建后续树：如果模型预测值过高，则针对下一个模型向下调整响应（依此类推）。 与传统的提升不同，每个委员会的阶段权重不会用于平均每个模型树的预测； 最终预测是来自每个模型树的预测的简单平均值。
+
+### Nearest–neighbors Adjustmemt
+
+Another innovation in Cubist using nearest–neighbors to adjust the predictions from the rule–based model. First, a model tree (with or without committees) is created. Once a sample is predicted by this model, Cubist can find it’s nearest neighbors and determine the average of these training set points.
+
+> 使用最近邻来调整基于规则的模型中的预测。 首先，创建一个模型树（有或没有委员会）。 通过该模型预测样本后，Cubist可以找到其最近的邻居，并确定这些训练设定点的平均值。
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Ensembles By Committees 
+set.seed(1)
+com_model <- cubist(x = train_pred, y = train_resp, committees = 5)
+summary(com_model)
+
+
+## Nearest–neighbors Adjustmemt
+inst_pred <- predict(com_model, test_pred, neighbors = 5)
+## RMSE
+sqrt(mean((inst_pred - test_resp)^2))
+## R^2
+cor(inst_pred, test_resp)^2
+```
+
+
+
+### Optimize parameters
+
+To tune the model over different values of neighbors and committees, the train function in the `caret package can be used to optimize these parameters. 
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+## Optimize parameters
+library("caret")
+grid <- expand.grid(committees = c(1, 10, 50, 100),
+                    neighbors = c(0, 1, 5, 9))
+set.seed(1)
+boston_tuned <- train(
+  x = train_pred,
+  y = train_resp,
+  method = "cubist",
+  tuneGrid = grid,
+  trControl = trainControl(method = "cv")
+)
+boston_tuned
+
+## The profiles of the tuning parameters 
+ggplot(boston_tuned)
+```
+
+
+### Logistic CV
+
+
+```{r,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+
+library("MASS")
+data(biopsy)
+biopsy$ID = NULL
+names(biopsy) = c("thick", "u.size", "u.shape", "adhsn", 
+                  "s.size", "nucl", "chrom", "n.nuc", "mit", "class")
+biopsy.v2 <- na.omit(biopsy)
+
+## 用0表示良性，用1表示恶性
+y <- ifelse(biopsy.v2$class == "malignant", 1, 0)
+
+set.seed(123) #random number generator
+ind <- sample(2, nrow(biopsy.v2), replace = TRUE, prob = c(0.7, 0.3))
+train <- biopsy.v2[ind==1, ] #the training data set
+test <- biopsy.v2[ind==2, ] #the test data set
+
+trainY <- y[ind==1]
+testY <- y[ind==2]
+
+
+
+set.seed(123)
+ctrl=(trainControl(method="repeatedcv", repeats=5))
+c<-c(100)
+n<-c(3,4)
+
+cubit.fit<-train(as.matrix(train[-10]),
+                 trainY, 
+                 method="cubist",
+                 preProcess = c("center", "scale"),
+                 tuneGrid = expand.grid(committees=c,neighbors=n),
+                 trControl = ctrl)
+                
+summary(cubit.fit)
+dotPlot(varImp(cubit.fit), main="Cubist Predictor importance")
+```

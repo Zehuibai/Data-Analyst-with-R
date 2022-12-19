@@ -1,0 +1,629 @@
+---
+title: 'As-a-Statistician-Parametric Test'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+packages<-c("tidyverse", "knitr", "papeR")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+
+Under the null hypothesis of no difference, the differences should be rather small. Of course, the size of the difference would depend on such factors as the sample sizes involved, the precision of our light meter, and the memories of our patients. 
+
+Even after taking all of these factors into account, there will still be observed differences, and we will need to quantify the magnitude of these. **The magnitude of the difference is expressed as the probability that such a difference could have occurred by chance alone under the null hypothesis. This probability is called the p-value**. 
+
+The p-value is a measure of **how unusual the observed outcome would be if all the conditions of the null hypothesis were valid**. The p-value is also known as the significance level, or statistical significance.
+
+> 没有差异的零假设下，差异应该很小。当然，差异的大小取决于所涉及的样本大小，光度计的精度以及患者的记忆等因素。
+即使将所有这些因素都考虑在内，仍然会观察到差异，我们将需要量化这些差异的大小。差异的大小表示为在原假设下仅偶然
+发生这种差异的可能性。该概率称为p值。p值是在无效假设的所有条件均有效的情况下观察到的结果有多不寻常的度量。
+p值也称为显着性水平或统计显着性。
+
+**Statistical significance** is the probability that such an outcome could have occurred by chance alone, under the null hypothesis.
+
+In this case, a small p-value suggests that perhaps the null hypothesis is not the correct explanation for the observed data. Notice that the p-value is not the probability that the null hypothesis is true. This is a common misconception. The p-value is a measure of how tolerant we may be of unusual outcomes. This tolerance will vary depending on the circumstances.
+
+> 如果观察到非常小的p值，则意味着在原假设下发生的某事发生的可能性很小。在这一点上，我们通常会得出结论：原假设是无效的，
+并使用p值作为替代的证据。更正式地说，我们拒绝了原假设，而选择了替代方案。较小的p值表明，原假设可能不是所观察数据的正确
+解释。请注意，p值不是零假设为真的概率。这是一个普遍的误解。 p值是衡量我们对异常结果的宽容程度的度量。该容差将根据情况
+而变化。
+
+Power is the probability of correctly rejecting the null hypothesis when the alternative is true.
+
+> 另一个普遍的误解是，观察到的p小于.05的次数是我们唯一拒绝无效假设的时间。尽管.05当然是一个受欢迎的值，但是观察到只有
+20次出现1次的结果并不一定会使我们拒绝接受严格审查的假设。
+问题: 即在我们本应假设的情况下未能拒绝原假设。我们需要能够在实际存在差异时检测出差异。就像通过p值（不正确地拒绝原假设）
+的不确定性一样，功效是当备选方案为true时正确地拒绝原假设的可能性。功率是更难测量的量，因为它取决于所考虑的特定替代假设。
+直观上，如果零假设和替代假设在某种意义上“相距甚远”，则需要较少的信息来说明差异。
+
+
+
+
+
+
+
+
+
+
+
+
+## Binomial test
+
+### Mathematical Formula
+
+The Hzpothesis is 
+$${\displaystyle H_{0}:\pi =\pi _{0}}$$
+
+* For Large samples we have $${\displaystyle Z={\frac {k-n\pi }{\sqrt {n\pi (1-\pi )}}}}$$
+* The continuity correction is an adjustment that is made when a discrete distribution is approximated by a continuous distribution: $${\displaystyle Z={\frac {k-n\pi \pm {\frac {1}{2}}}{\sqrt {n\pi (1-\pi )}}}}$$
+
+
+
+### R implementation
+
+Package [binom](https://cran.r-project.org/web/packages/binom/binom.pdf) can provide different binomial CI and Test such as
+
+* exact - Pearson-Klopper method. See also binom.test.
+* asymptotic - the text-book definition for confidence limits on a single proportion using the Central Limit Theorem.
+* wilson - Wilson method.
+* prop.test - equivalent to prop.test(x = x, n = n, conf.level = conf.level)$conf.int.
+* bayes - see binom.bayes.
+* logit - see binom.logit.
+* cloglog - see binom.cloglog.
+* probit - see binom.probit.
+* profile - see binom.profile.
+
+|  Function           |  Description                                                                  |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| binom.bayes         | Binomial confidence intervals using Bayesian inference |
+|                     |二项式分布概率上使用beta优先级，从beta的后验确定两侧置信区间。  二项式实验中使用先于p分布（成功概率）的共轭beta，从β后验构造一个置信区间。根据贝叶斯定理，给定数据x的p的后验分布为：p \| x〜Beta（x + prior.shape1，n-x +prior.shape2)默认的priority是Jeffrey′sprior，它是Beta（0.5，0.5）分布 。 因此，后验均值为（x +0.5）/（n + 1）。 |
+| binom.logit         | Binomial confidence intervals using the logit parameterization                      |
+| binom.probit        | Binomial confidence intervals using the probit parameterization                     |
+| binom.cloglog       | 在观察到的比例上（cloglog）参数化来构造置信区间   The complementary-log-log link function says that $$\eta(x) = \log(-\log(1-\pi_x))=\mathbf{x}\beta$$|
+| binom.lrt           | Binomial confidence intervals using the lrt likelihood -- likelihood ratio test (LRT) 置信区间基于对MLE附近的二项式偏差进行分析。                                         |
+| binom.profile       | Binomial confidence intervals using the profile likelihood  当使用标准方法难以获得准确的间隔估计值时，例如，当对数似然函数的形状高度非正态或有大量麻烦参数时，通常使用轮廓似然.当似然函数具有多个参数时，只关注其中一部分参数，而将其他参数视为常数，此时似然函数就被称为profile likelihood。                            |
+| binom.sim           | Simulates confidence intervals for binomial data                              |
+| binom.confint       | Binomial confidence intervals                                                 |
+| binom.coverage      | Probability coverage for binomial confidence intervals                        |
+| binom.plot          | Coverage plots for binomial confidence intervals                              |
+| binom.length        | Expected length for binomial confidence intervals                             |
+| binom.power         | Power curves for binomial parameterizations                                   |
+| cloglog.sample.size | Power and sample size for a binomial proportion using the cloglog parameterization  |
+| cloglog.sample.size | Power and sample size for a binomial proportion using the cloglog parameterization  |
+
+
+
+```
+library(binom)
+binom.test(3,4,0.99,alternative = "less")
+library(pwr)
+pwr.p.test(ES.h(3/4,0.99),n = 42,alternative = "less")
+```
+
+### SAS Implementation
+
+
+See more ["ODS Table Names"](https://documentation.sas.com/doc/en/statcdc/14.2/statug/statug_freq_details116.htm)
+
+| ODS Table Name    | Description                            | Statement | Option           |
+|-------------------|----------------------------------------|-----------|------------------|
+| BinomialCLs       | Binomial confidence limits             | TABLES    | BINOMIAL(CL=)    |
+| BinomialEquivTest | Binomial equivalence test              | TABLES    | BINOMIAL(EQUIV)  |
+| BinomialNoninf    | Binomial noninferiority test           | TABLES    | BINOMIAL(NONINF) |
+| BinomialTest      | Binomial proportion test               | TABLES    | BINOMIAL         |
+| CMH               | Cochran-Mantel-Haenszel test           | TABLES    | CMH              |
+| ChiSq             | Chi-square tests                       | TABLES    | CHISQ            |
+| EqualKappaTests   | Tests for equal kappas                 | TABLES    | AGREE            |
+| EqualOddsRatios   | Tests for equal odds ratios            | EXACT     | EQOR             |
+| GammaTest         | Gamma test                             | TEST      | GAMMA            |
+| LRChiSq           | Likelihood ratio chi-square exact test | EXACT     | LRCHI            |
+| MHChiSq           | Mantel-Haenszel chi-square exact test  | EXACT     | MHCHI            |
+| OneWayChiSq       | One-way chi-square test                | TABLES    | CHISQ            |
+| PearsonCorr       | Pearson correlation                    | TEST      | PCORR            |
+
+## Fisher's Exact Test
+
+Fisher's exact test is particularly appropriate when dealing with small samples. Comparing to the contingency chi-square test, Fisher's exact test is to exaclty calculate the p-value rather than being based on an asymptotic approximation.
+
+### Introduction
+
+**Hypotheses**
+
+The hypotheses of the Fisher’s exact test are the same than for the Chi-square test, that is:
+
+* $H_0$: the variables are independent, there is no relationship between the two categorical variables. Knowing the value of one variable does not help to predict the value of the other variable
+* $H_1$: the variables are dependent, there is a relationship between the two categorical variables. Knowing the value of one variable helps to predict the value of the other variable
+ 
+ 
+
+|                |       |       |                    |
+|----------------|-------|-------|--------------------|
+| Studying       | a     | b     | a + b              |
+| Non-studying   | c     | d     | c + d              |
+| Column Total   | a + c | b + d | a + b + c + d (=n) |
+
+$${\displaystyle p={\frac {\displaystyle {{a+b} \choose {a}}\displaystyle {{c+d} \choose {c}}}{\displaystyle {{n} \choose {a+c}}}}={\frac {\displaystyle {{a+b} \choose {b}}\displaystyle {{c+d} \choose {d}}}{\displaystyle {{n} \choose {b+d}}}}={\frac {(a+b)!~(c+d)!~(a+c)!~(b+d)!}{a!~~b!~~c!~~d!~~n!}}}$$
+
+
+### SAS implementation
+
+
+https://www.pharmasug.org/proceedings/2012/PO/PharmaSUG-2012-PO05.pdf
+
+```
+*** 0) Prepare example data;
+	data EXAMPLE;
+   		do ID = 1 to 50;
+			GROUP  = "A";
+			RESULT ="negative";
+			output; 
+		end;
+		do ID = 51 to 100;
+			GROUP  = "B";
+			RESULT ="negative";
+			output; 
+		end;	
+	RUN;
+
+
+*** 1) Define a format for the variable for which the statistical test should be conducted with PROC FREQ
+	   (Note: A dummy format is sufficient if the variable of interest is a character variable);
+	proc format;
+		value $RESULT_F		"positive"="positive"
+							"negative"="negative";
+	run;
+
+*** 2) Count frequencies for variable of interest
+	   (Note: It is essential to use PRELOADFMT and PRINTMISS in order to have all possible values of the variable of interest in the output datasset); 
+	proc tabulate data=EXAMPLE out=FREQUENCIES;
+		class GROUP RESULT / preloadfmt;		* PRELOADFMT loads the format of class variables if available;
+		table GROUP*RESULT*(n) / printmiss;			* (n) requests only frequencies and PRINTMISS requests entries also for values of the variable of interest which do not occur;
+		format RESULT $RESULT_F.;				* Assign format if it has not been done before;
+	run;
+
+*** 3) The count for values which not occurred has to be set from missing to 0;
+	data  FREQUENCIES_mod;
+		set FREQUENCIES (where=(RESULT ne ""));	* Delete frequency of missing values for the variable of interest ;
+		if N eq . then N = 0; 					* Convert missing to 0;
+	run;
+
+*** 4) Execute statistical test;
+	proc sort data=FREQUENCIES_mod; by GROUP; run;
+	proc freq data=FREQUENCIES_mod;
+		by GROUP;			* Analysis by group;
+		weight N/zeros;		* Indicate that the input dataset already contains summary data (WEIGHT option) and indicate that entries with frequency 0 should be included (ZEROS option); 
+		tables RESULT / binomial(cl=wald exact LEVEL="positive") alpha=0.05;	
+		exact binomial;
+		output out=OUTPUT binomial;
+	RUN;
+```
+
+### R implementation
+
+```{r fisher exact, echo = T,message = FALSE, error = FALSE, warning = FALSE}
+dat <- data.frame(
+  "smoke_no" = c(7, 0),
+  "smoke_yes" = c(2, 5),
+  row.names = c("Athlete", "Non-athlete"),
+  stringsAsFactors = FALSE
+)
+colnames(dat) <- c("Non-smoker", "Smoker")
+dat
+
+## Expected frequencies
+chisq.test(dat)$expected
+
+## Fisher’s exact test
+fisher.test(dat)
+ 
+```
+
+
+## Sensitivity and specificity
+
+* Sensitivity (True Positive Rate) refers to the proportion of those who received a positive result on this test out of those who actually have the condition (when judged by the ‘Gold Standard’).
+* Specificity (True Negative Rate) refers to the proportion of those who received a negative result on this test out of those who do not actually have the condition (when judged by the ‘Gold Standard’).
+
+
+```{r confussion-matrix, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="2×2 contingency table or confusion matrix"}
+knitr::include_graphics("./02_Plots/confussion-matrix.png")
+knitr::include_graphics("./02_Plots/confussion-matrix2.png")
+```
+
+
+
+ 
+## McNemar's test
+
+### introduction
+
+Simar to the contigency test, McNemar's test can be used to analyze categorical data in survey and questionnarie. But when the data are dependent, McNemar's test is more appropiate. t is applied to 2 × 2 contingency tables with a dichotomous trait, with matched pairs of subjects, to determine whether the row and column marginal frequencies are equal (that is, whether there is "marginal homogeneity").
+
+The test is applied to a $2 \times 2$ contingency table, which tabulates the outcomes of two tests on a sample of $N$ subjects, as follows.
+
+
+$$
+\begin{array}{|c|c|c|c|}
+\hline & \text { Test 2 positive } & \text { Test 2 negative } & \text { Row total } \\
+\hline \text { Test } 1 \text { positive } & \mathrm{a} & \mathrm{b} & \mathrm{a}+\mathrm{b} \\
+\hline \text { Test } 1 \text { negative } & \mathrm{c} & \mathrm{d} & \mathrm{c}+\mathrm{d} \\
+\hline \text { Column total } & \mathrm{a}+\mathrm{c} & \mathrm{b}+\mathrm{d} & \mathrm{N} \\
+\hline
+\end{array}
+$$
+
+
+
+The null hypothesis of marginal homogeneity states that the two marginal probabilities for each outcome are the same, i.e. $p_{a}+p_{b}=p_{a}+p_{c}$ and
+$p_{c}+p_{d}=p_{b}+p_{d}$
+The null and alternative hypotheses are 
+
+* $H_{0}: p_{b}=p_{c}$
+* $H_{1}: p_{b} \neq p_{c}$
+
+The McNemar test statistic is:
+$$
+\chi^{2}=\frac{(b-c)^{2}}{b+c}
+$$
+Under the null hypothesis, with a sufficiently large number of discordants (cells b and c), $\chi^{2}$ has a chi-squared distribution with 1 degree of freedom. If the $\chi^{2}$ result is significant, this provides sufficient evidence to reject the null hypothesis, in favour of the alternative hypothesis that $p_{b} \neq p_{c}$, which would mean that the marginal proportions are significantly different from each other.
+
+### SAS Implementation
+
+```
+proc freq data=athelete;
+		title "McNemar's test for Paired Samples";
+		tables treatX*treatY /agree expected norow nocol nopercent; 
+run;
+```
+
+### R Implementation
+
+```{r McNemar,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+set.seed(150)
+data <- data.frame(before = sample(c("Positive",
+                                     "Positive",
+                                     "Positive",
+                                     "Positive",
+                                     "Negative"),
+                            300, replace = TRUE),
+                    after = sample(c("Positive",
+                                     "Positive",
+                                     "Positive",
+                                     "Positive",
+                                     "Negative"),
+                           300, replace = TRUE))
+###  contingency table
+table(data$before, data$after)
+
+mcnemar.test(table(data$before, data$after))
+ 
+```
+
+
+
+
+## Cochran–Mantel–Haenszel Test
+
+> 用于分析分层或匹配类别数据的检验。研究人员可以在考虑分层的情况下测试二元预测变量或治疗与二元结果（例如病例或对照状态）之间的关联。与只能处理成对的McNemar测试不同，CMH测试可处理任意层大小。它通常用于观察性研究中，在该研究中无法控制受试者随机分配给不同治疗的情况，但可以测量混杂的协变量。
+
+| Treatment    | No treatment         | Row total     |  Title                            |
+|--------------|----------------------|---------------|-----------------------------------|
+| Case         | Ai                   | Bi            | N1i                               |
+| Controls     | Ci                   | Di            | N2i                               |
+| Column total | M1i                  | M2i           | Ti                                |
+
+
+The common odds-ratio of the K contingency tables is defined as:
+
+$${\displaystyle R={{\sum _{i=1}^{K}{{A_{i}D_{i}} \over T_{i}}} \over {\sum _{i=1}^{K}{{B_{i}C_{i}} \over T_{i}}}},}$$
+
+The null hypothesis is that there is no association between the treatment and the outcome. More precisely, the null hypothesis is:
+
+* $H_0$: $R = 1$
+* $H_1$: $R \neq 1$
+
+The test statistic is:
+
+$${\displaystyle \xi _{CMH}={[{\sum _{i=1}^{K}(A_{i}-{N_{1i}M_{1i} \over T_{i}})]^{2}} \over {\sum _{i=1}^{K}{N_{1i}N_{2i}M_{1i}M_{2i} \over T_{i}^{2}(T_{i}-1)}}}.}$$
+
+### R implementation
+
+```
+library(vcd)
+mytable <- xtabs(~Treatment+Improved+Sex, data=Arthritis)
+mantelhaen.test(mytable)
+```
+
+
+## Correlation Test
+
+### Pearson correlation 
+
+The correlation is calculated as $$r = \frac{\sum{(x-m_x)(y-m_y)}}{\sqrt{\sum{(x-m_x)^2}\sum{(y-m_y)^2}}}$$
+
+The p-value (significance level) of the correlation can be determined:
+
+1. by using the correlation coefficient table for the degrees of freedom : df=n−2, where nn is the number of observations in x and y variables.
+2. or by calculating the t value as follow: $$t = \frac{r}{\sqrt{1-r^2}}\sqrt{n-2}$$
+
+
+
+
+### Spearman correlation
+
+$$rho = \frac{\sum(x' - m_{x'})(y'_i - m_{y'})}{\sqrt{\sum(x' - m_{x'})^2 \sum(y' - m_{y'})^2}}$$
+where $x' = rank(x_)$ and $y' = rank(y)$
+
+### Kendall correlation
+
+Begin by ordering the pairs by the $x$ values. If $x$ and $y$ are correlated, then they would have the same relative rank orders. Now, for each $y_{i}$, count the number of $y_{j}>y_{i}$ (concordant pairs ($n_{c}$)) and the number of $y_{j}<y_{i}$ (discordant pairs ($n_{d}$)). $n$ is the size of $x$ and $y$
+
+$$t a u=\frac{n_{c}-n_{d}}{\frac{1}{2} n(n-1)}$$
+
+原假设为变量间不相关 (即总体的相关系数为0)。 可以使用cor.test()函数对单个的Pearson、Spearman和Kendall相关系数进行检验. x和y为要检验相关性的变量，alternative则用来指定进行双侧检验或单侧检验(取值 为“two.side”、“less”或“greater”)，而method用以指定要计算的相关类型(“pearson”、 “kendall”或“spearman”)。当研究的假设为总体的相关系数小于0时，请使用alternative= “less”。在研究的假设为总体的相关系数大于0时，应使用alternative=“greater”。
+
+```
+pcor(u,s)
+
+cor(x, y, method = c("pearson", "kendall", "spearman"))
+cor.test(x, y, method=c("pearson", "kendall", "spearman"))
+```
+
+
+
+## Two Sample T-Test
+
+### Inreoduction
+
+**Assumptions**
+
+Two sample t-test assumes that
+
+1. There is one continuous dependent variable and one categorical independent variable (with 2 levels);
+2. The two samples are independent;
+3. The two samples follow normal distributions, and can be done with Normality check.
+
+When the assumptions are not met, other methods are possible based on the two samples:
+
+* Two dependent samples and follow Normal distribution, suggest Paired T-test;
+* Two independent samples and does not follow Normal distribution, suggest [WMW test](https://www.stat.purdue.edu/~tqin/system101/method/method_wilcoxon_rank_sum_sas.htm);
+* Two dependent samples and does not follow Normal distribution, suggest [Signed Rank test](https://www.stat.purdue.edu/~tqin/system101/method/method_wilcoxon_signed_rank_sas.htm);
+
+**Two-sample t-test for unpaired data**
+
+$$\mathrm{H}_{0}: \mu_{1}=\mu_{2}$$
+$$\mathrm{H}_{\mathrm{a}}: \mu_{1} \neq \mu_{2}$$
+Test Statistic: 
+$$T=\frac{\bar{Y}_{1}-\bar{Y}_{2}}{\sqrt{s_{1}^{2} / N_{1}+s_{2}^{2} / N_{2}}}$$
+where $N_{1}$ and $N_{2}$ are the sample sizes, $\bar{Y}_{1}$ and $\bar{Y}_{2}$ are the sample means, and $s_{1}^{2}$ and $s_{2}^{2}$ are the sample variances.
+If equal variances are assumed, then the formula reduces to:
+$$
+T=\frac{\bar{Y}_{1}-\bar{Y}_{2}}{s_{p} \sqrt{1 / N_{1}+1 / N_{2}}}
+$$
+where
+$$
+s_{p}^{2}=\frac{\left(N_{1}-1\right) s_{1}^{2}+\left(N_{2}-1\right) s_{2}^{2}}{N_{1}+N_{2}-2}
+$$
+Reject the null hypothesis that the two means are equal if
+$$
+|T|>t_{1-\alpha / 2, v}
+$$
+where $t_{1-\alpha / 2, v}$ is the critical value of the $\underline{\underline{d} \text { dstribution with }} v$ degrees of freedom where
+$$
+v=\frac{\left(s_{1}^{2} / N_{1}+s_{2}^{2} / N_{2}\right)^{2}}{\left(s_{1}^{2} / N_{1}\right)^{2} /\left(N_{1}-1\right)+\left(s_{2}^{2} / N_{2}\right)^{2} /\left(N_{2}-1\right)}
+$$
+If equal variances are assumed, then $v=N_{1}+N_{2}-2$
+
+**Paired Samples t Test**
+
+The test statistic for the Paired Samples t Test, denoted $t$, follows the same formula as the one sample $t \mathrm{te}$
+$$
+t=\frac{\bar{x}_{\mathrm{diff}}-0}{s_{\bar{x}}}
+$$
+where
+$$
+s_{\bar{x}}=\frac{s_{\mathrm{diff}}}{\sqrt{n}}
+$$
+where
+
+* $\bar{x}_{\text {diff }}=$ Sample mean of the differences 
+* $n=$ Sample size (i.e., number of observations) 
+* $s_{\text {diff }}=$ Sample standard deviation of the differences
+* $s_{\bar{x}}=$ Estimated standard error of the mean $(s / \operatorname{sqrt}(n))$
+
+### SAS implementation
+
+```
+roc ttest data=read sides=2 alpha=0.05 h0=0;
+ 	title "Two sample t-test example";
+ 	class method; 
+	var grade;
+run;
+```
+
+
+### R implementation
+
+```
+## One Sample t-test  
+t.test(X, mu= 1,
+       alternative="two.sided", conf.level=0.95)$conf.int
+## Two Sample t-test       
+t.test(A, B,var.equal=TRUE, paired=TRUE)
+       
+## Gauß Test (Bekannt Variance)
+mu0 <- 0
+alpha <- 0.05 # (zweiseitig):
+sigma <- 1
+unten <- qnorm(alpha/2,mean=mu0,sd=(sigma)/(sqrt(n)))
+oben  <- qnorm(1-alpha/2,mean=mu0,sd=(sigma)/(sqrt(n)))
+
+
+## T Test (Unbekannt Variance)
+mu1 <- 1
+tcr <- qt(p=1-alpha, df=n-1)
+ncp1 <- abs(mu1-mu0)*sqrt(n)/sigma
+power <- 1-pt(q=tcr, df=n-1, ncp=ncp1)
+```
+
+
+
+
+## Normality test
+
+
+Checking the assumptionof Normality is necessary for many statistical methods. For example two sample t test or ANOVA. In this section we introduce some common ways to access normality: the normal probability plot and test statistics.
+
+The normal probabiltiy plot, QQplot creates quantile-quantile plots and compares ordered variable values with quantiles of a specific theoretical distribution. If the data distribution matches the theoretical distribution, the points on the plot form a linear pattern.
+
+In SAS, there are four test statistics for detecting the presence of non-normality, namely, the Shapiro-Wilk (Shapiro & Wilk, 1965), the Kolmogorov-Smirnov test, Cramer von Mises test, and the Anderson-Darling test. Details and discussions are given below.
+
+For example, in the two sample t test example , the assumption is the variables are normal. 
+
+
+### SAS implementation
+
+```
+proc univariate data=read normal; 
+		qqplot grade /Normal(mu=est sigma=est color=red l=1);
+		by method;
+run;
+```
+
+
+### R implementation
+
+Shapiro-Wilk Test
+
+```
+shapiro.test(X2)
+```
+ 

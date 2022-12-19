@@ -1,0 +1,1260 @@
+---
+title: 'As-a-Statistician-Non-Parametric Test'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+packages<-c("tidyverse", "knitr", "papeR")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+Nonparametric methods are insensitive to model assumptions and outliers but have reduced power.
+
+Non-parametric testing does not consider whether the population distribution is known or not, and it is often not for population parameters, but for certain general assumptions of the population (such as whether the location of the population distribution is the same, whether the population distribution is normal). The test is applicable to the following three situations
+
+1. Sequential data, the distribution of this type of data is generally unknown;
+2. Although it is continuous data, the overall distribution is unknown or non-normal. This is the same as the chi-square test, which is called the free distribution test.
+3. Although the overall distribution is normal, the data is also continuous, but the sample size is extremely small, such as less than 10 (after all, the T test is very poor, and it is best not to use the more stringent parameter test method)
+
+
+>非参数方法对模型假设和异常值不敏感，但功效降低。非参数检验不考虑总体分布是否已知，而且往往不是针对总体参数，而是针对总体的某些一般假设（例如总体分布的位置是否相同，总体是否 分布正常）。 该测试适用于以下三种情况
+
+>1. 顺序数据，这类数据的分布一般是未知的；
+>2.虽然是连续数据，但整体分布是未知的或非正态的。 这与卡方检验相同，称为自由分布检验。
+>3.虽然整体分布是正态的，数据也是连续的，但是样本量极小，比如不到10个（毕竟T检验很差，最好不要用更严格的 参数测试方法）
+
+
+
+* [PROC NPAR1WAY Statement](https://documentation.sas.com/doc/en/pgmsascdc/9.4_3.4/statug/statug_npar1way_syntax01.htm#statug.npar1way.np1plots)
+
+## Two Samples Hypotheses Testing
+
+### Sign Test for Location Parameter for Matched Paired Samples
+
+If the matched paired observations are normally distributed or can be approximated by a normal distribution, then the paired t-test is the best statistical test to implement. However, if the data is obtained from a non-normal distribution or data that contains outliers, then the non-parametric sign test is a better choice.
+Suppose we have n pairs of observations in the form of $(\mathrm(xi), \mathrm(yi)), \mathrm(i)=1, \ldots, \mathrm(n)_(\circ)$ We assume that every The record is for the same person, or for two different individuals that match certain characteristics that you don't want to be confused. The question to be considered in the research is whether the observed variables come from the same distribution or whether the distribution of location parameters is different. Use $\theta_{X}$ and $\theta_{Y}$ to denote the positional parameters of the unknown cumulative distribution functions FX (x) and FY (y), respectively. Usually, the positional parameter is the mean, median or mode. The tested hypotheses may be stated as $H_{0}: \theta_{X}=\theta_{Y}$ against
+$H_{1}: \theta_{X}>\theta_{Y}$, or $H_{1}: \theta_{X}<\theta_{Y}$, or $H_{1}: \theta_{X } \neq \theta_{Y}$. Note that the algebraic form of the cumulative distribution function is not assumed to be known, so a nonparametric test is used.
+
+In order to perform test statistics, calculate the difference of observation value $d_i = \mathrm{xi}$ -yi for each pair of $n$, and record the signs of these differences. If the number is positive, define the sign of the number as a plus sign ("+"); if it is negative, define it as a minus sign ("-"). If the difference is equal to zero, the sign is uncertain. However, the zero difference during this test is meaningless. All homodyne pairs should be eliminated from further consideration and halves should be reduced accordingly
+Analyze the total number of valid pairs. Under the null hypothesis that xi and yi have the same distribution, their difference di may be positive or negative. Let M denote the total number of positive deviations. Then under H0, M has a binomial distribution with the parameter $\mathrm{p}=\mathrm{P}(\mathrm{X}>\mathrm{Y})=0.5$. Suppose it can be written as H0: $\mathrm{p}=0.5$ relative to H1: $\mathrm{p>}$ 0.5 or H1: $\mathrm{p}<0.5$ or H1: $\mathrm{p}=0.5 $. Which alternative hypothesis should be chosen depends on the current problem. Use Bi $(\mathrm{n}, 0.5)$ to represent the term random variable with parameters n and 0.5. The calculation of P value is as follows:
+
+
+- For $H_{1}: p>0.5$, P-value $=\mathbb{P}(B i(n, 0.5) \geq M)=(0.5)^{n} \sum_{k=M}^{n}\left(\begin{array}{c}n \\ k\end{array}\right)$.
+- For $H_{1}: p<0.5$, P-value $=\mathbb{P}(B i(n, 0.5) \leq M)=(0.5)^{n} \sum_{k=0}^{M}\left(\begin{array}{l}n \\ k\end{array}\right)$.
+
+**Example**
+
+$$
+\begin{array}{cccc}
+\hline \begin{array}{c}
+\text { Patient } \\
+\text { Number }
+\end{array} & \begin{array}{c}
+\text { IOP Reduction } \\
+\text { in Tx Eye }
+\end{array} & \begin{array}{c}
+\text { IOP Reduction } \\
+\text { in Cx Eye }
+\end{array} & \begin{array}{c}
+\text { Sign of } \\
+\text { Difference }
+\end{array} \\
+\hline 1 & 0.45 & 0.38 & + \\
+2 & 1.95 & 0.90 & + \\
+3 & 1.20 & 0.70 & + \\
+4 & 0.65 & -0.40 & + \\
+5 & 0.98 & 0.47 & + \\
+6 & -1.98 & -1.30 & - \\
+7 & 1.80 & 1.34 & + \\
+8 & -0.76 & 0.13 & - \\
+9 & 0.56 & -0.40 & + \\
+\hline
+\end{array}
+$$
+To test formally whether the surgery is effective, we have to test H1 : p > 0.5 that states that it is more likely to see a positive sign than a negative one. The test statistic is M = 7, the number of positive signs. The P-value is computed as
+$$\begin{array}{c}
+\text { P-value }=\mathbb{P}(B i(9,0.5) \geq 7)=(0.5)^{9} \sum_{k=7}^{9}\left(\begin{array}{l}
+9 \\
+k
+\end{array}\right) \\
+=(0.5)^{9}\left[\left(\begin{array}{l}
+9 \\
+7
+\end{array}\right)+\left(\begin{array}{l}
+9 \\
+8
+\end{array}\right)+\left(\begin{array}{l}
+9 \\
+9
+\end{array}\right)\right]=(0.5)^{9}[36+9+1]=0.0898 .
+\end{array}$$
+
+Since P-value > 0-05 the null hypothesis is not rejected at the 5% significance level, and we conclude that the data do not support the efficacy of the surgery.
+
+
+**SAS Implementation**
+
+In SAS, the UNIVARIATE procedure may be used to carry out the sign test. The syntax is as following. The P-value in the output is two-sided.
+
+```
+PROC UNIVARIATE DATA=data name;
+VAR diff;
+RUN;
+
+data glaucoma;
+input ID Tx Cx @@;
+diff=Tx-Cx;
+datalines;
+1 0.45 0.38 2 1.95 0.90 3 1.20 0.70 4 0.65 -0.50 5 0.98 0.47
+6 -1.98 -1.30 7 1.80 1.34 8 -0.76 0.13 9 0.56 -0.40
+;
+proc univariate data=glaucoma;
+var diff;
+run;
+```
+
+
+### Wilcoxon Signed-Rank Test for Location Parameter for Matched
+
+
+Test program Another option for the symbolic test of the pairing experiment is the Wilcoxon signed rank test, which is named after the famous American statistician Frank Wilcoxon (1892-1965), who proposed the test in 1945.1. In the Wilcoxon signed rank test, it adds the rank of the absolute value of the difference between the observation value and the center position of the null hypothesis according to different signs as its test statistic. It is suitable for pairwise comparison in the T test, but it does not require the difference di between the paired data to obey the normal distribution, but only requires a symmetrical distribution. Test whether the difference between the paired observations comes from a population with a mean of 0 (whether the population that generates the data has the same mean)
+
+In order to perform the Wilcoxon signed rank test, first we calculate the difference di for each of the n matching pairs $=\mathrm{x}_{\mathrm{i}-\mathrm{y} \mathrm{i}_{\ circ}}$ All differences equal to zero should be discarded from the analysis. Then, we sort the absolute value of the difference in this way: assign the minimum value to 1, then assign the minimum value to 2, and so on. And so on. If there is a tie relationship between two or more absolute differences, each tie relationship value is assigned a rank equal to the average ranking that will be assigned if there is no tie, and the next highest absolute difference after the tie is processed will be Assign to the next unused level. For example, if two absolute differences are tied to level 2 and level 3 respectively, each level will receive a level of 2.5, and the next highest absolute difference will be designated as level 4.
+The specific steps of the method are as follows:
+
+-(1) For i=1,\ldots,n, calculate $\left|\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}\right|$, they represent these The distance from the sample point to Mo.
+-(2) Sort the above n absolute values ​​and find their n ranks. If they have the same sample points, take the average rank for each point (for example, the rank of $1,4,4,5$ is $1 ,2.5,2.5,4)$.
+-(3) Let $W+$ equal X $\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}>0$ of $\left|\mathrm{X}_{\ mathrm{i}}-\mathrm{M}_{0}\right|$'s rank sum, and W $-$ is equal to $\mathrm{X}_{\mathrm{i}}-\mathrm{M} _{0}<0$ of
+The sum of the ranks of $\left|\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}\right|$.
+-(4) For bilateral inspection $\mathrm{H}_{0}: \mathrm{M}=\mathrm{M}_{0}<=>\mathrm{H}_{1}: \mathrm{M } \neq \mathrm{M}_{0}$, under the null hypothesis, $\mathrm{W}$ + and W-should be similar. Therefore, when its
+One of them is very small and the null hypothesis should be doubted. Here, take the test statistic W=min(W +,W -)
+-(5) According to the obtained W value, use statistical software or check the distribution table of Wilcoxon signed rank test to obtain the p value under the null hypothesis. If n is large, use normal approximation: get the value of a normal random variable Z related to W, and then use software or check the normal distribution table to get the p value.
+-(6) If the p-value is small (for example, less than or equal to the given significance level, such as 0.05), the null hypothesis can be rejected. If the p-value is large, there is insufficient evidence to reject the null hypothesis, but it does not mean that the null hypothesis is accepted.
+
+<!-- > 测试程序对配对实验的符号测试的另一种选择是Wilcoxon符号秩测试, 它以著名的美国统计学家Frank Wilcoxon (1892- 1965) 的名字命名, 他在1945.1年提出了该测试。在Wilcoxon符号秩检验中, 它把观测 值和零假设的中心位置之差的绝对值的秩分别按照不同的符号相加作为其检验统计量。它适用于T检验中的 成对比较，但并不要求成对数据之差di服从正态分布, 只要求对称分布即可。检验成对观测数据之差是否 来自均值为0的总体 (产生数据的总体是否具有相同的均值) -->
+<!-- > 为了进行Wilcoxon符号秩检验, 首先我们为n个匹配对中的每对计算差异di $=\mathrm{x}_{\mathrm{i}-\mathrm{y} \mathrm{i}_{\circ}}$ 所有等于零的差异都应 从分析中丢弃。然后, 我们以这样的方式对差异的绝对值进行排序：将最小值分配为1, 然后将最小值分配 为2, 以此类推。以此类推。如果两个或多个绝对差异之间存在并列关系, 则每个并列关系值被赋予与不存 在平局时将被分配的平均排名相等的等级，并且在处理平局后的下一个最高绝对差将被分配给下一个未使 用的等级。例如, 如果两个绝对差分别与等级2和等级3绑定在一起, 则每个等级都将获得2.5等级, 并且将 下一个最高的绝对差指定为等级4。 -->
+<!-- 该方法具体步骤如下: -->
+
+<!-- - (1) 对i=1,\ldots,n, 计算 $\left|\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}\right|$, 它们代表这些样本点到Mo的距离。 -->
+<!-- - (2)把上面的n个绝对值排序, 并找出它们的n个秩，如果它们有相同的样本点, 每个点取平均秩 (如 $1,4,4,5$ 的秩为 $1,2.5,2.5,4)$ 。 -->
+<!-- - (3)令 $W+$ 等于X $\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}>0$ 的 $\left|\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}\right|$ 的秩的和, 而W $-$ 等于 $\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}<0$ 的 -->
+<!-- $\left|\mathrm{X}_{\mathrm{i}}-\mathrm{M}_{0}\right|$ 的秩的和。 -->
+<!-- - (4)对双边检验 $\mathrm{H}_{0}: \mathrm{M}=\mathrm{M}_{0}<=>\mathrm{H}_{1}: \mathrm{M} \neq \mathrm{M}_{0}$, 在零假设下, $\mathrm{W}$ +和W -应差不多。因而，当其 -->
+<!-- 中之一很小时, 应怀疑零假设。在此, 取检验统计量W=min(W +,W -) -->
+<!-- - (5) 根据得到的W值, 利用统计软件或查Wilcoxon符号秩检验的分布表以得到在零假设下的p值。如果n 很大要用正态近似: 得 到一个与W有关的正态随机变量Z的值，再用软件或查正态分布表得到p值。 -->
+<!-- - (6)如果p值较小 (比如小于或等于给定的显著性水平，譬如0.05) 则可以拒绝零假设。如果p值较大则 没有充分的证据来拒绝 零假设, 但不意味着接受零假设。 -->
+
+The critical value $T_0$ depends on the sample size n, the significance level α, and whether the alternative hypothesis is one-tailed or two-tailed.
+
+$$
+\begin{array}{ccccc}
+\hline \begin{array}{c}
+\text { Patient } \\
+\text { Number }
+\end{array} & \begin{array}{c}
+\text { IOP Reduction } \\
+\text { in Tx Eye }
+\end{array} & \begin{array}{c}
+\text { IOP Reduction } \\
+\text { in Cx Eye }
+\end{array} & \text { Difference } & \text { Rank } \\
+\hline 1 & 0.45 & 0.38 & 0.07 & 1 \\
+2 & 1.95 & 0.90 & 1.05 & 8 \\
+3 & 1.20 & 0.70 & 0.50 & 3 \\
+4 & 0.65 & -0.50 & 1.15 & 9 \\
+5 & 0.98 & 0.47 & 0.51 & 4 \\
+6 & -1.98 & -1.30 & -0.68 & 5 \\
+7 & 1.80 & 1.34 & 0.46 & 2 \\
+8 & -0.76 & 0.13 & -0.89 & 6 \\
+9 & 0.56 & -0.40 & 0.96 & 7 \\
+\hline
+\end{array}
+$$
+
+For the hypothesis under study $H_{1}: \theta_{T x}>\theta_{C x}$, the rejection area is composed of a sufficiently small negative difference level sum. The test statistic is $T^{-}=5+6=11$. From the critical table, for $\mathrm{n=9,}$, at the $5 \%$ significance level, the criticality of the one-sided test The value is $T_{0}=8$ Since the original hypothesis of $T^{-}>T_{0}$ is not rejected, it is concluded that the operation is invalid.
+
+<!-- 对于正在研究的假设 $H_{1}: \theta_{T x}>\theta_{C x}$, 拒绝区域由足够小的负差等级和组成。测试统计量为 $T^{-}=5+6=11$. 从临界表，对于 $\mathrm{n=9,}$, 在 $5 \%$ 显着性水平下，单面测试的临界值为 $T_{0}=8$ 由于 $T^{-}>T_{0}$ 原假设不被拒绝, 从而得出手术无效的结论。 -->
+
+**SAS Implementation|**
+
+- SAS outputs $S=T^{+}-n(n+1) / 4=n(n+1) / 4-T^{-}$ as the test statistic. Here $n(n+1) / 4$ is the expected value of $T^{+}$ under the null hypothesis. The P-value is given for a two-
+sided alternative hypothesis.
+- For $n>20$, the P-value is computed based on asymptotic distribution of the test statistic $S$, according to which $S \sqrt{(n-1) /\left(n \mathbb{V a r}(S)-S^{2}\right)}$ has a $t$ -distribution with $n-1$ degrees of freedom. Here the variance of $S$ is $\operatorname{Var}(S)=n(n+1)(2 n+1) / 24$ (more generally, if ties are present, the variance is $n(n+1)(2 n+1) / 24-\sum_{j=1}^{m}\left(T_{j}^{3}-T_{j}\right) / 48$ where $T_{j}, j=1, \ldots, m$, is the size of the $j$ th group of tied observations).
+
+```
+PROC UNIVARIATE DATA=data name;
+VAR diff;
+RUN;
+```
+
+
+### Wilcoxon Rank-Sum Test for Location Parameter for Two Independent Samples
+
+**Wilcoxon rank-sum test/Mann–Whitney U test**
+
+If the two sets of data are independent, the Wilcoxon rank sum test (better known as the Mann–Whitney U test) can be used to assess whether the observations are drawn from the same probability distribution (the probability of obtaining a higher score in a population) Is it larger than the other population).
+Wilcoxon rank sum test is used to infer whether the two population distributions from two samples of measurement data or grade data are different. Theoretically, it is assumed that the two population distributions are the same, that is, the two samples come from the same population.
+
+Since the rank sum test is not sensitive to the coronal difference between the two population distributions, for two population distributions with the same location and different shapes but similar, it cannot be inferred that the two population distributions are different, so the opposing alternative hypothesis cannot be considered as two The overall distribution is different, but only because the two overall distribution positions are different. Regardless of whether the shapes of the two population distributions are different, the purpose of the rank sum test is to infer whether the positions of the two population distributions are different. This is exactly what is needed in practice, such as inferring the value of an indicator of two different populations. Whether there is a difference in size or which group of people is big, it can be reflected by the difference in the position of the index value distribution, regardless of whether the shape of the index value distribution is different
+
+<!-- > 若两组数据独立，可以使用Wilcoxon秩和检验(更广为人知的名字是 Mann–Whitney U检验) 来评估观测是否是从相同的概率分布中抽得的(在一个总体中获得更高得分的概率是否比另 一个总体要大)。 -->
+<!-- wilcoxon秩和检验，用于推断计量资料或等级资料的两个样本所来自的两个总体分布是否有差别在理论上假设应为两个总体分布相同，即两个样本来自同一总体。 -->
+<!-- > 由于秩和检验对于两个总体分布的冠状差别不敏感，对于位置相同、形状不同但类似的两个总体分布，推断不出两个总体分布有差别，故对立的备择假设不能认为两个总体分布不同，而只能为两个总体分布位置不同。不管两个总体分布的形状有无差别，秩和检验的目的是推断两个总体分布的位置是否有差别，这正是实践中所需要的，如要推断两个不同人群的某项指标值的大小是否有差别或哪个人群的大，可用其指标值分布的位置差别反映，而不关心其指标值分布的形状有无差别 -->
+
+**A very general formulation is to assume that:**
+
+1. All the observations from both groups are independent of each other,
+2. The responses are **ordinal** (i.e., one can at least say, of any two observations, which is the greater),
+3. Under the null hypothesis $H_0$, the distributions of both populations are equal.
+4. The alternative hypothesis $H_1$ is that the distributions are not equal.
+
+**Calculation by hand**
+
+1. Assign a numerical level to all observations (put two observations into one group), with 1 representing the minimum value. If there is a set of binding values, a level is assigned, which is equal to the midpoint of the unadjusted level.
+2. Add up the ranks of the observations from sample 1. Since the sum of all levels is equal to N $(\mathrm{N}+1)/2$, the sum of levels in sample 2 is now determined, where N is the total number of observations.
+3. $\mathrm{U}$ is then given by
+$$
+U_{1}=R_{1}-\frac{n_{1}\left(n_{1}+1\right)}{2}
+$$
+Where n1 is the sample size of sample 1, and R1 is the rank sum of sample 1. (It doesn't matter which of the two samples is considered sample 1). An equally valid formula for $U$ is
+$$
+U_{2}=R_{2}-\frac{n_{2}\left(n_{2}+1\right)}{2}
+$$
+The smaller value of U1 and U2 is the value used when referring to the importance table. The sum of these two values is
+$$
+\begin{array}{c}
+U_{1}+U_{2}=R_{1}-\frac{n_{1}\left(n_{1}+1\right)}{2}+R_{2}-\frac{n_{2}\left(n_{2}+1\right)}{2} \\
+R_{1}+R_{2}=N(N+1) / 2 \\
+U_1 + U_2 = n_1n_2.
+\end{array}
+$$
+For large samples, U is approximately normally distributed. In this case, the standard value
+$$z={\frac {U-m_{U}}{\sigma _{U}}}$$
+
+**SAS Implementation**
+
+- The EXACT option requests an exact test for the specified statistic, that is, an exact P-value is computed via listing all possibilities
+- The P value based on the asymptotic normality of the test statistic. For larger $n_{1} \leq n_{2}$, the test statistic is approximately normal distribution, with
+mean $n_{1}(n+1) / 2$ and variance $n_{1} n_{2}(n+1) / 12$ where $n=n_{1}+n_{2}$ (if corrected for ties, the variance is $n 1 n 2(n+1) / 12-n 1 n 2 /[12 n(n-1)] \sum j=1^{m} T j\left(T j^{2}-1\right)$ with
+$T 1, \ldots, T_{m}$ denoting the respective sizes of \$m\$ groups of tied observations).
+
+```
+PROC NPAR1WAY DATA=data name WILCOXON;
+CLASS sample name;
+VAR variable name;
+EXACT;
+
+data learning program;
+input program $ GPA @@;
+datalines;
+yes 3.98 no 3.42 yes 3.45 no 2.56 yes 3.66
+no 2.00 yes 3.78 no 3.19 yes 3.90 no 3.00
+yes 4.00 no 3.56 yes 3.78 no 3.56 yes 3.12
+no 4.00 yes 3.45 no 2.78 yes 3.97 no 3.44
+;
+proc npar1way data=learning program wilcoxon;
+class program;
+var GPA;
+exact;
+run;
+```
+
+**R Implementation**
+
+```
+## Wilcoxon-Mann-Whitney U Test
+library(MASS)
+UScrime <- transform(UScrime, So = factor(So))
+wilcox_test(Prob ~ So, data = UScrime, distribution = "exact")
+```
+
+### Ansari-Bradley Test for Scale Parameter for Two Independent Samples
+
+If the observations from two independent samples are normally distributed, and a test for equality of variance is required, the standard F test can handle this situation well. If the normality assumption is violated and the equality of scale parameters determining the spread of the probability distributions needs to be tested, then the non-parametric Ansari Bradley test can be implemented. However, its use can only be verified when the location parameters of the probability distribution are the same.
+
+<!-- 如果来自两个独立样本的观察值呈正态分布, 并且要进行方差相等性检验, 则标准F检验可以很好地处理这 种情况。如果违反了正态性假设, 并且需要测试确定概率分布范围的比例尺参数是否相等 (equality of scale parameters determining the spread of the probability distributions) 则可以实施非参数AnsariBradley检验。但是, 只有在概率分布的位置参数相同的情况下，才可以验证其使用。 -->
+
+It is assumed that the two cumulative distribution functions, $F_{X}$ and $F_{Y}$, have equal location
+parameters, say, $\theta$, but different scale parameters, say, $\eta_{1}$ and $\eta_{2}$ Let $\gamma=\eta 2 / \eta 1$ denote the ratio of
+the two scale parameters. The hypotheses of interest may be easily expressed in terms of $\gamma$. As always, the null $H_{0}: \gamma=1$ asserts that the scale parameters are equal.
+
+Applicable conditions: Two independent samples $\mathrm{X}_{1}, \mathrm{X}_{2}, \cdots, \mathrm{X}_{\mathrm{m}} \square \mathrm{F} \left(\frac{x-\theta_{1}}{\sigma_{1}}\right), \mathrm{Y}_{1}, \mathrm{Y}_{2}, \cdots, \mathrm {Y}_{n} \square \mathrm{F}\left(\frac{x-\theta_{2}}{\sigma_{2}}\right)$ where $F(.)$ is continuous
+Distribution function, and F $(0)=\frac{1}{2}$, assuming that the positional parameters of the two populations are equal, that is, $\theta_{1}=\theta_{2}$.
+First mix the two samples and sort them by promotion, and rank them in ascending order.
+
+* If $\mathrm{R}_{11}, R_{12}, \cdots, R_{1 m}$ denote the rank of $X$ in the mixed sample
+* If $\mathrm{R}_{21}, R_{22}, \cdots, R_{2 m}$ denote the rank of $Y$ in the mixed sample
+
+$$
+\begin{array}{l}
+\overline{A_{1}}=\frac{1}{m} \sum_{j=1}^{m}\left(\frac{N+1}{2}-\left|R_{1 j}-\frac{N+1}{2}\right|\right) \\
+\overline{A_{2}}=\frac{1}{n} \sum_{j=1}^{n}\left(\frac{N+1}{2}-\left|R_{2 j}-\frac{N+1}{2}\right|\right)
+\end{array}
+$$
+
+- If $\bar{A}_{1}$ is far from $\overline{A_{2}}$, the null hypothesis can be doubted.
+- If $\bar{A}_{1}$ is too small, then $\sigma_{1}$ is too big;
+- If $\overline{A_{1}}$ is too large, then $\sigma_{1}$ is too small;
+
+**SAS Implementation**
+
+```
+PROC NPAR1WAY DATA=data name AB;
+CLASS sample name;
+VAR variable name;
+EXACT;
+RUN;
+
+data psy tests;
+input test $ score @@;
+datalines;
+older 72 older 64 older 34 older 78 older 87
+newer 80 newer 72 newer 94 newer 68 newer 57 newer 78 newer 82
+;
+proc npar1way data=psy tests ab;
+class test;
+var score;
+exact;
+run;
+```
+
+**R Implementation**
+
+
+```{r Ansari-Bradley Test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+### Using R (Hard Way)
+set.seed(1)
+x = round(rnorm(11),2)
+y = round(rnorm(10,0,2),2)
+m = length(x)
+n = length(y)
+N = m + n
+z = sort(c(x,y),index=TRUE)
+rz = seq(1,(N-1)/2)
+rz = c(rz,(N+1)/2,rev(rz))
+r = rz[sort(z$ix,index=TRUE)$ix]
+sum(r[1:11])
+sum(r[12:21])
+
+
+## ansari.test()
+set.seed(1)
+x = round(rnorm(11),2)
+y = round(rnorm(10,0,2),2)
+ansari.test(x,y)
+
+ansari.test(x,y,alternative="less")
+```
+
+
+### Kolmogorov-Smirnov Test for Equality of Distributions
+
+Suppose that two samples drawn from two independent populations are measured. The question of interest is how basic these measurements are in each population
+Whether the distribution is equal. In this case, the non-parametric Kolmogorov Smirnov test can be performed|
+
+<!-- 假设对从两个独立总体中抽取的两个样本进行了测量。感兴趣的问题是, 这些测量值在各个总体中的基本 
+分布是否相等。在这种情况下，可以进行非参数KolmogorovSmirnov检验|-->
+
+
+Let $x_{1}, \ldots, x_{n_{1}}$ and $y_{1}, \ldots, y_{n_{2}}$ be two independent random samples from populations with continuous cumulative distribution functions $F_{X}$ and $F_{Y}$, respectively. We would like to assess
+whether these are the same functions, that is, we would like to test the null hypothesis
+$$
+H_{0}: F_{X}(t)=F_{Y}(t) \text { for all } t
+$$
+In order to apply the Kolmogorov-Smirnov test, first calculate the respective empirical distribution functions for the two samples $\hat{F}_{X}(t)$ and $\hat{F}_{Y}(t)$
+$$
+\begin{array}{l}
+\hat{F}_{X}(t)=\frac{\# \text { of } x^{\prime} \mathrm{s} \leq t}{n_{1}}=\frac{1}{n_{1}} \sum_{i=1}^{n_{1}} \mathbb{I}\left\{x_{i} \leq t\right\} \\
+\hat{F}_{Y}(t)=\frac{\# \text { of } y^{\prime} \mathrm{s} \leq t}{n_{2}}=\frac{1}{n_{2}} \sum_{i=1}^{n_{2}} \mathbb{I}\left\{y_{i} \leq t\right\}
+\end{array}
+$$
+ 
+Function $\mathbb{I}\{A\}$ represents the indicator function of $A$, if the statement is true, it is equal to 1, otherwise it is 0.
+Calculate test statistics. It represents the maximum difference (or maximum vertical distance) between two empirical distribution functions.
+
+* For the upper-tailed alternative $H_{1}: F_{X}(t)>F_{Y}(t)$ for some $t$, the test statistic is
+$$
+D^{+}=\max _{t}\left(\hat{F}_{X}(t)-\hat{F}_{Y}(t)\right)
+$$
+* For the lower-tailed alternative $H_{1}: F_{X}(t)<F_{Y}(t)$ for some $t$, the test statistic is
+$$
+D^{-}=\max _{t}\left(\hat{F}_{Y}(t)-\hat{F}_{X}(t)\right)
+$$
+* For the two-tailed alternative $H_{1}: F_{X}(t) \neq F_{Y}(t)$ for some $t$, the test statistic is
+$$
+D=\max _{t}\left|\hat{F}_{X}(t)-\hat{F}_{Y}(t)\right|
+$$
+Finally, the test statistics are compared with the appropriate critical value. If the test statistic is strictly greater than the critical value, the decision rule will reject the null hypothesis, otherwise it will reject the null hypothesis.
+
+**SAS Implementation**
+
+The output contains also an asymptotic P-value which is computed according to the formula
+$$P(D>d)=2 \sum_{i=1}^{\infty}(-1)^{i-1} \exp \left\{-\frac{2 i^{2} d^{2} n_{1} n_{2}}$$
+
+```
+PROC NPAR1WAY DATA=data name;
+CLASS sample name;
+VAR variable name;
+EXACT;
+RUN;
+```
+
+**R Implementation**
+
+
+```{r Kolmogorov-Smirnov test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+x <- c(1,2,2,3,3,3,3,4,5,6)
+y <- c(2,3,4,5,5,6,6,6,6,7)
+ks.test(x,y)
+
+### compute the D 
+alternative <- "two.sided"
+x <- x[!is.na(x)]
+n <- length(x)
+  y <- y[!is.na(y)]
+  n.x <- as.double(n)
+  n.y <- length(y)
+  w <- c(x, y)
+  z <- cumsum(ifelse(order(w) <= n.x, 1/n.x, -1/n.y))
+  z <- z[c(which(diff(sort(w)) != 0), n.x + n.y)] #exclude ties
+  STATISTIC <- switch(alternative, two.sided = max(abs(z)), 
+                      greater = max(z), less = -min(z))
+  STATISTIC
+```
+
+
+## Several Samples Hypotheses Testing
+
+
+### Friedman Rank Test for Location Parameter for Several Dependent Samples
+
+The Friedman test determines if there are differences among groups for two-way data structured in a specific way, namely in an unreplicated complete block design.  In this design, one variable serves as the treatment or group variable, and another variable serves as the blocking variable.  It is the differences among treatments or groups that we are interested in.  We aren’t necessarily interested in differences among blocks, but we want our statistics to take into account differences in the blocks.  In the unreplicated complete block design, each block has one and only one observation of each treatment. 
+
+When comparing the means of two or more related samples, the parametric method requires repeated measurement analysis of variance. In this case, a reasonable non-parametric technique is the Friedman rank test of positional parameters. This test was proposed by American economist and statistician Milton Friedman (1912-2006) in 1937.
+The test procedure assumes that k identical variables are repeatedly measured on n individuals over time or under certain conditions. These k sets of measurements are usually called related samples, because the same individual constitutes each sample. The null hypothesis assumes that all k positional parameters are equal
+
+<!-- 当比较两个以上相关样本的均值时，参数方法要求对方差进行重复测量分析。在这种情况下，一种合理的非参数技术是位置参数的Friedman秩检验。这项检验是1937年由美国经济学家和统计学家Milton Friedman（1912-2006）提出的。 -->
+<!-- 测试程序假设随着时间或在一定条件下对n个个体重复进行了k个相同变量的测量。这k组测量值通常称为相关样本，因为相同的个体构成了每个样本。零假设假设所有k个位置参数均相等 -->
+
+$$H_{0}: \theta_{1}=\theta_{2}=\cdots=\theta_{k},$$
+Alternative hypothesis asserting that not all  location parameters are the same,
+$$H_{1}: \theta_{i} \neq \theta_{j} \text { for some } i \neq j, i, j=1, \ldots, k$$
+
+To compute the Friedman rank test statistic, we first assign ranks to observations within each individual
+in such a way that the smallest value gets the rank of 1 . If two or more observations are tied, assign each
+of them the same rank which is the mean of the ranks that would have been assigned to these values if
+they were not tied. Denote by $r_{i j}, i=1, \ldots, n, j=1, \ldots, k$, the rank for the measurement on the $i$ th individual in the $j$ -th sample (for example, on the $j$ -th occasion or for the $j$ -th condition). Let
+$R_{j}=\sum_{i=1}^{n} r_{i j}, j=1, \ldots, k$, be the sum of the ranks of all measurements in the $j$ -th sample. In case there are no ties, the test statistic $Q$ is derived as
+$$
+Q=\frac{12}{n k(k+1)} \sum_{j=1}^{k} R_{j}^{2}-3 n(k+1)
+$$
+In the presence of ties, the test statistic is determined by the formula
+$$
+Q=\frac{n(k-1)\left[(1 / n) \sum_{j=1}^{k} R_{j}^{2}-n k(k+1)^{2} / 4\right]}{\sum_{i=1}^{n} \sum_{j=1}^{k} r_{i j}^{2}-n k(k+1)^{2} / 4}
+$$
+The sum of squares of \$ks distinct ranks for an ith individual is computed explicitly as
+$$\sum_{j=1}^{k} r_{i j}^{2}=n\left[1^{2}+2^{2}+\cdots+k^{2}\right]=n k(k+1)(2 k+1) / 6$$
+Now simple algebraic manipulations yield the result:
+$$
+\begin{array}{}
+Q &&=\frac{n(k-1)\left[\sum_{j=1}^{k} R_{j}^{2} / n-n k(k+1)^{2} / 4\right]}{n k(k+1)(2 k+1) / 6-n k(k+1)^{2} / 4} \\
+&&=\frac{n(k-1)\left[\sum_{j=1}^{k} R_{j}^{2} / n-n k(k+1)^{2} / 4\right]}{n k(k+1)(k-1) / 12}\\
+&&=\frac{12}{n k(k+1)} \sum_{i=1}^{k} R_{j}^{2}-3 n(k+1)
+\end{array}
+$$
+
+**Kendall’s W**
+
+Kendall’s W, or Kendall’s coefficient of concordance, can be used as an effect size statistic for Friedman’s test.
+The following interpretations are based on personal intuition. They are not intended to be universal.
+
+|             |       | small   | medium         | large  |
+|-------------|-------|---------|----------------|--------|
+| Kendall’s W | k = 3 | < 0.10  | 0.10  – < 0.30 | ≥ 0.30 |
+|             | k = 5 | < 0.10  | 0.10  – < 0.25 | ≥ 0.25 |
+|             | k = 7 | < 0.10  | 0.10  – < 0.20 | ≥ 0.20 |
+|             | k = 9 | < 0.10  | 0.10  – < 0.20 | ≥ 0.20 |
+
+**SAS Implementation**
+
+* RANK process assigns grades, which are output to different data sets together with the original variables
+* The P value is calculated based on a chi-square distribution with k-1 degrees of freedom, which is a large sample asymptotic distribution of Friedman's test statistic.
+
+```
+PROC SORT data=data name;
+BY individual name;
+RUN;
+PROC RANK DATA=data name OUT=outdata name;
+VAR response name;
+BY individual name;
+RANKS rank name;
+RUN;
+PROC FREQ data=outdata name;
+TABLE individual name*sample name*rank name/ NOPRINT CMH;
+RUN;
+
+
+
+data reaction time;
+input individual hand $ time @@;
+datalines;
+1 both 1.0 1 right 0.6 1 left 0.7
+2 both 0.4 2 right 0.5 2 left 0.6
+3 both 0.2 3 right 0.5 3 left 0.4
+4 both 0.3 4 right 0.2 4 left 0.5
+5 both 0.4 5 right 0.3 5 left 0.5
+6 both 0.1 6 right 0.2 6 left 0.3
+;
+proc sort data=reaction time;
+by individual;
+run;
+proc rank data=reaction time out=ranked;
+var time;
+by individual;
+ranks rank;
+run;
+proc freq data=ranked;
+table individual*hand*rank/noprint cmh;
+run;
+```
+
+We have that $k=3, n=6, R_{1}=10, R_{2}=10$, and $R_{3}=16$. Therefore,
+$$
+\begin{array}{c}
+Q=\frac{12}{n k(k+1)} \sum_{j=1}^{k} R_{j}^{2}-3 n(k+1) \\
+=\frac{12}{(6)(3)(3+1)}\left(10^{2}+10^{2}+16^{2}\right)-(3)(6)(3+1)=4
+\end{array}
+$$
+The critical value for $k=3, n=6$, and $\alpha=0.05$ is 7 . The test statistic is less than the critical value,
+hence, the null hypothesis $H_{0}: \theta_{\text {both }}=\theta_{\text {right }}=\theta_{\text {left }}$ cannot be rejected.
+
+**R Implementation**
+
+```{r Friedman Test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+Input =("
+ Instructor        Rater  Likert
+ 'Bob Belcher'        a      4
+ 'Bob Belcher'        b      5
+ 'Bob Belcher'        c      4
+ 'Bob Belcher'        d      6
+ 'Bob Belcher'        e      6
+ 'Bob Belcher'        f      6
+ 'Bob Belcher'        g     10
+ 'Bob Belcher'        h      6
+ 'Linda Belcher'      a      8
+ 'Linda Belcher'      b      6
+ 'Linda Belcher'      c      8
+ 'Linda Belcher'      d      8
+ 'Linda Belcher'      e      8
+ 'Linda Belcher'      f      7
+ 'Linda Belcher'      g     10
+ 'Linda Belcher'      h      9
+ 'Tina Belcher'       a      7
+ 'Tina Belcher'       b      5
+ 'Tina Belcher'       c      7
+ 'Tina Belcher'       d      8
+ 'Tina Belcher'       e      8
+ 'Tina Belcher'       f      9
+ 'Tina Belcher'       g     10
+ 'Tina Belcher'       h      9
+ 'Gene Belcher'       a      6
+ 'Gene Belcher'       b      4
+ 'Gene Belcher'       c      5
+ 'Gene Belcher'       d      5
+ 'Gene Belcher'       e      6
+ 'Gene Belcher'       f      6
+ 'Gene Belcher'       g      5
+ 'Gene Belcher'       h      5
+ 'Louise Belcher'     a      8
+ 'Louise Belcher'     b      7
+ 'Louise Belcher'     c      8
+ 'Louise Belcher'     d      8
+ 'Louise Belcher'     e      9
+ 'Louise Belcher'     f      9
+ 'Louise Belcher'     g      8
+ 'Louise Belcher'     h     10            
+")
+
+Data = read.table(textConnection(Input),header=TRUE)
+
+### Order levels of the factor; otherwise R will alphabetize them
+Data$Instructor = factor(Data$Instructor,
+                      levels=unique(Data$Instructor))
+
+### Create a new variable which is the likert scores as an ordered factor
+Data$Likert.f = factor(Data$Likert,
+                          ordered=TRUE)
+
+### Summarize data treating Likert scores as factors
+xtabs( ~ Instructor + Likert.f,
+      data = Data)
+
+XT = xtabs( ~ Instructor + Likert.f,
+           data = Data)
+prop.table(XT,
+           margin = 1)
+
+### Friedman test example
+friedman.test(Likert ~ Instructor | Rater,
+              data = Data)
+
+### Kendall W 
+library(DescTools)
+KendallW(XT,
+         correct=TRUE,
+         test=TRUE)
+```
+
+### Kruskal-Wallis H-Test for Location Parameter
+
+The Kruskal–Wallis test is a rank-based test that is similar to the Mann–Whitney U test, but can be applied to one-way data with more than two groups.
+
+Without further assumptions about the distribution of the data, the Kruskal–Wallis test **does not address hypotheses about the medians of the groups**.  Instead, the test addresses if it is likely that an observation in one group is greater than an observation in the other.  This is sometimes stated as testing if one sample has stochastic dominance compared with the other. The test **assumes that the observations are independent**.  That is, it is not appropriate for paired observations or repeated measures data.
+
+
+If the data comes from multiple independent samples, and the goal is to test the equality and inequality of each positional parameter, one-way analysis of variance (ANOVA) should be performed. The non-parametric equivalent of the analysis of variance method is Kruskal-Wallis H-test, which extends the Mann-Whitney U test (only used to compare two groups).
+
+Used to infer whether there is a difference in multiple population distributions from multiple independent samples. In theory, testing the hypothesis $H_{0}$ should be that multiple populations have the same distribution, that is, multiple samples come from the same population. Since the H test is not sensitive to the shape difference of multiple population distributions, the test hypothesis $H_{0}$ can be written as multiple population distributions in the same position in practical applications. The opposing alternative hypothesis $H_{1}$ is that multiple populations are distributed in different positions.
+
+<!-- 如果数据来自多个独立样本，并且目标是测试各个位置参数的相等性与非相等性, 则应进行单向方差分析 (ANOVA) 。 方差分析方法的非参数等效项是Kruskal-Wallis H-test, 它扩展了Mann-Whitney U检验(仅用 于比较两组)。 -->
+<!-- 用于推断多个独立性样本所来自的多个总体分布是否有差别。在理论上检验假设 $H_{0}$ 应为多个总体分布相同, 即多个样本来自同一总体。由于H检验多个总体分布的形状差别不敏感, 故在实际应用中检验假设 $H_{0}$可写作多个总体分布位置相同。对立的备择假设 $H_{1}$ 为多个总体分布位置不全相同。 -->
+ 
+$$
+\begin{array}{c}
+H=(N-1) \frac{\sum_{i=1}^{g} n_{i}\left(\bar{r}_{i \cdot}-\bar{r}\right)^{2}}{\sum_{i=1}^{g} \sum_{j=1}^{n_{i}}\left(r_{i j}-\bar{r}\right)^{2}} \\
+H=\frac{12}{N(N+1)} \sum_{i=1}^{g} \frac{1}{n_{i}}\left(\bar{r}_{i}-\frac{N+1}{2}\right)^{2} \\
+=\frac{12}{N(N+1)} \sum_{i=1}^{g} \frac{\bar{r}_{i}^{2}}{n_{i}}-3(N+1)
+\end{array}
+$$
+
+
+**Effect size**
+
+Statistics of effect size for the Kruskal–Wallis test provide the degree to which one group has data with higher ranks than another group.  They are related to the probability that a value from one group will be greater than a value from another group.   Unlike p-values, **they are not affected by sample size**.
+
+The effect size statistics of the Kruskal–Wallis test provide the degree to which one set of data has a higher rank than the other. They are related to the possibility that one set of values is greater than another set of values. Unlike p-values, they are **not affected by sample size**.
+
+Appropriate effect size statistics for the Kruskal–Wallis test include **Freeman’s theta and epsilon-squared**.  epsilon-squared is probably the most common. For Freeman’s theta, an effect size of 1 indicates that the measurements for each group are entirely greater or entirely less than some other group, and an effect size of 0 indicates that there is no effect; that is, that the groups are absolutely stochastically equal.
+
+Another option is to use the maximum Cliff’s delta or Vargha and Delaney’s A (VDA) from pairwise comparisons of all groups.  VDA is the probability that an observation from one group is greater than an observation from the other group.  Because of this interpretation, VDA is an effect size statistic that is relatively easy to understand.
+
+|                                | small                                  | medium                                 | large           |
+|--------------------------------|----------------------------------------|----------------------------------------|-----------------|
+| epsilon-squared                | 0.01     – < 0.08                      | 0.08     – < 0.26                      | ≥ 0.26          |
+| Freeman’s theta, k = 2         | 0.11     – < 0.34                      | 0.34     – < 0.58                      | ≥ 0.58          |
+| Freeman’s theta, k = 3         | 0.05     – < 0.26                      | 0.26     – < 0.46                      | ≥ 0.46          |
+| Freeman’s theta, k = 5         | 0.05     – < 0.21                      | 0.21     – < 0.40                      | ≥ 0.40          |
+| Freeman’s theta, k = 7         | 0.05     – < 0.20                      | 0.20     – < 0.38                      | ≥ 0.38          |
+| Freeman’s theta, k = 7         | 0.05     – < 0.20                      | 0.20     – < 0.38                      | ≥ 0.38          |
+| Maximum Cliff’s delta          | 0.11     –   < 0.28                    | 0.28     –   < 0.43                    | ≥ 0.43          |
+| Maximum Vargha and Delaney’s A | 0.56     –   < 0.64 , > 0.34  –   0.44 | 0.64     –   < 0.71 , > 0.29  –   0.34 | ≥ 0.71 , ≤ 0.29 |
+
+
+**SAS Implementation**
+
+If a significant difference between the samples is detected, use the Wilcoxon rank sum test for post-hoc pairwise comparison. To select any two samples from the data set, use the WHERE clause:
+
+`WHERE (sample name=‘sample 1’ OR sample name=‘sample 2’);`
+
+```
+PROC NPAR1WAY DATA=data name WILCOXON;
+CLASS sample name;
+VAR variable name;
+EXACT;
+RUN;
+
+data weight loss;
+input fitness class $ percEWL @@;
+datalines;
+aerobics 6.7 aerobics 7.7 aerobics 10.0 aerobics 9.4 aerobics 9.1
+pilates 10.5 pilates 12.8 pilates 13.1 pilates 13.4
+step 13.0 step 11.2 step 11.8 step 11.6
+cardio 19.0 cardio 15.3 cardio 17.5 cardio 22.4
+;
+proc npar1way data=weight loss wilcoxon;
+class fitness class;
+var percEWL;
+exact;
+run;
+
+
+##  multiple comparisons
+proc npar1way data=weight loss wilcoxon;
+class fitness class;
+var percEWL;
+exact;
+where (fitness class=‘step’ or fitness class=‘aerobics’);
+run;
+proc npar1way data=weight loss wilcoxon;
+class fitness class;
+var percEWL;
+exact;
+where (fitness class=‘pilates’ or fitness class=‘step’);
+run;
+proc npar1way data=weight loss wilcoxon;
+class fitness class;
+var percEWL;
+exact;
+where (fitness class=‘cardio’ or fitness class=‘pilates’);
+run;
+proc npar1way data=weight loss wilcoxon;
+class fitness class;
+var percEWL;
+exact;
+where (fitness class=‘cardio’ or fitness class=‘step’);
+run;
+```
+
+**R Implementation**
+
+```{r Kruskal–Wallis test,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+Input =("
+ Speaker  Likert
+ Pooh      3
+ Pooh      5
+ Pooh      4
+ Pooh      4
+ Pooh      4
+ Pooh      4
+ Pooh      4
+ Pooh      4
+ Pooh      5
+ Pooh      5
+ Piglet    2
+ Piglet    4
+ Piglet    2
+ Piglet    2
+ Piglet    1
+ Piglet    2
+ Piglet    3
+ Piglet    2
+ Piglet    2
+ Piglet    3
+ Tigger    4
+ Tigger    4
+ Tigger    4
+ Tigger    4
+ Tigger    5
+ Tigger    3
+ Tigger    5
+ Tigger    4
+ Tigger    4
+ Tigger    3
+")
+
+Data = read.table(textConnection(Input),header=TRUE)
+Data$Speaker = factor(Data$Speaker,
+                      levels=unique(Data$Speaker))
+Data$Likert.f = factor(Data$Likert,
+                       ordered = TRUE)
+
+XT = xtabs( ~ Speaker + Likert.f,
+            data = Data)
+prop.table(XT,
+           margin = 1)
+
+### Summarize data treating Likert scores as numeric
+library(FSA)
+Summarize(Likert ~ Speaker,
+          data=Data,
+          digits=3)
+
+### Kruskal–Wallis test
+kruskal.test(Likert ~ Speaker,
+             data = Data)
+
+### Effect Size
+### Epsilon-squared
+library(rcompanion)
+epsilonSquared(x = Data$Likert,
+               g = Data$Speaker)
+
+### Freeman’s theta
+library(rcompanion)
+freemanTheta(x = Data$Likert,
+             g = Data$Speaker)
+
+### Maximum Vargha and Delaney’s A or Cliff’s delta
+library(rcompanion)
+library(coin)
+multiVDA(x = Data$Likert,
+         g = Data$Speaker)
+```
+
+
+## Tests for Categorical Data
+
+
+### Spearman Rank Correlation Coefficient Test
+
+Suppose n pairs of realizations $(\mathrm{xi}, \mathrm{yi})$ can be used for continuous variables X and Y. The Pearson product moment correlation coefficient can be calculated as a measure of the direction and strength of the linear relationship between X and Y. To test the Pearson correlation coefficient equal to zero, assume that X and Y are approximately normally distributed.
+
+<!-- 假设n对实现 $(\mathrm{xi}, \mathrm{yi})$ 可用于连续变量X和Y。可以将Pearson乘积矩相关系数计算为X和Y之间线性关系的 方向和强度的量度。为了测试等于零的皮尔逊相关系数，假设X和Y近似正态分布。 -->
+
+$$
+r_{p}=\frac{\sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)\left(y_{i}-\bar{y}\right)}{\sqrt{\sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)^{2}} \sqrt{\sum_{i=1}^{n}\left(y_{i}-\bar{y}\right)^{2}}}
+$$
+
+
+If the observed value is very different from the normal distribution, or at least one variable is ordered, then the Spearman rank correlation coefficient is a nonparametric alternative to the Pearson correlation coefficient.
+
+The calculation of Spearman's correlation coefficient assumes that n pairs of observations are obtained for variables X and Y. Either the data is non-normal, or at least one of these variables is measured on an ordinal scale. The difference is that instead of calculating the original value, the rank is calculated. The levels are assigned to the X and Y variables respectively. The allocation process is as follows: the lowest value gets the level 1, followed by the lowest level is 2, and so on. The maximum value gets the rank of n. If there are parallel observations, an average level will be assigned to each observation (if not tied)
+
+<!-- 如果观测值与正态分布大不相同，或者至少一个变量是有序的, 则Spearman等级相关系数是Pearson相关 系数的非参数替代方案。 -->
+
+<!-- Spearman相关系数的计算假设对变量X和Y获得n对观测值。要么数据是非正态的, 要么这些变量中的至少 一个是按序数尺度进行测量的。Spearman等级相关系数由与Pearson乘积矩相关的相同公式 (3.1) 定 义，不同之处在于，不是对原始值进行计算, 而是对等级进行计算。等级分别分配给X和Y变量。分配过程 如下：最小值得到的等级为1, 其次为最小值的等级为2, 依此类推。最大值获得n的等级。如果遇到并列观 察, 则将为每个观察值分配平均水平 (如果未并列 not tied) -->
+
+$$
+r_{s}=\frac{\sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)\left(y_{i}-\bar{y}\right)}{\sqrt{\sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)^{2}} \sqrt{\sum_{i=1}^{n}\left(y_{i}-\bar{y}\right)^{2}}}
+$$
+If there are no ties, $r_{s}$ satisfies
+$$r_{s}=1-\frac{6 \sum_{i=1}^{n}\left(x_{i}-y_{i}\right)^{2}}{n^{3}-n}$$
+Clearly, if no ties occur, $T_{x}=T_{y}=0$ and the equation simplifies to become above without ties.
+
+**Testing Procedure**
+
+The pearman rank correlation coefficient rs is used to statistically test whether the variables X and Y are correlated in the population. Let ps denote the unknown theoretical value of Spearman's correlation coefficient in the population. The null hypothesis $H 0: \rho_{s}=0$ means that the variables are not relevant.
+
+
+**SAS Implementation**
+
+The FREQ procedure with the EXACT SCORR statement may be used to calculate the coefficient and the corresponding exact P-value. The syntax is:
+The specification SCORR refers to the Spearman rank correlation coefficient.
+
+```
+PROC FREQ DATA=data name;
+TABLE variable name1*variable name2;
+EXACT SCORR;
+RUN;
+```
+
+The CORR procedure may be applied to compute the coefficient and the corresponding two-sided asymptotic P-value of the test. The P-value is computed based on the asymptotic approximation, according to which the statistic 
+$$
+T=r_{s} \sqrt{\frac{n-2}{\left(1-r_{s}^{2}\right)}} \text { has an approximate } t \text { -distribution with } n-2 \text { degrees of freedom. }
+$$
+
+```
+PROC CORR DATA=data name SPEARMAN;
+  VAR variable name1 variable name2;
+RUN;
+```
+
+### Fisher Exact Test
+
+For the contingency table, the number of such tables with the cell frequencies in the first row equal to $\mathrm{a}$ and $\mathrm{b}$, given the fixed column sums, is $\left(\begin{array}{c}a+c \\ a\end{array}\right)\left(\begin{array}{c}b+d \\ b\end{array}\right)$. The overall number of tables with the first row sum of $a+b$ is $\left(\begin{array}{c}a+b+c+d \\ a+b\end{array}\right)$. Therefore, the probability to observe this table is
+
+$$
+\begin{array}{ccc|c} 
+& \text { Column 1 } & \text { Column 2 } & \text { Total } \\
+\hline \text { Row 1 } & a & b & a+b \\
+\text { Row 2 } & c & d & c+d \\
+\hline \text { Total } & a+c & b+d & a+b+c+d
+\end{array}
+$$
+
+**SAS Implementation**
+
+```
+PROC FREQ DATA=data name;
+  TABLE variable name1*variable name2 / FISHER;
+RUN;
+
+
+## Alternatively, the EXACT statement may be used:
+PROC FREQ DATA=data name;
+  TABLE variable name1*variable name2;
+  EXACT FISHER;
+RUN;
+
+## For a data set containing level combinations and cell counts, the syntax is:
+PROC FREQ DATA=data name ORDER=DATA;
+  WEIGHT count;
+  TABLE variable name1*variable name2 / FISHER;
+RUN;
+```
+
+## Permutation test
+
+### Introduction
+
+Permutation tests are increasingly common tests to perform certain types of statistical analyses.  They do not rely on assumptions about the distribution of the data, as some other tests do.  
+
+Permutation tests work by **resampling the observed data many times in order to determine a p-value for the test**.  Recall that the p-value is defined as the probability of getting data as extreme as the observed data when the null hypothesis is true. If the data are shuffled many times in accordance with the null hypothesis being true, the number of cases with data as extreme as the observed data could be counted, and a p-value calculated.
+
+The advantages of permutation tests are
+
+* the **lack of assumptions about the distribution** of the underlying data,
+* their **flexibility** in the kinds of data they can handle (nominal, ordinal, interval/ratio),
+* and their being relatively straightforward to conduct and interpret.
+
+The disadvantages of permutation test is  the **limited complexity** of designs they can handle
+
+### Package: coin
+
+| Test | Coin function |
+|---------------------------------------------|--- ------------------------|
+| Two-sample and K-sample permutation test | oneway_test(y ~ A) |
+| Two-sample and K-sample permutation test with a stratification (block) factor | oneway_test(y ~ A \| C) |
+| Wilcoxon-Mann-Whitney rank sum test | wilcox_test(y ~ A) |
+| Kruskal-Wallis test | kruskal_test(y ~ A) |
+| Person chi-square test | chisq_test(A ~ B) |
+| Cochran-Mantel-Haenszel test | cmh_test(A ~ B \| C) |
+| Linear Association Test | lbl_test(D ~ E) |
+| Spearman test | spearman_test(y ~ x) |
+| Friedman test | friedman_test(y ~ A \| C) |
+| Wilcoxon Signed Rank Test | wilcoxsign_test(y1 ~ y2) |
+
+
+
+### One-way Permutation Test of Independence for Ordinal Data
+
+```{r Permutation Independence,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+###  Check the data frame
+
+library(psych)
+headTail(Data) 
+summary(Data)
+
+XT = xtabs( ~ Speaker + Likert.f, data = Data)
+prop.table(XT, margin = 1)
+
+### One-way ordinal permutation test
+library(coin)
+independence_test(Likert.f ~ Speaker,  data = Data)
+
+### Post-hoc test: pairwise permutation tests
+### If the independence test is significant, a post-hoc analysis 
+### can be performed to determine which groups differ from which other groups.
+
+### Order groups by median
+Data$Speaker = factor(Data$Speaker,
+                      levels=c("Pooh", "Tigger", "Piglet"))
+### Pairwise permutation tests
+library(rcompanion)
+PT = pairwisePermutationTest(Likert.f ~ Speaker, data   = Data,method = "fdr")
+PT
+
+### Compact letter display
+library(rcompanion)
+cldList(p.adjust ~ Comparison,
+        data = PT,
+        threshold  = 0.05)
+
+
+### Plot of medians and confidence intervals
+### Create data frame of medians and confidence intervals
+library(rcompanion)
+Sum = groupwiseMedian(Likert ~ Speaker,
+                      data       = Data,
+                      conf       = 0.95,
+                      R          = 5000,
+                      percentile = TRUE,
+                      bca        = FALSE,
+                      digits     = 3)
+### Prepare labels
+
+X = 1:3
+Y = Sum$Percentile.upper + 0.2
+Label = c("a", "b", "a")
+library(ggplot2)
+ggplot(Sum,                ### The data frame to use.
+       aes(x = Speaker,y = Median)) +
+   geom_errorbar(aes(ymin = Percentile.lower,
+                     ymax = Percentile.upper),
+                     width = 0.05,
+                     size  = 0.5) +
+   geom_point(shape = 15,size  = 4) +
+   theme_bw() +
+   theme(axis.title   = element_text(face  = "bold")) +
+   ylab("Median Likert score") +
+   annotate("text", x = X, y = Y, label = Label)
+```
+
+
+### One-way Permutation Test of Symmetry for Ordinal Data
+
+A permutation test of symmetry can be used for one-way data with an ordinal dependent variable where observations are paired within a blocking variable.  It will determine if there is a difference in the response variable among groups when controlling for the effect of the blocking variable.  There can be two or more groups. 
+
+* Null hypothesis:  The response of the dependent variable among groups are equal.
+* Alternative hypothesis (two-sided): The response of the dependent variable among groups are not equal.
+
+```{r Permutation Symmetry,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+Input =("
+ Instructor        Rater  Likert
+ 'Bob Belcher'        a      4
+ 'Bob Belcher'        b      5
+ 'Bob Belcher'        c      4
+ 'Bob Belcher'        d      6
+ 'Bob Belcher'        e      6
+ 'Bob Belcher'        f      6
+ 'Bob Belcher'        g     10
+ 'Bob Belcher'        h      6
+ 'Linda Belcher'      a      8
+ 'Linda Belcher'      b      6
+ 'Linda Belcher'      c      8
+ 'Linda Belcher'      d      8
+ 'Linda Belcher'      e      8
+ 'Linda Belcher'      f      7
+ 'Linda Belcher'      g     10
+ 'Linda Belcher'      h      9
+ 'Tina Belcher'       a      7
+ 'Tina Belcher'       b      5
+ 'Tina Belcher'       c      7
+ 'Tina Belcher'       d      8
+ 'Tina Belcher'       e      8
+ 'Tina Belcher'       f      9
+ 'Tina Belcher'       g     10
+ 'Tina Belcher'       h      9
+ 'Gene Belcher'       a      6
+ 'Gene Belcher'       b      4
+ 'Gene Belcher'       c      5
+ 'Gene Belcher'       d      5
+ 'Gene Belcher'       e      6
+ 'Gene Belcher'       f      6
+ 'Gene Belcher'       g      5
+ 'Gene Belcher'       h      5
+ 'Louise Belcher'     a      8
+ 'Louise Belcher'     b      7
+ 'Louise Belcher'     c      8
+ 'Louise Belcher'     d      8
+ 'Louise Belcher'     e      9
+ 'Louise Belcher'     f      9
+ 'Louise Belcher'     g      8
+ 'Louise Belcher'     h     10
+")
+
+Data = read.table(textConnection(Input),header=TRUE)
+Data$Instructor = factor(Data$Instructor, levels=unique(Data$Instructor))
+Data$Rater      = factor(Data$Rater     , levels=unique(Data$Rater))
+Data$Likert.f = factor(Data$Likert, ordered=TRUE)
+
+library(coin)
+symmetry_test(Likert.f ~ Instructor | Rater,
+              data = Data)
+
+
+### Post-hoc test: pairwise permutation tests
+### Order groups by median
+Data$Instructor = factor(Data$Instructor,
+                   levels = c("Linda Belcher", "Louise Belcher",
+                              "Tina Belcher", "Bob Belcher",
+                              "Gene Belcher"))
+### Pairwise permutation tests
+library(rcompanion)
+PT = pairwisePermutationSymmetry(Likert.f ~ Instructor | Rater,
+                                 data   = Data,
+                                 method = "fdr")
+PT
+
+
+```
+
+### Permutation Tests for Medians and Percentiles
+
+Permutation tests can be used to compare medians or percentiles among groups.  This is useful, for example, to compare the 25^th^ percentile or 75^th^ percentile among groups.
+
+```{r Permutation Percentiles,echo = T,message = FALSE, error = FALSE, warning = FALSE}
+TwoTowns = read.table("http://rcompanion.org/documents/TwoTowns.csv",
+                        header=TRUE, sep=",")
+
+Town.A  = TwoTowns$Income[TwoTowns$Town=="Town.A"]
+Town.B  = TwoTowns$Income[TwoTowns$Town=="Town.B"]
+Town.C  = TwoTowns$Income[TwoTowns$Town=="Town.B"] + 20000
+
+Income  = c(Town.A, Town.B, Town.C)
+Town    = c(rep("Town.A", 101), rep("Town.B", 101), rep("Town.C", 101))
+ThreeTowns = data.frame(Town, Income)
+str(ThreeTowns)
+
+### Statistics by groups
+library(FSA)
+Summarize(Income ~ Town, data = ThreeTowns, digits = 3)
+
+### Box plots
+library(ggplot2)
+ggplot(ThreeTowns,
+       aes(x = Town, y = Income)) +
+  geom_boxplot() +
+     coord_trans(y = "log10") +
+  ylab("Income \n(y axis is log scaled)") +
+  xlab("Town")
+
+### Test for percentiles between two groups
+percentileTest(Income ~ Town,
+               data = ThreeTowns,
+               test = "percentile",
+               tau  = 0.25,
+               r    = 5000)
+
+percentileTest(Income ~ Town,
+               data = ThreeTowns,
+               test = "median",
+               r    = 5000)
+
+### Test for percentiles among multiple groups
+PT25 = pairwisePercentileTest(Income ~ Town,
+                              data = ThreeTowns,
+                              test = "percentile",
+                              tau  = 0.25,
+                              r    = 5000)
+
+PT25
+cldList(p.adjust ~ Comparison, data = PT25)
+```
+
+ 
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

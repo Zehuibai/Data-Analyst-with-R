@@ -1,0 +1,840 @@
+---
+title: 'As-a-Statistician-Advanced Logistic Regression '
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+
+# devtools::install_github("rvlenth/lsmeans", dependencies = TRUE)
+
+packages<-c("tidyverse", "knitr")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+ 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library('mindr')
+# input <- rstudioapi::getSourceEditorContext()$path
+# mm(from = input, type = 'file', widget_name = '04_ggplot2.html', root = "")
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+
+## Logit Analysis of Contingency Tables
+
+> 几十年来，列联表分析的主要方法是由卡尔·皮尔森（Karl Pearson）在1900年提出的卡方检验。
+但是，随着对数线性模型在1960年代末和1970年代初的发展，情况发生了巨大变化。
+对数线性分析使得分析多向列联表，在优雅的统计框架中测试简单假设和复杂假设成为可能。
+尽管对数线性分析仍然是列联表分析的一种流行方法，但是logit分析（逻辑回归）通常可以做得更好。
+实际上，两种方法之间存在密切的关系。对于列联表，每个logit模型都有一个与log-linear模型完全
+相同的对数线性模型。相反，情况并不成立-有些对数线性模型与任何logit模型都不相对应-但在大多
+数情况下，此类模型几乎没有实质性意义。
+
+### Two-Way Table
+
+**FREQ statement**
+
+```
+DATA tab4_1a;
+ INPUT f blackd death;
+ DATALINES;
+22 0 1
+28 1 1
+52 0 0
+45 1 0
+; 
+PROC LOGISTIC DATA=tab4_1a;
+ FREQ f;
+ MODEL death(EVENT='1') = blackd
+RUN; 
+
+PROC FREQ DATA=tab4_1a;
+ WEIGHT f;
+ TABLES blackd*death / CHISQ RELRISK;
+RUN;
+
+#################################################
+Estimates of the Relative Risk (Row1/Row2)
+
+Type of Study                   Value 95%     Confidence Limits
+Case-Control (Odds Ratio)       1.4707        0.7404 2.9214
+```
+
+**events/trials syntax**
+
+处理表格数据的另一种方法是使用事件/试验语法。 我们没有输入表格中的所有四个内部单元格计数，而是输入死亡句子的单元格频率以及该列的总数
+
+```
+DATA tab4_1b;
+ INPUT death total blackd;
+ DATALINES;
+22 74 0
+28 73 1
+; 
+
+*** not need the EVENT='1' option;
+PROC LOGISTIC DATA=tab4_1b;
+ MODEL death/total = blackd;
+RUN
+```
+
+### Three-Way Table
+
+$$
+\begin{array}{llcc}
+\hline & & {\text { \quad Intercourse }} \\
+\text { Race } & \text { Gender } & \text { Yes } & \text { No } \\
+\hline & & & \\
+\text { White } & \text { Male } & 43 & 134 \\
+& & & \\
+& \text { Female } & 26 & 149 \\
+\text { Black } & \text { Male } & 29 & 23 \\
+& & & \\
+& \text { Female } & 22 & 36 \\
+\hline
+\end{array}
+$$
+
+**Events/trials syntax in LOGISTIC**
+
+```
+ total=yes+no;
+ DATALINES;
+1 1 43 134
+1 0 26 149
+0 1 29 23
+0 0 22 36
+;
+PROC LOGISTIC DATA=interco;
+ MODEL yes/total=white male / SCALE=NONE;
+RUN; 
+
+## saturated logit model 
+## 饱和logit模型包括两个解释变量对因变量的影响之间的相互作用
+
+PROC LOGISTIC DATA=interco;
+ MODEL yes/total=white male white*male/ SCALE=NONE ;
+RUN; 
+```
+
+### Four-Way Table
+
+$$
+\begin{array}{lllccc}
+\hline & & & {\text { Identifies with the Working }} & \\
+ \text { Country } & \text { Occupation } & \begin{array}{l}
+\text { Father's } \\
+\text { Occupation }
+\end{array} & \text { Yes } & \text { No } & \text { Total } \\
+\hline \text { France } & \text { Manual } & \text { Manual } & 85 & 22 & 107 \\
+& & \text { Non-manual } & 44 & 21 & 65 \\
+& \text { Non-manual } & \text { Manual } & 24 & 42 & 66 \\
+& & \text { Non-manual } & 17 & 154 & 171 \\
+\text { U.S. } & \text { Manual } & \text { Manual } & 24 & 63 & 87 \\
+& & \text { Non-manual } & 22 & 43 & 65 \\
+& \text { Non-manual } & \text { Manual } & 1 & 84 & 85 \\
+& & \text { Non-manual } & 6 & 142 & 148 \\
+\hline
+\end{array}
+$$
+
+```
+ INPUT france manual famanual total working;
+ DATALINES;
+1 1 1 107 85
+1 1 0 65 44
+1 0 1 66 24
+1 0 0 171 17
+0 1 1 87 24
+0 1 0 65 22
+0 0 1 85 1
+0 0 0 148 6
+; 
+
+PROC LOGISTIC DATA=working;
+ MODEL working/total = france manual famanual / SCALE=NONE;
+RUN; 
+
+## Odds Ratios for Variables in a Two-Way Interaction
+ODDSRATIO famanual / AT(france=0 1);
+ODDSRATIO france / AT(famanual=0 1);
+```
+
+### Overdispersion
+
+> 用分组数据估算逻辑模型时，经常会发生模型不适合的情况-相对于自由度，偏差和Pearson卡方均较大。 缺乏合身有时被称为过度分散。 过度分散有两个可能的原因：
+1. 模型指定不正确：模型中需要更多的相互作用和/或非线性。 
+2. 缺乏观测的独立性：这可能是由于未观察到的异质性在群体而不是个人层面上产生的。
+
+```
+DATA nihdoc;
+ INPUT nih docs pdoc;
+ DATALINES;
+.5 8 1
+.5 9 3
+.835 16 1
+.998 13 6
+1.027 8 2
+2.036 9 2
+2.106 29 10
+2.329 5 2
+2.523 7 5
+2.524 8 4
+2.874 7 4
+3.898 7 5
+4.118 10 4
+4.130 5 1
+4.145 6 3
+4.242 7 2
+4.280 9 4
+4.524 6 1
+4.858 5 2
+4.893 7 2
+4.944 5 4
+5.279 5 1
+5.548 6 3
+5.974 5 4
+6.733 6 5
+7 12 5
+9.115 6 2
+9.684 5 3
+12.154 8 5
+13.059 5 3
+13.111 10 8
+13.197 7 4
+13.433 86 33
+13.749 12 7
+14.367 29 21
+14.698 19 5
+15.440 10 6
+17.417 10 8
+18.635 14 9
+21.524 18 16
+; 
+
+
+PROC LOGISTIC DATA=nihdoc;
+ MODEL pdoc/docs=nih / SCALE=NONE;
+RUN;
+
+## the model doesn’t fit well. The deviance is nearly 70%
+## larger than the degrees of freedom, with a p-value less than .01. 
+```
+
+This lack of independence will produce what is called extra-binomial variation—the variance of the dependent variable will be greater than what is expected under the assumption of a binomial distribution. Besides producing a large deviance, extra-binomial variation can result in underestimates of the standard errors and overestimates of the chi-square statistics.
+
+
+One approach to this problem is to adjust the chi-squares and test statistics, leaving the coefficient estimates unchanged. The adjustment is quite simple: Take the ratio of the goodness-of-fit chi-square to its degrees of freedom, and then divide all the individual chi-squares by that ratio. Equivalently, take the square root of the ratio and multiply all the standard errors by that number. This adjustment, which can be based either on the Pearson chi-square or the deviance, is easily implemented in LOGISTIC by changing the SCALE option. SCALE=D makes the adjustment with the deviance chi-square and SCALE=P uses the Pearson chi-square
+
+```
+PROC LOGISTIC DATA=nihdoc;
+ MODEL pdoc/docs=nih / SCALE=D;
+RUN;
+```
+
+
+PROC LOGISTIC offers an alternative overdispersion correction proposed by Williams (1982) that modifies the coefficients as well as the standard errors and chi-squares. Based on the method of quasi-likelihood, these coefficients should be more statistically efficient than the conventional estimates; that is, they should have smaller true standard errors.
+
+```
+PROC LOGISTIC DATA=nihdoc;
+ MODEL pdoc/docs=nih / SCALE=WILLIAMS;
+RUN;
+```
+
+
+
+## Loglinear Analysis of Contingency Tables
+
+### Two-way Table
+
+$$
+\begin{array}{|c|c|}
+\hline m_{11} & m_{12} \\
+\hline m_{21} & m_{22} \\
+\hline
+\end{array}
+$$
+
+Let $R_{i}$ be a dummy variable for the rows, having a value of 1 if $i=1$ and 0 if $i=2$.
+Similarly, let $C_{j}$ be a dummy variable for the columns with a value of 1 if $j=1$ and 0 if $j=2 .$ We can then write the "saturated" loglinear model for this $2 \times 2$ table of frequency
+counts as
+$$
+\begin{array}{l}
+\log m_{i j}=\beta_{0}+\beta_{1} R_{i}+\beta_{2} C_{j}+\beta_{3} R_{i} C_{j} \quad i, j=1,2 \\
+\log m_{11}=\beta_{0}+\beta_{1}+\beta_{2}+\beta_{3} \\
+\log m_{12}=\beta_{0}+\beta_{1} \\
+\log m_{21}=\beta_{0} \quad+\beta_{2} \\
+\log m_{22}=\beta_{0}
+\end{array}
+$$
+对 $\beta 3$ 特别感兴趣, $\beta 3$ 是相互作用项的系数。括号中的数量是叉积比。叉积比等于比值比。在这 种情况下，这是黑人的死刑几率与非黑人的死刑几率之比。回想一下，比值比为1.0对应于两个 变量之间的独立性。因为1的对数为0, 所以行和列变量的独立性等效于 $\beta 3=0$ 。因此，我们可
+以通过检验 $\beta_{3}=0$ 是否可以检验两个变量是否独立。
+$$
+\beta_{3}=\log \left(\frac{m_{11} m_{22}}{m_{12} m_{21}}\right)
+$$
+Replace the expected frequency with the observed frequency:
+$$
+\hat{\beta}_{3}=\log \left(\frac{n_{11} n_{22}}{n_{12} n_{21}}\right)
+$$
+$$\hat{\beta}_{3}=\log [(28 \times 52) /(45 \times 22)]=.3857$$
+**Calculate using PROC GENMOD**
+
+```
+DATA penalty;
+ INPUT n death black;
+ DATALINES;
+28 1 1
+22 1 0
+45 0 1
+52 0 0
+;
+PROC GENMOD DATA=penalty;
+ MODEL n = death black death*black / DIST=POISSON;
+RUN; 
+```
+
+$$
+\begin{array}{|l|r|r|r|r|r|r|r|}
+\hline \text { Parameter } & \text { DF } & \text { Estimate } & \text { Standard } & \text { Error } & {\begin{array}{c}
+\text { Wald 95\% } \\
+\text { Confidence } \\
+\text { Limits }
+\end{array}} & \begin{array}{r}
+\text { Chi- } \\
+\text { Square }
+\end{array} & \text { Pr }\\
+\hline \text { Intercept } & 1 & 3.9512 & 0.1387 & 3.6794 & 4.2230 & 811.84 & <.0001 \\
+\hline \text { death } & 1 & -0.8602 & 0.2543 & -1.3587 & -0.3617 & 11.44 & 0.0007 \\
+\hline \text { black } & 1 & -0.1446 & 0.2036 & -0.5436 & 0.2545 & 0.50 & 0.4776 \\
+\hline \text { death* black } & 1 & 0.3857 & 0.3502 & -0.3006 & 1.0721 & 1.21 & 0.2706 \\
+\hline \text { Scale } & 0 & 1.0000 & 0.0000 & 1.0000 & 1.0000 & & \\
+\hline
+\end{array}
+$$
+
+
+### Problem of Zeros
+
+> 列联表有时具有频率计数为零的像元。这些可能会引起问题或需要特殊处理。有两种零：
+
+1. Structural zeros: These are cells for which a nonzero count is impossible because of the nature of the phenomenon or the design of the study. The classic example is a cross-tabulation of sex by type of surgery in which structural zeros occur for male hysterectomies and female vasectomies. 
+2. Random zeros: In these cells, nonzero counts are possible (at least as far we know), but a zero occurs because of random variation. Random zeros are especially likely to arise when the sample is small and the contingency table has many cells. 
+
+> 1. 结构零点：由于现象或研究设计的性质，这些零点不可能进行非零计数。典型的例子是按手术类型对性别进行交叉汇总，其中男性子宫切除术和女性输精管切除术出现结构零。
+> 2. 随机零：在这些像元中，非零计数是可能的（至少据我们所知），但是由于随机变化，会出现零。当样本较小且列联表具有许多像元时，随机零尤其可能出现
+
+
+> PROC GENMOD可以轻松容纳结构零位。在估算模型之前，只需从数据集中删除结构零即可。随机零可能会有些棘手。在大多数情况下，它们不会造成任何困难，只是预期的单元格数量可能很小，从而将卡方近似值降级为偏差和Pearson的统计量。但是，当拟合的边际表中出现随机零时，会出现更严重的问题。当拟合的边缘表包含的频率计数为零时，至少一个ML参数估计是无限的，并且拟合算法将不会收敛。当通过其等效对数线性模型拟合logit模型时，会出现相同的问题，并且潜在的解决方案是相同的。但是，在拟合对数线性模型时，出现问题的频率更高，因为有必要拟合描述所有自变量之间关系的完整边际表。考虑下面的二元变量X，Y和Z的三元表
+
+
+|       | X (1) |       | X (0) |       |
+|:-----:|:-----:|:-----:|:-----:|:-----:|
+|       | Z (1) | Z (0) | Z (1) | Z (0) |
+| Y (1) |   20  |   5   |   4   |   0   |
+| Y (0) |   5   |   5   |   11  |   0   |
+| Total |   25  |   10  |   15  |   0   |
+
+
+```
+DATA zero;
+ INPUT x y z f;
+ DATALINES;
+1 1 1 20
+1 0 1 5
+1 1 0 5
+1 0 0 5
+0 1 1 4
+0 0 1 11
+0 1 0 0
+0 0 0 0
+; 
+
+PROC GENMOD DATA=zero DESC;
+ FREQ f;
+ MODEL y = x z / D=B AGGREGATE;
+RUN;
+```
+> AGGREGATE选项要求偏差和Pearson卡方。这里没有明显的问题。 X的系数较大且具有统计意义，而Z的系数较小且不太显着。 两种拟合优度统计都为0，自由度为0。 这是因为模型具有三个参数，但是我们只能观察到因变量Y的X和Z的三个组合
+
+$$
+\begin{array}{|l|r|r|r|}
+\hline \text { Criterion } & \text { DF } & \text { Value } & \text { Value/DF } \\
+\hline \text { Deviance } & 0 & 0.0000 & \\
+\hline \text { Scaled Deviance } & 0 & 0.0000 & \\
+\hline \text { Pearson Chi-Square } & . & 0.0000 & \\
+\hline \text { Scaled Pearson X2 } & . & 0.0000 & \\
+\hline \text { Log Likelihood } & & -28.1403 & \\
+\hline \text { Full Log Likelihood } & & -4.5114 & \\
+\hline
+\end{array}
+$$
+
+> 解决方案是将边缘零点产生的随机零点视为结构零点，也就是说，在拟合模型之前将其从数据中删除。(仅当与带有零的边际表相对应的参数是令人讨厌的参数时，才应使用频率为零的信元删除。)
+
+
+
+## Discrete Choice Analysis
+
+The explanatory variables can include characteristics of the choice options as well as variables describing the relationship between the chooser and the option. This model is very easily estimated using the STRATA statement in PROC LOGISTIC. But I’ll also show how to estimate more general models using PROC PHREG and PROC MDC
+
+> 解释变量可以包括选择选项的特征以及描述选择器和选项之间关系的变量。离散选择分析通常基于条件logit模型
+
+### Logistic Strata
+
+```
+DARK 0=milk chocolate, 1=dark chocolate
+SOFT 0=hard center, 1=soft center
+NUTS 0=no nuts, 1=nuts 
+
+## 每个人有八个观测值
+DATA chocs;
+ INPUT id choose dark soft nuts @@;
+ DATALINES;
+ 1 0 0 0 0 1 0 0 0 1 1 0 0 1 0 1 0 0 1 1
+ 1 1 1 0 0 1 0 1 0 1 1 0 1 1 0 1 0 1 1 1
+ 2 0 0 0 0 2 0 0 0 1 2 0 0 1 0 2 0 0 1 1
+ 2 0 1 0 0 2 1 1 0 1 2 0 1 1 0 2 0 1 1 1
+ 3 0 0 0 0 3 0 0 0 1 3 0 0 1 0 3 0 0 1 1
+ 3 0 1 0 0 3 0 1 0 1 3 1 1 1 0 3 0 1 1 1
+ 4 0 0 0 0 4 0 0 0 1 4 0 0 1 0 4 0 0 1 1
+ 4 1 1 0 0 4 0 1 0 1 4 0 1 1 0 4 0 1 1 1
+ 5 0 0 0 0 5 1 0 0 1 5 0 0 1 0 5 0 0 1 1
+ 5 0 1 0 0 5 0 1 0 1 5 0 1 1 0 5 0 1 1 1
+ 6 0 0 0 0 6 0 0 0 1 6 0 0 1 0 6 0 0 1 1
+ 6 0 1 0 0 6 1 1 0 1 6 0 1 1 0 6 0 1 1 1
+ 7 0 0 0 0 7 1 0 0 1 7 0 0 1 0 7 0 0 1 1
+ 7 0 1 0 0 7 0 1 0 1 7 0 1 1 0 7 0 1 1 1
+ 8 0 0 0 0 8 0 0 0 1 8 0 0 1 0 8 0 0 1 1
+ 8 0 1 0 0 8 1 1 0 1 8 0 1 1 0 8 0 1 1 1
+ 9 0 0 0 0 9 0 0 0 1 9 0 0 1 0 9 0 0 1 1
+ 9 0 1 0 0 9 1 1 0 1 9 0 1 1 0 9 0 1 1 1 
+10 0 0 0 0 10 0 0 0 1 10 0 0 1 0 10 0 0 1 1
+10 0 1 0 0 10 1 1 0 1 10 0 1 1 0 10 0 1 1 1
+; 
+
+PROC LOGISTIC DATA=chocs;
+ MODEL choose(EVENT='1')=dark soft nuts;
+ STRATA id;
+RUN;
+```
+
+### Conditional logit model
+
+假设我们有 $i=1, \ldots, n$ 个个体, 并且每个个体都有 $j=1, \ldots, J_{i}$ 个选项。我们将
+可能的选择数记为 $J_{i}$, 以表示不同的个人可能具有不同的选择集。如果个体i选择了选项, 则
+$y_{i j}=1$, 否则选择0, 而 $x_{i j}$ 为向量 描述人的选项的解释变量。这组解释变量可以包括用于 各种选项的虚拟变量, 以及选项特征和各个特征之间的相互作用。但是, 它不包括拼截项。 McFadden (1974) 引入的条件logit模型是
+$$
+\operatorname{Pr}\left(y_{i j}=1\right)=\frac{e^{\beta \mathbf{x}_{i j}}}{e^{\beta \mathbf{x}_{i 1}}+e^{\beta \mathbf{x}_{i 2}}+\ldots+e^{\beta \mathbf{x}_{i / i}}}
+$$
+
+-在多项式logit模型模型中，每个个体都有一个X向量，每个可能结果都有单独的系数向量
+$\beta j_{0}$
+- 对于条件对数模型，每个结果只有一个系数向量，但x向量不同。
+比较任意两个选项和k的对数由下式给出：
+$$
+\log \left(\frac{\operatorname{Pr}\left(y_{i j}=1\right)}{\operatorname{Pr}\left(y_{i k}=1\right)}\right)=\boldsymbol{\beta}\left(\mathbf{x}_{i j}-\mathbf{x}_{i k}\right)
+$$
+Equivalently, the odds that person $i$ will choose $j$ over $k$ is given by
+$$
+\exp \left\{\boldsymbol{\beta}\left(\mathbf{x}_{i j}-\mathbf{x}_{i k}\right)\right\}
+$$
+Features
+
+- Each person had the same set of options.每个人都有相同的选择集
+- Each person could choose one and only one option 每个人只能选择一个选项
+
+### Ranked Data
+
+> E.g. 研究了147起谋杀案，这些案件进入了陪审团以在无期徒刑与死刑判决之间作出决定。为了不偏不倚地衡量犯罪的严重性，进行了一项辅助研究，其中有50名审判法官对谋杀案进行了评估。要求每位法官阅读详细描述14或15个案件的文件。然后，他们按照评估的罪责等级从1到14（或15）对案件进行排名，其中1表示最严重。每个案例由四到六名法官进行评估。有10个不同的案件组，因此（a）一组中的每个案件都由同一位法官评估，并且（b）评估一组中的案件的法官看不到其他组中的任何案件。但是，这种小组结构对分析没有影响。我们的目标是估计一个模型，在该模型中，谋杀案的特征可以预测法官的排名。
+
+The model we’ll use—sometimes called the exploded logit model (Punj and Staelin 1978, Allison and Christakis 1994)
+其动机是假设法官通过做出一系列选择来构建自己的排名。他们首先从前面的15个中选择最严重的违法行为，并为其指定值1。他们根据条件logit模型进行选择：其中yij是判断i选择案例j的概率，而xj是描述案例j的特征的向量。从选项集中删除选定的案例后，每个法官都从其余的14个案例中选择最严重的案例。
+
+$$
+\operatorname{Pr}\left(y_{i j}=1\right)=\frac{e^{\beta \mathbf{x}_{j}}}{e^{\beta \mathbf{x}_{1}}+e^{\beta \mathbf{x}_{2}}+\ldots+e^{\beta \mathbf{x}_{15}}} .
+$$
+
+```
+PROC PHREG DATA=judgernk NOSUMMARY;
+ MODEL rank=blackd whitvic death / TIES=DISCRETE;
+ STRATA judgid;
+RUN;
+```
+
+### Heteroscedastic extreme value (HEV) Model
+
+PROC MDC 不报告优势比。 但是好处是MDC可以估计一些更高级的模型，从而放宽了条件logit模型的某些假设。
+
+Such as:
+
+* Conditional logit model (IIA: Independence of irrelevant alternatives)
+* Heteroscedastic extreme value model
+* Multinomial probit
+* Nested logit model.
+
+条件对数模型可以通过假设选择来自潜在的随机效用来推导. 该模型的一个假设是随机变量$ε_{ij}$都具有相同的方差。 现在，让每个选择选项j的方差都不同。 有时将其称为异方差极值（heteroscedastic extreme value (HEV)）模型，因为假设$ε_{ij}$具有标准极值分布(standard extreme value distributions)，但方差不同（Bhat 1995）。
+
+```
+PROC MDC DATA=travel;
+ MODEL choice = ttme time cost / CHOICE=(mode)
+ TYPE=HEV;
+ ID id;
+RUN; 
+
+## 排除了三个模式指示器。 MDC中可用的更高级的模型通常很难
+估计包括用于选择选项的虚拟变量的模型。
+## 实际上，即使没有模式虚拟模型的模型也无法收敛。为了使其
+正常工作，我必须通过指定以下内容来更改默认的数值积分方法：
+
+ MODEL choice = ttme time cost / CHOICE=(mode)
+ TYPE=HEV HEV=(INTEGRATE=HARDY);
+ 
+ ## Model Fit Summary
+ ## Maximum Absolute Gradient
+ ## 对于已正确收敛的模型，该数字应非常接近0。
+```
+
+更为复杂的模型是多项式概率multinomial probit。该模型不仅允许不同选择选项的误差项之间具有异方差性，而且还可以使它们之间具有相关性。另外，我们假设$ε_{ij}$具有多元正态分布，而不是假设它们具有极值分布
+
+```
+PROC MDC DATA=travel2;
+ MODEL choice = ttme time cost / CHOICE=(mode)
+ TYPE=MPROBIT;
+ ID id;
+RUN; 
+```
+
+### Nested logit model
+
+MDC中的另一个模型，该模型可以偏离IIA假设，即嵌套logit模型。该模型假定选择选项可以嵌套在组中，而随机实用程序在组内相关，而组之间不相关。例如，对于旅行数据，我们可以假设所有公共选择（火车，公共汽车，飞机）都属于一个组，而私人选择（汽车）则属于其自己的组。换句话说，公共选择将倾向于共享私人选择未共享的未观察到的特征。在PROC MDC中指定这种模型的方法如下：
+
+```
+PROC MDC DATA=travel2;
+ MODEL choice = ttme time cost / CHOICE=(mode)
+ TYPE=NLOGIT;
+ UTILITY U(1,)=ttme time cost;
+ NEST LEVEL(1)=(1 2 3 @1, 4@2),
+ LEVEL(2)=(1 2@1);
+ ID id;
+RUN;
+```
+
+## Longitudinal and Other Clustered Data
+
+### Introduction
+
+> 在前面，我们假定所有观察值都是独立的，也就是说，每个观察值的结果与其他每个观察值的结果完全无关。尽管该假设非常适合大多数数据集，但在许多应用程序中，可以将数据分组为自然或强制群集，而同一群集中的观测值往往比不同群集中的观测值更相似。纵向数据也许是最常见的聚类示例。如果我们记录一个人在多个时间点的反应，我们通常希望这些观察结果是正相关的。但是，在许多其他应用程序中，数据具有群集结构。例如，丈夫和妻子聚集在家庭中，而学生聚集在教室中。在涉及匹配的研究中，每个匹配组都是一个簇。
+
+Logistic regression should take clustering into account for several reasons:
+
+* Ignoring the clustering and treating the observations as though they are independent usually produces standard errors that are **underestimated and test statistics that are overestimated**. All methods for dealing with clustered data are designed to correct this problem. 
+* Conventional logistic regression applied to clustered data produces coefficient estimates that are **not efficient**. That means that there are, in principle, other methods whose coefficients have smaller true standard errors.
+* In addition to these problems, clustered data also presents opportunities to **correct for biases** that may occur with any application of binary regression. One method for clustered data can correct for heterogeneity shrinkage. Another method can correct for bias due to omitted explanatory variables.
+
+There are **5 different methods for clustered data** that can be implemented in SAS:
+
+* Robust standard errors with PROC GENMOD and PROC SURVEYLOGISTIC 
+* Generalized estimating equations (GEE) with PROC GENMOD
+* Conditional logit (fixed-effects) models with PROC LOGISTIC 
+* Mixed models (random effects) with PROC GLIMMIX 
+* A hybrid method 混合方法 that combines fixed-effects with mixed models
+
+
+```{r Logistic clustered, echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure: 5 different methods for clustered data"}
+knitr::include_graphics("./02_Plots/Logistic_clustered.png")
+```
+
+### Robust Standard Errors
+
+```
+## Data Preparation
+316名在费城地区的大火中幸存的人。 在火灾发生后的3个月，6个月和
+12个月对他们进行了采访。 对于每次访谈，如果该人有创伤后应激障碍
+的症状，则将结果变量PTSD编码为1，否则为0。
+
+CONTROL A scale of a person’s perceived control over several areas of life.
+PROBLEMS The total number of problems reported in several areas of life.
+SEVENT The number of stressful events reported since the last interview.
+COHES A scale of family cohesion.
+
+## assumes 3 observations for each person are independent.
+PROC LOGISTIC DATA=ptsd;
+ CLASS time / PARAM=GLM;
+ MODEL ptsd(EVENT='1') = control problems sevent cohes time;
+RUN; 
+```
+
+**Consequences**
+
+
+Even with dependence among the observations, the coefficients should be consistent estimates of the true coefficients, and, therefore, approximately unbiased. They are not efficient, however. That means that there are other ways of estimating the coefficients that make better use of the data, thereby producing estimates with less sampling variability. A more serious problem is that the standard errors are likely to be underestimates of the true standard errors. And because the formula for the Wald chi-squares has the standard error in the denominator, the chi-squares likely to be overestimates. So, maybe the p-values aren’t as small as they appear
+
+> 即使依赖于观察值，输出8.2中的系数也应该是真实系数的一致估计，因此近似无偏。 但是，它们效率不高。 这意味着还有其他估算系数的方法，可以更好地利用数据，从而产生采样变异性较小的估算值。 一个更严重的问题是标准误差可能会低估真正的标准误差。 并且由于Wald卡方的公式的分母具有标准误差，因此卡方可能被高估了。 因此，p值可能不像它们看起来的那么小
+
+**Address the inefficient**
+
+lack of efficiency in the coefficient estimates and focus on the more serious problem of biased estimates of the standard errors
+
+* Using SURVEYLOGISTIC
+* Using GENMOD
+
+它们可以估计具有“健壮”标准误差的逻辑回归模型，该误差可校正重复测量之间的依赖性。这两个过程使用的方法被称为Huber-White方法，三明治方法或泰勒级数展开方法(Huber-White method, the sandwich method, or the Taylor series expansion method)。
+
+
+**Robust standard errors**
+
+Calculate correlations among the Pearson residuals for the response variable within individuals, and then use those correlations to appropriately adjust the standard errors.
+
+
+**PROC SURVEYLOGISTIC**
+
+> 旨在处理具有分层，聚类和加权的复杂样本调查。重复的度量可以被视为只是一种聚类的形式（每个个体内重复的度量）
+
+```
+PROC SURVEYLOGISTIC DATA=ptsd;
+ CLASS time / PARAM=GLM;
+ MODEL ptsd(EVENT='1') = control problems sevent cohes time;
+ CLUSTER subjid;
+RUN;
+```
+
+**PROC GENMOD**
+
+> 可以获得相同的结果，PROC GENMOD旨在估算广义线性模型。其中包括线性模型，逻辑模型和计数数据模型。与LOGISTIC不同，GENMOD不接受MODEL语句上的EVENT ='1'或DESCENDING选项。相反，必须在PROC语句上放置DESCENDING选项（在此缩写为DESC）。因为GENMOD可以估计许多不同种类的响应变量的模型，所以我们需要使用选项DIST = BINOMIAL（可以缩写为D = B）来指定PTSD的分布。与PROC LOGISTIC一样，用于二项式分布的默认链接功能是logit链接，但是可以通过选择LINK = PROBIT或LINK = CLOGLOG来覆盖它。我还包括了非常有用的TYPE3选项，因为它提供了CLASS变量的整体测试，而这些测试不依赖于这些变量的参数化。。但是，与SURVEYLOGISTIC不同，不仅必须在REPEATED语句上还必须在CLASS语句上指定SUBJID变量。
+
+```
+PROC GENMOD DATA=ptsd DESC;
+ CLASS subjid time;
+ MODEL ptsd = control problems sevent cohes time /
+ DIST=BINOMIAL TYPE3;
+ REPEATED SUBJECT=subjid;
+RUN;
+```
+
+
+
+
+### GEE Estimation with PROC GENMOD
+
+The robust standard error solves the biggest problem that arises from repeated observations of the same person. But the coefficient estimates are still not valid enough, which means their true standard errors are higher than needed. In principle, in terms of sample variability, better estimates should be obtained. One way to achieve this is the method of generalized estimating equations
+
+
+In ordinary logistic regression, the maximum likelihood estimates can be obtained by an algorithm known as iteratively reweighted least squares. What that means is that each step in the algorithm is accomplished by weighted least squares, with both the weights and the constructed dependent variable changing at each iteration as functions of the results at the last iteration. In the matrix formulation of weighted least squares, there is an N ×N weight matrix W, which has off-diagonal elements equal to 0 and diagonal elements equal to pi (1–pi ), where pi is the predicted probability from the previous iteration. The GEE algorithm extends this approach to do iterative generalized least squares. In this method, **the matrix W has nonzero off-diagonal elements that are functions of the correlations among the observations**. These correlations are re-estimated at each iteration based on correlations among the Pearson residuals.
+
+```
+PROC GENMOD DATA=ptsd DESC;
+ CLASS subjid time;
+ MODEL ptsd = control problems sevent cohes time / D=B;
+ REPEATED SUBJECT=subjid / WITHIN=time TYPE=UN CORRW;
+RUN;
+```
+
+**Alternating logistic regression**
+
+
+One potential criticism of the GEE models we have seen so far is that they are based on Pearson correlations for the residuals of a dichotomous response. Those correlations should vary, in part, as a function of the predicted value of the dichotomous variable. Predicted values near 0 or 1 should lead to lower correlations. It might be preferable to specify the model in terms of measures of association that do not depend on the predicted values. GENMOD offers a solution to that problem by parameterizing the over-time associations in terms of odds ratios rather than correlations. The method is called “alternating logistic regression” because the iterative algorithm alternates between (1) a GEE step for the main model and (2) a conventional logistic regression for the odds ratios that describe the relationships among the repeated measures. GENMOD allows for some fairly complex models for these odds ratios, such as different values for different subgroups, and odds ratios that depend on other explanatory variables. Here, we’ll look at two of the simpler models that are analogs of the TYPE=UN and TYPE=EXCH.
+
+```
+REPEATED SUBJECT=subjid / WITHIN=time LOGOR=FULLCLUST;
+REPEATED SUBJECT=subjid / WITHIN=time LOGOR=EXC
+
+## LOGOR refers to the logarithm of the odds ratio, 
+## FULLCLUST: full set of odds ratios within each cluster
+```
+
+### Mixed Models with PROC GLIMMIX
+
+
+the principal attraction of GEE is the fact that it produces efficient coefficient estimates that have minimum sampling variability. Mixed modeling has the same attraction, but also offers a number of additional features. In this approach, **clustering is treated as a random effect in a mixed model—so named because it includes both fixed and random effects**. Although mixed models are quite similar to GEE, they have two potential advantages. First, much more complex models are possible, with multiple levels of clustering, overlapping clusters, and random coefficients. Second, estimation of mixed models can correct for heterogeneity shrinkage. In other words, mixed models are subject specific rather than population averaged like the models estimated by GEE (McCulloch 1997, Rodriguez and Goldman 1995).
+
+$$\log \left(\frac{p_{i t}}{1-p_{i t}}\right)=\alpha_{i}+\boldsymbol{\beta} \mathbf{x}_{i t}$$
+
+> 混合模型与GEE模型的不同之处在于，重复测量之间的相关性直接建立在模型中。聚类在混合模型中被视为随机效应，因此被称为是因为它既包括固定效应，也包括随机效应。不同之处在于存在 $\alpha_{i} ，$ 可以认为它代表了影响结果的所有未观察变量的组合效应，但这些变量是 随着时
+间的推移稳定。有时称为随机截距模型。通常认为 $\alpha_{i}$ 代表未观察到的异质性。我们假设每个 $\alpha_{i}$ 是具有
+指定概率分布的随机变量。具体来说，假设 $\alpha_{i}$ 与 $x_{i t}$ 无关, 并且具有均值为0的正态分布。在较简单的模
+型中，还假定它们彼此独立且方差为 $\sigma_{2}$
+存在 $\alpha_{i}$ 会导致结果变量的重复测量之间存在相关性。如果特定个体的 $\alpha_{i}$ 高, 则该个体的许多响应将趋于
+为1。另一方面, 如果 $\alpha_{i}$ 低, 则许多个体的响应将趋于0。响应中的个体内部相关性更高。该模型隐含一种
+可交换性的形式：在任意两个时间点重复测量之间的关联对于任意一对时间点都是相同的。因此, 它不允 许随着测量之间的时间长度而减少关联。SAS有两个可以估计混合逻辑回归模型的过程, 即PROC NLMIXED和PROC GLIMMIX
+
+
+```
+PROC GLIMMIX DATA=ptsd METHOD=QUAD;
+ CLASS subjid time;
+ MODEL ptsd = control problems sevent cohes time / D=B
+ SOLUTION;
+ RANDOM INTERCEPT / SUBJECT=subjid;
+ COVTEST 0;
+RUN; 
+```
+
+* For obtaining maximum likelihood estimation instead of pseudo-likelihood estimation, the option METHOD = QUAD is essential. QUAD refers to Gaussian orthogonality, which is a method used to integrate the likelihood function on the distribution of a random intercept.
+* The SOLUTION option (can be abbreviated as S) requires the reporting of coefficient estimates in addition to regular hypothesis testing.
+* The COVTEST statement provides a test of the null hypothesis that the variance of $\alpha$ is 0.
+
+
+### Fixed-Effects with Conditional Logistic Regression
+
+> 尽管GEE和混合模型是出色的工具，但它们无法纠正因在群集级别省略解释变量而导致的偏差 (don’t correct for bias resulting from omitted explanatory variables at the cluster level)。更具体地说，当每个人有多个观测值时（如PTSD示例），可以统计地控制人的所有稳定特征，而不管这些特征是否可以测量。 不用说，这是一种极具吸引力的可能性，并且可以通过LOGISTIC程序轻松实现。 不幸的是，正如我们将要看到的那样，存在很多明显的限制，使这种方法不能成为普遍偏爱的方法。该模型的公式与随机截距模型的公式完全相同：
+
+$$\log \left(\frac{p_{i t}}{1-p_{i t}}\right)=\alpha_{i}+\boldsymbol{\beta} \mathbf{x}_{i t}$$
+
+> 在混合模型方法中，我们将αi视为具有指定概率分布的随机变量：均值0，方差σ2且与xit无关的正态。在本节中，我们将αi视为一组固定常数 constants，每个固定常数用于样本中的每个个体，这种方法有时称为固定效应模型。estimate
+
+> 如果响应变量是连续的，我们可以使用普通的最小二乘法，对每个个体i（小于1）使用一个虚拟变量（Allison 2005）。例如，如果因变量是CONTROL而不是PTSD，我们可以将模型与316个虚拟变量的948个观测值拟合。在该模型中，变量看起来似乎太过分了，但这是完全合理的。一种在计算上更易于处理的等效方法是转换所有变量，以便将它们表示为与每个人均值的偏差。然后，在转换后的变量上运行模型。 PROC GLM可以使用ABSORB语句自动完成此操作。不幸的是，除非聚类的数量（虚拟变量）很小并且每个聚类的观察数量相对较大，否则虚拟变量或均值偏差方法不能满足逻辑回归。在最大似然估计的渐近理论中，通常假设观察数变大而要估计的参数数保持恒定。但是，将方程式（8.2）应用于纵向数据时，每个其他个体都将一个附加参数添加到模型中。这可能导致其他变量的系数明显过高。解决附带参数问题的一种方法称为条件似然估计（Chamberlain 1980）。
+
+> 在构造似然函数时，我们以观察到的每个人的1和0的数量为条件。例如，如果某人在第1时出现PTSD症状，但在第2时和第3时没有，那么我们问：“鉴于此人只有一次出现PTSD症状，那么在第1时刻而不是在第一次(Time 2,3)发生PTSD的概率是多少？我们根据解释变量和β参数编写此概率的表达式，然后将所有个体的这些概率相乘以得出总体似然。完成此操作后，αi参数就会从似然函数中消除。可以使用PROC中的STRATA语句实现条件logit模型。
+
+```
+PROC LOGISTIC DATA=ptsd ;
+ CLASS time / PARAM=GLM;
+ MODEL ptsd(EVENT='1') = control problems sevent cohes time;
+ STRATA subjid;
+RUN; 
+```
+
+
+The contrast between fixed-effects and random-effects (mixed model) estimation is a classic trade-off between bias and inefficiency. Fixed-effects estimates are much less prone to bias because the conditional likelihood discards information that is potentially contaminated by confounding variables. On the other hand, if confounding variables are not a problem, then the fixed-effects approach can discard much potentially useful information.
+
+
+The best method to use depends greatly on the design, the data, and the goals of the analysis. In randomized experiments, there is little danger of spuriousness, so conditional logit is relatively unattractive. With observational (non-experimental) data, on the other hand, spuriousness is nearly always a serious concern, making conditional logit analysis especially attractive. I typically use both conditional logit and GEE analysis (or a mixed model) to get greater insight into the data. But as we saw in the matching section, some designs make GEE impossible while others make conditional logit analysis unappealing.
+
+### Hybrid Method      
+
+第五种方法，将条件logit方法的优点与GEE或混合模型的优点相结合。该方法可以概括为四个步骤：
+
+> 计算每个人随时间变化的解释变量的平均值。 
+
+1. Calculate the means of the time-varying explanatory variables for each individual.
+
+> 计算随时间变化的解释变量与特定于个人的平均值之间的偏差。 
+
+2. Calculate the deviations of the time-varying explanatory variables from the individual-specific means
+
+> 使用在步骤1和2中创建的变量以及任何其他时间常数解释变量来估计模型。 
+
+3. Estimate the model with variables created in steps 1 and 2, along with any additional time-constant explanatory variables.
+
+> 使用GEE或混合模型调整残差依赖性。
+
+4. Use GEE or a mixed model to adjust for residual dependence.
+
