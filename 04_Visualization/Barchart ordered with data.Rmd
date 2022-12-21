@@ -1,0 +1,381 @@
+---
+title: 'Barchart ordered with data'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+packages<-c("tidyverse","readxl" ,"knitr", "devEMF")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+GSEA.Comp.D1 <- read_excel("./00_Data/G9_NES.xlsx", 
+                           sheet = "Fig_compl_cohort_pCR_and_surv")
+GSEA.Comp.D1 <- GSEA.Comp.D1[,1:11]
+
+GSEA.Comp.D2 <- GSEA.Comp.D1 %>%
+  filter(`NAME short` != "") %>%
+  mutate(Gene =  `NAME short`,
+         PCR = round(NES_pCR_all,1),
+         DDFS = round(NES_DDFS_all,1),
+         PCR_Pvalue = case_when(
+           `NOM p-val_pCR_all` <= 0.05 ~ "Significant",
+           `NOM p-val_pCR_all` > 0.05 ~ "Not Significant"
+         ),
+         DDFS_Pvalue = case_when(
+           `NOM p-val_DDFS_all` <= 0.05 ~ "Significant",
+           `NOM p-val_DDFS_all` > 0.05 ~ "Not Significant"
+         ),
+         Both_Pvalue = case_when(
+           `NOM p-val_pCR_all` <= 0.05 & `NOM p-val_DDFS_all` <= 0.05 ~ "pCR & DDFS Significant",
+           `NOM p-val_pCR_all` <= 0.05 & `NOM p-val_DDFS_all` > 0.05 ~ "only pCR Significant",
+           `NOM p-val_DDFS_all` <= 0.05 & `NOM p-val_pCR_all` > 0.05 ~ "only DDFS Significant",
+           TRUE ~ "pCR & DDFS not Significant"
+         ),
+         PCR_Bin = ifelse(PCR < 0, "reduced PCR", "increased PCR"),
+         DDFS_Bin = ifelse(DDFS < 0, "reduced survival", "improved survival")
+         ) %>%
+  mutate_at(c("PCR_Pvalue", "DDFS_Pvalue", "Both_Pvalue", "PCR_Bin", "DDFS_Bin", "Gene"), factor) %>%
+  select(Gene, PCR, PCR_Bin, DDFS,DDFS_Bin, PCR_Pvalue, DDFS_Pvalue, Both_Pvalue)
+
+# table(GSEA.Comp.D2$Both_Pvalue)
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+ 
+# Scatter plot 
+
+## X-Y Axis
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+ 
+options(ggrepel.max.overlaps = Inf)
+
+library(ggrepel)
+
+Scatter.Overall.V1 <- GSEA.Comp.D2 %>% 
+  ggplot(aes(x=DDFS, y=PCR)) + 
+  geom_point(stat='identity', aes(col=Both_Pvalue), size=3)  +
+  scale_color_manual(name="Significance", values = c("#00AFBB", "#E7B800", "#FC4E07")) +
+  # scale_color_manual(name="pCR", 
+  #                    labels = c("increased PCR", "reduced PCR"), 
+  #                    values = c("increased PCR"="#e6007d", "reduced PCR"="#bccc2f")) + 
+  geom_text_repel(aes(label = Gene,  color = Both_Pvalue), size = 3) +
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene",
+       x="NES of DDFS", 
+       y="NES of pCR") + 
+  ylim(-3.6, 2.5) +
+  coord_flip() +
+  theme_classic()
+Scatter.Overall.V1
+
+Scatter.Overall.V2 <- GSEA.Comp.D2 %>% 
+  ggplot(aes(x=PCR, y=DDFS)) + 
+  geom_point(stat='identity', aes(col=Both_Pvalue), size=3)  +
+  scale_shape_manual(values=c(3, 16, 17))+ 
+  scale_color_manual(name="Significance", values = c("#00AFBB", "#E7B800", "#FC4E07")) +
+  geom_label_repel(aes(label = Gene,  color = Both_Pvalue), size = 3) +
+  theme(legend.position="bottom") +
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene",
+       x="NES of DDFS", 
+       y="NES of pCR") +  
+  theme_minimal() +
+  coord_fixed(ylim=c(-2,3),xlim=c(-4,3)) +  
+  scale_y_continuous(breaks=seq(-2,3,0.5)) +
+  scale_x_continuous(breaks=seq(-4,3,0.5)) +
+  geom_vline(xintercept = 0, linetype = "dashed") + 
+  geom_hline(yintercept = 0, linetype = "dashed") 
+Scatter.Overall.V2
+```
+
+
+
+## Four quadrants
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+Fig.FourQuadrants <- GSEA.Comp.D2 %>%
+  mutate(DDFS_Bin=factor(DDFS_Bin, levels = c("improved survival","reduced survival")),
+         PCR_Bin=factor(PCR_Bin, levels = c("reduced PCR", "increased PCR")),
+         gene = factor(Gene, levels = Gene)) %>%
+  ggplot(aes(x=Gene, y=DDFS, label=DDFS)) + 
+  geom_point(stat='identity', aes(col=DDFS_Pvalue), size=5)  +
+  facet_grid(DDFS_Bin ~ PCR_Bin) +
+  scale_color_manual(name="DDFS P-value", 
+                     labels = c("Significant", "Not Significant"), 
+                     values = c("Significant"="#e6007d", "Not Significant"="#bccc2f")) + 
+  geom_text(color="white", size=2) +
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene to DDFS by survival status",
+       x="Gene", 
+       y="NES of DDFS") +
+  ylim(-2.0, 2.7) +
+  coord_flip()
+
+Fig.FourQuadrants
+```
+
+## Ordered Scatter PCR Overal
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+GSEA.Comp.D3_PCR <- GSEA.Comp.D2[order(GSEA.Comp.D2$PCR), ]
+GSEA.Comp.D3_PCR$Gene <- factor(GSEA.Comp.D3_PCR$Gene, levels = GSEA.Comp.D3_PCR$Gene)  
+
+
+GSEA.Comp.D3_PCR %>% 
+  ggplot(aes(x=Gene, y=PCR, label=PCR)) + 
+  geom_point(stat='identity', aes(col=PCR_Bin), size=7)  +
+  scale_color_manual(name="pCR", 
+                     labels = c("increased PCR", "reduced PCR"), 
+                     values = c("increased PCR"="#e6007d", "reduced PCR"="#bccc2f")) + 
+  geom_text(color="white", size=3) +
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene to pCR",
+       x="Gene", 
+       y="NES of pCR") + 
+  ylim(-3.6, 2.5) +
+  coord_flip()
+```
+
+## Diverging Barcharts
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+GSEA.Comp.D3_DDFS <- GSEA.Comp.D2[order(GSEA.Comp.D2$DDFS), ]
+GSEA.Comp.D3_DDFS$Gene <- factor(GSEA.Comp.D3_DDFS$Gene, levels = GSEA.Comp.D3_DDFS$Gene)  
+
+
+GSEA.Comp.D3_DDFS %>% 
+  ggplot(aes(x=Gene, y=DDFS, label=DDFS)) + 
+  geom_bar(stat='identity', aes(fill=DDFS_Bin), width=.5) +
+  scale_fill_manual(name="DDFS", 
+                     labels = c("improved survival", "reduced survival"), 
+                     values = c("improved survival"="#e6007d", "reduced survival"="#bccc2f")) + 
+  geom_text(color="black", size=2) +
+  labs(title="Diverging Bars of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene to DDFS",
+       x="Gene", 
+       y="NES of DDFS") +  
+  coord_flip() +
+  theme_bw()
+```
+
+
+## by significance
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+GSEA.Comp.D3_DDFS %>% 
+  ggplot(aes(x=Gene, y=DDFS, label=DDFS)) + 
+  geom_point(stat='identity', aes(col=DDFS_Bin), size=6)  +
+  facet_wrap(~DDFS_Pvalue) +
+  scale_color_manual(name="DDFS", 
+                     labels = c("improved survival", "reduced survival"), 
+                     values = c("improved survival"="#e6007d", "reduced survival"="#bccc2f")) + 
+  geom_text(color="white", size=2) +
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene to DDFS by significance",
+       x="Gene", 
+       y="NES of DDFS") +
+  ylim(-2.0, 2.7) +
+  coord_flip()
+
+```
+
+## by survival status
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+GSEA.Comp.D3_DDFS %>% 
+  mutate(DDFS_Bin=factor(DDFS_Bin, levels = c("reduced survival", "improved survival"))) %>%
+  ggplot(aes(x=Gene, y=DDFS, label=DDFS)) + 
+  geom_point(stat='identity', aes(col=DDFS_Pvalue), size=6)  +
+  facet_wrap(~DDFS_Bin) +
+  scale_color_manual(name="DDFS P-value", 
+                     labels = c("Significant", "Not Significant"), 
+                     values = c("Significant"="#e6007d", "Not Significant"="#bccc2f")) + 
+  geom_text(color="white", size=2) +
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene to DDFS by survival status",
+       x="Gene", 
+       y="NES of DDFS") +
+  ylim(-2.0, 2.7) +
+  coord_flip()
+
+```
+
+## Diverging Lollipop Chart
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+GSEA.Comp.D3_DDFS %>% 
+  ggplot(aes(x=Gene, y=DDFS, label=DDFS)) + 
+  geom_point(stat='identity', aes(col=DDFS_Pvalue), size=6)  +
+  scale_color_manual(name="DDFS P-value", 
+                     labels = c("Significant", "Not Significant"), 
+                     values = c("Significant"="#e6007d", "Not Significant"="#bccc2f")) + 
+  geom_segment(aes(y = 0, 
+                   x = Gene, 
+                   yend = DDFS, 
+                   xend = Gene), 
+               color = "black") +
+  geom_text(color="black", size=2, vjust=-0.3) +
+  labs(title="Diverging Lollipop Chart", 
+       subtitle="Normalized mileage from 'mtcars': Lollipop") + 
+  ylim(-2.0, 2.7) +
+  coord_flip()
+```
+
+# Bar plot 
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+
+GSEA.Comp.D3 <- bind_cols(gather(GSEA.Comp.D2, key = "Endpoint", value = "NES", c("PCR","DDFS")),
+                          gather(GSEA.Comp.D2, key = "Endpoint_P",value = "Significance", c("PCR_Pvalue","DDFS_Pvalue")) %>% select(Significance)) %>%
+  select(Gene, Endpoint,NES,Significance)  %>%
+  arrange(desc(Endpoint),NES) %>% 
+  mutate(Gene = factor(Gene, levels=unique(GSEA.Comp.D2$Gene)),
+         Significance = factor(Significance, levels = c("Significant", "Not Significant")))  
+  
+Bar.Overall.V1 <- GSEA.Comp.D3 %>% 
+  ggplot(aes(x=Gene, y=NES, label=NES)) + 
+  geom_bar(stat='identity', aes(fill=Endpoint), width=.8,position = "dodge") +
+  scale_fill_manual(name="NES", 
+                    labels = c("DDFS", "PCR"), 
+                    values = c("DDFS"="#CED6E7", "PCR"="#91B2D7"))+ ## e6007d and bccc2f
+  geom_text(aes(group=Endpoint, y=NES+0.1*sign(NES), label= NES, colour = Significance),
+            position=position_dodge(width=0.9),
+            size=3) +
+  scale_color_manual(name="Significance", 
+                    labels = c("Significant", "Not Significant"), 
+                    values = c("Significant"="red", "Not Significant"="black"))+
+  labs(title="Scatter plot of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene to DDFS",
+       x="Gene", 
+       y="NES") + 
+  coord_flip() + 
+  scale_y_continuous(breaks=seq(-4,3,0.5)) + 
+  theme_minimal() 
+Bar.Overall.V1
+
+Bar.Overall.V2 <- GSEA.Comp.D3 %>% 
+  ggplot(aes(x=Gene, y=NES, label=NES)) + 
+  geom_bar(stat='identity', aes(fill=Endpoint), width=.8,position = "dodge") +
+  scale_fill_manual(name="NES", 
+                    labels = c("DDFS", "PCR"), 
+                    values = c("DDFS"="#e6007d", "PCR"="#bccc2f"))+
+  geom_text(aes(group=Endpoint, y=NES+0.1*sign(NES), label= NES, colour = Significance),
+            position=position_dodge(width=0.9),
+            size=3) +
+  scale_color_manual(name="Significance", 
+                    labels = c("Significant", "Not Significant"), 
+                    values = c("Significant"="red", "Not Significant"="black"))+
+  labs(title="Bar chart of normalized enrichment score", 
+       subtitle="GSEA - Complete cohort for relevant gene",
+       x="Gene", 
+       y="NES") + 
+  scale_y_continuous(breaks=seq(-4,3,0.5)) +
+  scale_x_discrete(position = "top") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+Bar.Overall.V2
+
+# library(ggpattern)
+# GSEA.Comp.D3 %>% 
+#   ggplot(aes(x=Gene, y=NES, label=NES)) + 
+#   geom_bar_pattern(position="dodge",stat="identity",
+#                    mapping=aes(fill=Endpoint, pattern=Significance),width=.8) +
+#   scale_fill_manual(name="NES", 
+#                     labels = c("DDFS", "PCR"), 
+#                     values = c("DDFS"="#e6007d", "PCR"="#bccc2f"))+
+#   geom_text(aes(group=Endpoint, label= NES),
+#             position=position_dodge(width=0.9),
+#             size=3)
+#   labs(title="Bar chart of normalized enrichment score", 
+#        subtitle="GSEA - Complete cohort for relevant gene",
+#        x="Gene", 
+#        y="NES") + 
+#   scale_y_continuous(breaks=seq(-4,3,0.5)) +
+#   scale_x_discrete(position = "top") +
+#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+ 
+
+
+
+```
+
+ 
+ 
+# Save
+ 
+
+```
+{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+emf(file = "G:/Statistik/Bioinformatik/G9_diverse/G9 Biomarker Paper/!Analysis corrected HTG data/Analysis_GSEA Scatter Plots/Output/Scatter_Overall_V1.emf",
+    width = 15,
+    height = 10, 
+    units = "in",
+    emfPlus = FALSE)
+Scatter.Overall.V1
+dev.off()
+```
+

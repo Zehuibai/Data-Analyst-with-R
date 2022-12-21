@@ -1,0 +1,322 @@
+---
+title: 'Barchart with pattern or texture'
+author: "Zehui Bai"
+date: '`r format(Sys.time())`'
+output:
+  html_document:
+    df_print: paged
+    number_sections: no
+    toc: yes
+    toc_float: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+fontsize: 10pt
+editor_options:
+  chunk_output_type: console
+colorlinks: yes
+---
+
+```{r setup, include=FALSE, echo = FALSE,message = FALSE, error = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                    1. load the required packages                       -->
+# <!-- ---------------------------------------------------------------------- --> 
+
+## if(!require(psych)){install.packages("psych")}
+## remotes::install_github("coolbutuseless/ggpattern")
+## ggbreak for axis scale break
+## ggpattern for bar pattern filling
+packages<-c("tidyverse", "knitr", "ggpattern", "ggbreak", "patternplot")
+ipak <- function(pkg){
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg)) 
+    install.packages(new.pkg, dependencies = TRUE)
+  sapply(pkg, require, character.only = TRUE)
+}
+ipak(packages)
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                        2. Basic system settings                        -->
+# <!-- ---------------------------------------------------------------------- -->
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+getwd()
+Sys.setlocale("LC_ALL","English")
+
+## convert backslash to forward slash in R
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+
+### get the path
+# rstudioapi::getSourceEditorContext()$path
+# dirname(rstudioapi::getSourceEditorContext()$path)
+
+### set working directory
+# getwd()
+# setwd("c:/Users/zbai/Desktop")
+# Sys.setlocale("LC_ALL","English")
+
+### get the R Version
+# paste(R.Version()[c("major", "minor")], collapse = ".")
+
+### convert backslash to forward slash 
+# scan("clipboard",what="string")
+# gsub('"', "", gsub("\\\\", "/", readClipboard()))
+# <!-- ---------------------------------------------------------------------- --> 
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--     3. Load the SASmarkdown package if the SAS output is required      -->
+# <!-- ---------------------------------------------------------------------- -->
+# library(SASmarkdown)
+# ### Set SAS output
+# ### Reset engine to R
+# saspath <- "C:/SASHome/SASFoundation/9.4/sas.exe"
+# sasopts <- "-nosplash -linesize 75"
+# knitr::opts_chunk$set(engine="sashtml", engine.path=saspath,
+#         engine.opts=sasopts, comment=NA)
+# 
+# # run these commands to convince yourself that
+# # within this knitr session the engine changed.
+# knitr::opts_chunk$get()$engine
+# knitr::opts_chunk$get()$engine.path
+# knitr::opts_chunk$get()$engine.opts
+# <!-- ---------------------------------------------------------------------- -->
+
+
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                         4. Import the datasets                         -->
+# <!-- ---------------------------------------------------------------------- -->
+### Import csv data
+# pfad <- "~/Desktop/SASUniversityEdition/myfolders/Daten"
+# mydata1 <- read.csv(file.path(pfad, "yourcsv_data.csv"), 
+#                     sep=";", 
+#                     header=TRUE)   
+
+### Import xlsx data
+# library(readxl)
+# mydata2 <- read_excel("C:/Users/zbai/Documents/GitHub/R-Projects/SAS/Yimeng/results-text.xlsx")
+
+### Import sas data
+# library(sas7bdat)
+# mydata3 <- read.sas7bdat("~/Desktop/SASUniversityEdition/myfolders/Daten/uis.sas7bdat")
+
+### Import from copyboard
+# copdat <- read.delim("clipboard")
+# Data_D01 <- copdat
+
+# <!-- ---------------------------------------------------------------------- -->
+# <!--                           5. Some Tools                                -->
+# <!-- ---------------------------------------------------------------------- -->
+
+## To check out vignettes for one specific package
+# browseVignettes("ggplot2")
+
+
+# <!-- ---------------------------------------------------------------------- -->
+```
+
+
+
+```{r mind map,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+library(mindr)
+# text -> widget
+# input <- c("# Chapter 1", "## Section 1.1", "### Section 1.1.1", "## Section 1.2", "# Chapter 2")
+# mm(from = input, root = "mindr")
+
+
+input <- rstudioapi::getSourceEditorContext()$path 
+## file.show(input) # Open the input file with the default program, if any
+input_txt <- readLines(input, encoding = "UTF-8")
+## Convert to mind map text, markdown outline, R script, and HTML widget ####
+mm_output <- mm(input_txt, 
+                output_type = c("widget"),
+                root = "")
+mm_output$widget
+```
+
+# ggpattern package
+ 
+
+## Basic second scala by alpha
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+set.seed(35)
+df <- data.frame(Class = factor(rep(c(1,2),times = 80), labels = c("Math","Science")),
+                 StudyTime = factor(sort(sample(1:4, 16, 
+                                                prob = c(0.25,0.3,0.3,0.15), replace = TRUE)),
+                                    labels = c("<5","5-10","10-20",">20")),
+                 Nerd = factor(sapply(rep(c(0.1,0.3,0.5,0.8),c(30,50,50,30)), function(x)sample(c("Nerd","NotNerd"),size = 1, prob = c(x,1-x))),levels = c("NotNerd","Nerd")))
+
+ggplot(data = df, aes(x = Class, fill = StudyTime, alpha = Nerd)) + 
+  geom_bar(position = "dodge", color = "black") + 
+  scale_alpha_manual(values = c(Nerd = 0.2, NotNerd = 1)) +
+  scale_fill_manual(values = colorRampPalette(c("#0066CC","#FFFFFF","#FF8C00"))(4)) +
+  labs(x = "Class", y = "Number of Students", alpha = "Nerd?") +
+  theme(legend.key.height = unit(1, "cm"))
+```
+
+## geom_bar_pattern
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+### Descriptive statistics for continious variables
+ggplot(data = df, aes(x = Class, fill = StudyTime, pattern = Nerd)) +
+  geom_bar_pattern(position = position_dodge(preserve = "single"),
+                   color = "black", 
+                   pattern_fill = "black",
+                   pattern_angle = 45,
+                   pattern_density = 0.1,
+                   pattern_spacing = 0.025,
+                   pattern_key_scale_factor = 0.6) + 
+  scale_fill_manual(values = colorRampPalette(c("#0066CC","#FFFFFF","#FF8C00"))(4)) +
+  scale_pattern_manual(values = c(Nerd = "stripe", NotNerd = "none")) +
+  labs(x = "Class", y = "Number of Students", pattern = "Nerd?") + 
+  guides(pattern = guide_legend(override.aes = list(fill = "white")),
+         fill = guide_legend(override.aes = list(pattern = "none")))
+```
+
+
+
+## Other Example 1
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+ cData <- structure(list(Individual = c("Indv 1", "Indv 2", "Indv 3", "Indv 1", "Indv 2", "Indv 3", "Indv 1", "Indv 2", "Indv 3",
+                                       "Indv 1", "Indv 2", "Indv 3", "Indv 1", "Indv 2", "Indv 3", "Indv 1", "Indv 2", "Indv 3"),
+                        Change = c("Gain", "Gain", "Gain", "Gain", "Gain", "Gain", "Gain", "Gain", "Gain",
+                                   "Loss", "Loss", "Loss", "Loss", "Loss", "Loss", "Loss", "Loss", "Loss"),
+                        Type = c("Type A", "Type A", "Type A", "Type B", "Type B", "Type B", "Type C", "Type C", "Type C",
+                                 "Type A", "Type A", "Type A", "Type B", "Type B", "Type B", "Type C", "Type C", "Type C"),
+                        Value = c(39L, 5L, 12L, 28L, 21L, 7L, 21L, 9L, 116L, 28L, 108L, 30L, 0L, 3L, 25L, 13L, 4L, 26L),
+                        Stripe_Angle = c(25L, 25L, 25L, 135L, 135L, 135L, 90L, 90L, 90L, 25L, 25L, 25L, 135L, 135L,
+                                         135L, 90L, 90L, 90L)), row.names = c(NA, -18L), class = "data.frame")
+
+colr <- c("orange", "steelblue", "darkred")
+
+cData %>% 
+  ggplot(aes(x=Change, y=Value), pattern="stripe") +
+  geom_col_pattern(aes(pattern_angle=Type, color=Type, fill=Type),
+                   pattern_fill="white", pattern_color="white", pattern_spacing=.05) +
+  scale_color_manual(values = colr) +
+  scale_fill_manual(values = colr) +
+  scale_pattern_angle_manual(values = c(0, -45, 45)) +
+  scale_y_continuous(breaks = seq(0, 140, 10)) +
+  scale_y_break(breaks = c(50,60), scales = 0.5, ticklabels = c(60,80,100), space = 0.1, expand = TRUE) + #break axis scale for higher values
+  labs(x="", y="Amount") +
+  facet_grid(~Individual, switch = "x") +
+  theme_classic()
+```
+
+ 
+ 
+# patternplot package
+ 
+
+## Pie charts produced by patternpie()
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- read.csv(system.file("extdata", "vegetables.csv", package="patternplot"))
+
+
+#Example 1
+pattern.type<-c('hdashes', 'vdashes', 'bricks')
+pie1<-patternpie(group=data$group,pct=data$pct,label=data$label, 
+                 label.size=4, label.color='black',label.distance=1.3,pattern.type=pattern.type,
+           pattern.line.size=c(10, 10, 2), frame.color='black',frame.size=1.5, pixel=12, density=c(8, 8, 10))
+pie1<-pie1+ggtitle('(A) Black and White with Patterns')
+
+
+#Example 2
+pattern.color<-c('red3','green3', 'white' )
+background.color<-c('dodgerblue', 'lightpink', 'orange')
+
+pie2<-patternpie(group=data$group,pct=data$pct,label=data$label, label.distance=1.3, pattern.type=pattern.type,
+           pattern.color=pattern.color,background.color=background.color, 
+           pattern.line.size=c(10, 10, 2), frame.color='grey40',frame.size=1.5, pixel=12, density=c(8, 8, 10))
+pie2<-pie2+ggtitle('(B) Colors with Patterns')
+
+library(gridExtra)
+grid.arrange(pie1,pie2,  nrow = 1)
+```
+
+## Pie chart produced by imagepie()
+
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+library(jpeg)
+Tomatoes <-  readJPEG(system.file("img", "tomatoes.jpg", package="patternplot"))
+Peas <- readJPEG(system.file("img", "peas.jpg", package="patternplot"))
+Potatoes <-  readJPEG(system.file("img", "potatoes.jpg", package="patternplot"))
+
+#Example 1
+data <- read.csv(system.file("extdata", "vegetables.csv", package="patternplot"))
+pattern.type<-list(Tomatoes,Peas,Potatoes)
+imagepie(group=data$group,pct=data$pct,label=data$label,pattern.type=pattern.type,
+         label.distance=1.3,frame.color='burlywood4', frame.size=0.8, label.size=6,
+         label.color='forestgreen')+ggtitle('Pie Chart with Images')
+```
+
+
+## Ring chart
+
+Ring chart see (AN INTRODUCTION TO PATTERNPLOT PACKAGE)[https://cran.r-project.org/web/packages/patternplot/vignettes/patternplot-intro.html]
+
+## Bar charts produced by patternbar()
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- read.csv(system.file("extdata", "monthlyexp.csv", package="patternplot"))
+data<-data[which(data$Location=='City 1'),]
+x<-factor(data$Type, c('Housing', 'Food',  'Childcare'))
+y<-data$Amount
+pattern.type<-c('hdashes', 'blank', 'crosshatch')
+pattern.color=c('black','black', 'black')
+background.color=c('white','white', 'white')
+density<-c(20, 20, 10)
+
+g1<-patternbar(data,x, y,group=NULL,ylab='Monthly Expenses, Dollars', pattern.type=pattern.type,pattern.color=pattern.color, background.color=background.color,pattern.line.size=c(5.5, 1, 4),frame.color=c('black', 'black', 'black'), density=density, vjust=-1, hjust=0.5, bar.width=0.75)+scale_y_continuous(limits = c(0, 2800))+ggtitle('(A) Vertical Bar Chart')
+
+g2<-patternbar(data,x, y,group=NULL,ylab='Monthly Expenses, Dollars', pattern.type=pattern.type,pattern.color=pattern.color, background.color=background.color,pattern.line.size=c(5.5, 1, 4),frame.color=c('black', 'black', 'black'), density=density, vjust=0.5, hjust=-0.25, bar.width=0.5)+scale_y_continuous(limits = c(0,2800))+ggtitle('(B) Horizontal Bar Chart')+coord_flip()
+
+g3<-patternbar(data,x, y,group=NULL,ylab='Monthly Expenses, Dollars', pattern.type=pattern.type,pattern.color=pattern.color, background.color=background.color,pattern.line.size=c(5.5, 1, 4),frame.color=c('black', 'black', 'black'), density=density, vjust=2, hjust=0.5, bar.width=0.75)+ggtitle('(C) Reverse Bar Chart')+ scale_y_reverse(limits = c(2800,0))
+
+library(gridExtra)
+grid.arrange(g1,g2,g3,  nrow = 1)
+```
+
+## Change themes
+
+```{r,echo = F,message = FALSE, error = FALSE, warning = FALSE}
+data <- read.csv(system.file("extdata", "monthlyexp.csv", package="patternplot"))
+data<-data[which(data$Location=='City 1'),]
+x<-factor(data$Type, c('Housing', 'Food',  'Childcare'))
+y<-data$Amount
+pattern.type<-c('hdashes', 'blank', 'crosshatch')
+pattern.color=c('black','black', 'black')
+background.color=c('white','white', 'white')
+density<-c(20, 20, 10)
+
+g1<-patternbar(data,x, y,group=NULL,ylab='Monthly Expenses, Dollars', pattern.type=pattern.type,pattern.color=pattern.color, background.color=background.color,pattern.line.size=c(5.5, 1, 4),frame.color=c('black', 'black', 'black'), density=density, vjust=-1, hjust=0.5)+scale_y_continuous(limits = c(0, 2800))+ggtitle('(A) Bar Chart with Default Theme')
+
+g2<-patternbar(data,x, y,group=NULL,ylab='Monthly Expenses, Dollars', pattern.type=pattern.type,pattern.color=pattern.color, background.color=background.color,pattern.line.size=c(5.5, 1, 4),frame.color=c('black', 'black', 'black'), density=density, vjust=-1, hjust=0.5)+scale_y_continuous(limits = c(0, 2800))+ggtitle('(B) Bar Chart with Classic Theme')+ theme_classic()
+
+library(gridExtra)
+grid.arrange(g1,g2,  nrow = 1)
+```
+
+
+<!-- ---------------------------------------------------------------------- -->
+
+<!--               Example for including figure in local path               -->
+
+<!-- ---------------------------------------------------------------------- -->
+
+```{r , echo=FALSE, fig.align="center", out.width = '100%',fig.cap="Figure:"}
+## knitr::include_graphics("./Background/christmas logo_small.png")
+```
+
+<!-- ---------------------------------------------------------------------- -->
